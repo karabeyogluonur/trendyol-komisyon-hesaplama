@@ -2,8 +2,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
-using TKH.Presentation.Models.MarketplaceAccount;
 using TKH.Core.Utilities.Results;
+using TKH.Presentation.Models.MarketplaceAccount;
+using TKH.Presentation.Services;
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Presentation.Controllers
@@ -12,11 +13,16 @@ namespace TKH.Presentation.Controllers
     {
         private readonly IMarketplaceAccountService _marketplaceService;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
 
-        public MarketplaceAccountController(IMarketplaceAccountService marketplaceService, IMapper mapper)
+        public MarketplaceAccountController(
+            IMarketplaceAccountService marketplaceService,
+            IMapper mapper,
+            INotificationService notificationService)
         {
             _marketplaceService = marketplaceService;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -26,9 +32,11 @@ namespace TKH.Presentation.Controllers
 
             if (marketplaceAccountListResult.Success)
             {
-                var viewModel = _mapper.Map<List<MarketplaceAccountListViewModel>>(marketplaceAccountListResult.Data);
-                return View(viewModel);
+                List<MarketplaceAccountListViewModel> marketplaceAccountListViewModels = _mapper.Map<List<MarketplaceAccountListViewModel>>(marketplaceAccountListResult.Data);
+                return View(marketplaceAccountListViewModels);
             }
+
+            _notificationService.Error(marketplaceAccountListResult.Message, "Listeleme Hatası.");
             return View(new List<MarketplaceAccountListViewModel>());
         }
 
@@ -43,15 +51,22 @@ namespace TKH.Presentation.Controllers
         public async Task<IActionResult> Add(MarketplaceAccountAddViewModel model)
         {
             if (!ModelState.IsValid)
+            {
+                _notificationService.Warning("Lütfen zorunlu alanları kontrol ediniz.");
                 return View(model);
+            }
 
             MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(model);
 
             IResult marketplaceAccountAddResult = await _marketplaceService.AddAsync(marketplaceAccountAddDto);
 
             if (marketplaceAccountAddResult.Success)
-                return RedirectToAction("Index", "Home");
+            {
+                _notificationService.Success(marketplaceAccountAddResult.Message);
+                return RedirectToAction("Index");
+            }
 
+            _notificationService.Error(marketplaceAccountAddResult.Message);
             ModelState.AddModelError("", marketplaceAccountAddResult.Message);
             return View(model);
         }
@@ -62,35 +77,50 @@ namespace TKH.Presentation.Controllers
             IDataResult<MarketplaceAccountUpdateDto> marketplaceAccountUpdateDtoResult = await _marketplaceService.GetByIdAsync(id);
 
             if (!marketplaceAccountUpdateDtoResult.Success)
+            {
+                _notificationService.Error(marketplaceAccountUpdateDtoResult.Message);
                 return RedirectToAction("Index");
+            }
 
-            var model = _mapper.Map<MarketplaceAccountUpdateViewModel>(marketplaceAccountUpdateDtoResult.Data);
-
-            return View(model);
+            var marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(marketplaceAccountUpdateDtoResult.Data);
+            return View(marketplaceAccountUpdateViewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(MarketplaceAccountUpdateViewModel model)
+        public async Task<IActionResult> Edit(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
         {
             if (!ModelState.IsValid)
-                return View(model);
+            {
+                _notificationService.Warning("Lütfen girdiğiniz bilgileri kontrol ediniz.");
+                return View(marketplaceAccountUpdateViewModel);
+            }
 
-            MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(model);
+            MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
             IResult marketplaceAccountUpdateResult = await _marketplaceService.UpdateAsync(marketplaceAccountUpdateDto);
 
             if (marketplaceAccountUpdateResult.Success)
+            {
+                _notificationService.Success(marketplaceAccountUpdateResult.Message);
                 return RedirectToAction("Index");
+            }
 
+            _notificationService.Error(marketplaceAccountUpdateResult.Message);
             ModelState.AddModelError("", marketplaceAccountUpdateResult.Message);
-            return View(model);
+            return View(marketplaceAccountUpdateViewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            await _marketplaceService.DeleteAsync(id);
+            IResult marketplaceAccountDeleteResult = await _marketplaceService.DeleteAsync(id);
+
+            if (marketplaceAccountDeleteResult.Success)
+                _notificationService.Success(marketplaceAccountDeleteResult.Message);
+            else
+                _notificationService.Error(marketplaceAccountDeleteResult.Message);
+
             return RedirectToAction("Index");
         }
     }

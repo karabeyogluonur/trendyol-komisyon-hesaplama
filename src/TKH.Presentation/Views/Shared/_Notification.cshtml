@@ -1,0 +1,38 @@
+@using System.Text.Json
+@using TKH.Entities.Enums
+@{
+    var toastKey = "TKH_Notification_Key";
+    var messagesJson = TempData[toastKey] as string;
+}
+
+@if (!string.IsNullOrEmpty(messagesJson))
+{
+    <script>
+
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "preventDuplicates": false,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var messages = @Html.Raw(messagesJson);
+
+            messages.forEach(function (msg) {
+                var typeStr = "";
+                if (msg.Type === @((int)NotificationType.Success)) typeStr = "success";
+                else if (msg.Type === @((int)NotificationType.Error)) typeStr = "error";
+                else if (msg.Type === @((int)NotificationType.Warning)) typeStr = "warning";
+                else typeStr = "info";
+
+                toastr[typeStr](msg.Message, msg.Title);
+            });
+        });
+    </script>
+}
