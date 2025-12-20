@@ -1,6 +1,6 @@
 using TKH.Core.Entities.Abstract;
 
-namespace TKH.Business.Dtos.Marketplace
+namespace TKH.Business.Dtos.MarketplaceAccount
 {
     public class MarketplaceAccountListDto : IDto
     {
