@@ -32,6 +32,13 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 #endregion
+
+#region Automapper
+
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
+
+#endregion
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
