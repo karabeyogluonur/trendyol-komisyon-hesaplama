@@ -1,0 +1,62 @@
+{
+    "files.eol": "\n",
+    "files.autoSave": "afterDelay",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.encoding": "utf8",
+
+    "editor.tabSize": 4,
+    "editor.fontSize": 12,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.minimap.enabled": false,
+
+    "explorer.compactFolders": false,
+
+    "window.zoomLevel": 0,
+    "workbench.colorTheme": "Default Dark+",
+    "workbench.iconTheme": "material-icon-theme",
+
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.defaultProfile.osx": "zsh",
+
+    "terminal.integrated.profiles.windows": {
+        "Command Prompt": {
+            "path": "C:\\\\Windows\\\\System32\\\\cmd.exe"
+        }
+    },
+
+    "terminal.integrated.profiles.osx": {
+        "zsh": {
+            "path": "/bin/zsh"
+        }
+    },
+
+    "csharp.format.enable": true,
+    "omnisharp.useModernNet": true,
+    "omnisharp.path": "latest",
+
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true,
+        "**/.vs": true,
+        "**/.git": true,
+        "**/.vscode": false
+    },
+
+    "search.exclude": {
+        "**/bin": true,
+        "**/obj": true,
+        "**/.vs": true
+    },
+
+    "scm.compactFolders": false,
+    "diffEditor.renderSideBySide": true
+}
