@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TKH.Business\TKH.Business.csproj" />
+    <ProjectReference Include="..\TKH.Core\TKH.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

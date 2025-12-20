@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\TKH.Core\TKH.Core.csproj" />
     <ProjectReference Include="..\TKH.Entities\TKH.Entities.csproj" />
   </ItemGroup>
 
