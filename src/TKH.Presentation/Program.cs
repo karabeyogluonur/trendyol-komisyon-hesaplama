@@ -1,5 +1,6 @@
 using TKH.DataAccess;
 using TKH.Business;
+using TKH.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 var mvcBuilder = builder.Services.AddControllersWithViews();
@@ -7,6 +8,7 @@ var mvcBuilder = builder.Services.AddControllersWithViews();
 if (builder.Environment.IsDevelopment())
     mvcBuilder.AddRazorRuntimeCompilation();
 
+builder.Services.AddCoreServices();
 builder.Services.AddDataAccessServices(builder.Configuration);
 builder.Services.AddBusinessServices();
 
