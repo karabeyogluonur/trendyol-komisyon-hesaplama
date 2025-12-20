@@ -1,9 +1,12 @@
+using TKH.DataAccess;
+
 var builder = WebApplication.CreateBuilder(args);
 var mvcBuilder = builder.Services.AddControllersWithViews();
 
 if (builder.Environment.IsDevelopment())
     mvcBuilder.AddRazorRuntimeCompilation();
 
+builder.Services.AddDataAccessServices(builder.Configuration);
 
 var app = builder.Build();
 
