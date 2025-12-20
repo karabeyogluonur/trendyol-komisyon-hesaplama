@@ -1,0 +1,179 @@
+@model MarketplaceAccountUpdateViewModel
+
+@{
+    ViewData["Title"] = "Pazar Yeri Düzenle";
+}
+
+<div class="card mb-5">
+    <div class="card-body py-4">
+        <div id="kt_app_toolbar" class="app-toolbar">
+            <div class="d-flex flex-stack w-100">
+                <div class="page-title d-flex flex-column justify-content-center gap-2">
+                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
+                        Pazaryeri Hesap Yönetimi
+                    </h1>
+                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index", "Marketplace")"
+                                class="text-gray-600 text-hover-primary">Pazaryeri Hesapları</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item text-gray-800 fw-semibold">
+                            Düzenle
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-controller="MarketplaceAccount" asp-action="Edit" method="post" id="kt_marketplace_edit_form">
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="card card-flush">
+        <div class="card-header card-header-stretch min-h-50px">
+            <div class="card-toolbar">
+                <ul class="nav nav-tabs nav-line-tabs nav-stretch fs-7 border-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#tab_general">
+                            <i class="ki-outline ki-setting-2 fs-4 me-2"></i> Genel Ayarlar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tab_api_config">
+                            <i class="ki-outline ki-shield-tick fs-4 me-2"></i> API Konfigürasyonu
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body pt-10">
+            <div class="tab-content">
+
+                <div class="tab-pane fade show active" id="tab_general" role="tabpanel">
+
+                    <div class="row mb-5">
+                        <div class="col-md-6 fv-row">
+                            <label asp-for="MarketplaceType" class="required form-label fs-7 fw-semibold"></label>
+                            <select asp-for="MarketplaceType" asp-items="Html.GetEnumSelectList<MarketplaceType>()"
+                                class="form-select form-select-sm form-select-solid" data-control="select2"
+                                data-placeholder="Seçiniz...">
+                            </select>
+                            <span asp-validation-for="MarketplaceType" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 fv-row">
+                            <label asp-for="IsActive" class="form-label fs-7 fw-semibold"></label>
+                            <div class="form-check form-switch form-check-custom form-check-solid mt-1">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" asp-for="IsActive">
+                                    Entegrasyon Aktif
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-12 fv-row">
+                            <label asp-for="StoreName" class="required form-label fs-7 fw-semibold"></label>
+                            <input asp-for="StoreName" class="form-control form-control-sm" maxlength="50" />
+                            <span asp-validation-for="StoreName" class="text-danger fs-8"></span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-0">
+                        <i class="ki-duotone ki-information-5 fs-2hx text-primary me-4 mb-5 mb-sm-0 flex-shrink-0">
+                            <span class="path1"></span><span class="path2"></span><span class="path3"></span>
+                        </i>
+                        <div class="d-flex flex-column pe-0 pe-sm-10">
+                            <h5 class="mb-1 fs-6">Bilgilendirme</h5>
+                            <span class="fs-7 text-gray-600">Mağaza adını değiştirmek, geçmiş sipariş verilerini
+                                etkilemez. Sadece paneldeki görünür ismi günceller.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tab_api_config" role="tabpanel">
+
+                    <div
+                        class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
+                        <i class="ki-duotone ki-key fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0">
+                            <span class="path1"></span><span class="path2"></span>
+                        </i>
+                        <div class="d-flex flex-column pe-0 pe-sm-10">
+                            <h5 class="mb-1 fs-6">Hassas Alanlar</h5>
+                            <span class="fs-7 text-gray-600">API bilgilerini değiştirirken dikkatli olun. Yanlış bilgi
+                                girilmesi entegrasyonu durduracaktır.</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-12 fv-row">
+                            <label asp-for="MerchantId" class="required form-label fs-7 fw-semibold"></label>
+                            <input asp-for="MerchantId" class="form-control form-control-sm" />
+                            <div class="text-muted fs-8 mt-1">Trendyol/HB panelinde 'Satıcı ID' olarak geçer.</div>
+                            <span asp-validation-for="MerchantId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-6 fv-row">
+                            <label asp-for="ApiKey" class="required form-label fs-7 fw-semibold"></label>
+                            <input asp-for="ApiKey" class="form-control form-control-sm" autocomplete="off" />
+                            <span asp-validation-for="ApiKey" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 fv-row">
+                            <label asp-for="ApiSecretKey" class="form-label fs-7 fw-semibold"></label>
+                            <input asp-for="ApiSecretKey" type="password" class="form-control form-control-sm"
+                                placeholder="Değiştirmek için yeni şifreyi girin..." autocomplete="new-password" />
+                            <div class="text-muted fs-8 mt-1">
+                                Boş bırakırsanız mevcut şifre korunur. Değiştirmek isterseniz doldurun.
+                            </div>
+                            <span asp-validation-for="ApiSecretKey" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-end py-6 px-9">
+            <a asp-action="Index" class="btn btn-sm btn-light me-3">Vazgeç</a>
+            <button type="submit" class="btn btn-sm btn-primary" id="kt_btn_submit">
+                <span class="indicator-label">Değişiklikleri Kaydet</span>
+                <span class="indicator-progress">
+                    Lütfen bekleyin...
+                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                </span>
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Form submit loading efekti
+            $("#kt_marketplace_edit_form").submit(function () {
+                if ($(this).valid()) {
+                    var btn = $("#kt_btn_submit");
+                    btn.attr("data-kt-indicator", "on");
+                    btn.prop("disabled", true);
+                }
+            });
+        });
+    </script>
+}

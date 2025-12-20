@@ -1,0 +1,187 @@
+@model List<MarketplaceAccountListViewModel>
+
+<div class="card mb-5">
+    <div class="card-body py-4">
+        <div id="kt_app_toolbar" class="app-toolbar">
+            <div class="d-flex flex-stack w-100">
+                <div class="page-title d-flex flex-column justify-content-center gap-2">
+                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
+                        Pazaryeri Hesap Yönetimi
+                    </h1>
+
+                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="text-gray-600">Pazaryeri Hesapları</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a href="@Url.Action("Add", "MarketplaceAccount")"
+                        class="btn btn-sm btn-primary d-flex align-items-center px-4">
+                        <i class="ki-outline ki-plus fs-2 me-2"></i>
+                        Yeni Hesap Ekle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card mb-5">
+    <div class="card-body">
+
+        <table class="table table-row-dashed table-hover align-middle gs-0 gy-4">
+            <thead>
+                <tr class="text-start text-muted fw-bold fs-7 text-uppercase">
+                    <th class="min-w-200px">Pazaryeri</th>
+                    <th class="min-w-200px">Mağaza Adı</th>
+                    <th class="min-w-125px">Satıcı ID</th>
+                    <th class="min-w-100px">Durum</th>
+                    <th class="text-end min-w-100px">İşlemler</th>
+                </tr>
+            </thead>
+
+            <tbody class="fw-semibold text-gray-700">
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var account in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        @{
+                                            var badgeColor = account.MarketplaceTypeName == "Trendyol" ? "warning" :
+                                            account.MarketplaceTypeName == "Hepsiburada" ? "primary" : "secondary";
+                                            var initial = account.MarketplaceTypeName.Substring(0, 1);
+                                        }
+                                        <div class="symbol symbol-35px symbol-light-@badgeColor">
+                                            <span class="symbol-label fw-bold text-@badgeColor">@initial</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <span class="fw-bold fs-7 mb-1">@account.MarketplaceTypeName</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="d-block fs-7">
+                                    @account.StoreName
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="text-muted d-block fs-7">
+                                    @account.MerchantId
+                                </span>
+                            </td>
+
+                            <td>
+                                @if (account.IsActive)
+                                {
+                                    <span class="badge badge-light-success fw-bold px-3 py-2">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-light-danger fw-bold px-3 py-2">Pasif</span>
+                                }
+                            </td>
+
+                            <td class="text-end">
+                                <a asp-controller="MarketplaceAccount" asp-action="Edit" asp-route-id="@account.Id"
+                                    class="btn btn-icon btn-light-primary w-30px h-30px me-3">
+                                    <span data-bs-toggle="tooltip" data-bs-trigger="hover" title="Düzenle">
+                                        <i class="ki-duotone ki-pencil fs-3">
+                                            <span class="path1"></span><span class="path2"></span>
+                                        </i>
+                                    </span>
+                                </a>
+
+                                <a href="javascript:void(0);" class="btn btn-icon btn-light-danger w-30px h-30px me-3"
+                                    data-bs-toggle="modal" data-bs-target="#deleteAccountModal" data-id="@account.Id"
+                                    data-name="@account.StoreName">
+                                    <i class="ki-duotone ki-trash fs-2">
+                                        <span class="path1"></span><span class="path2"></span>
+                                        <span class="path3"></span><span class="path4"></span>
+                                        <span class="path5"></span>
+                                    </i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-10">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="ki-outline ki-shop fs-2x text-muted mb-3"></i>
+                                <span class="fs-6 fw-semibold">Henüz hiç hesap eklenmemiş.</span>
+                                <span class="fs-7">Yeni bir pazar yeri entegrasyonu ekleyerek başlayın.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Hesabı Sil</h5>
+                <button type="button" class="btn btn-sm btn-icon" data-bs-dismiss="modal">
+                    <i class="ki-outline ki-cross fs-2"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p class="fs-6 text-gray-700">
+                    <strong id="deleteStoreNameDisplay" class="text-dark"></strong> mağazasını silmek istediğinize emin
+                    misiniz?
+                </p>
+                <div class="alert alert-warning d-flex align-items-center p-5 mb-0">
+                    <i class="ki-outline ki-shield-cross fs-2hx text-warning me-4"></i>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold">Uyarı</span>
+                        <span>Bu işlem geri alınamaz ve ilgili entegrasyonu durdurur.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
+
+                <form id="deleteAccountForm" asp-controller="MarketplaceAccount" asp-action="Delete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteAccountId" name="id" />
+                    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        const deleteModal = document.getElementById('deleteAccountModal');
+        deleteModal.addEventListener('show.bs.modal', event => {
+
+            const button = event.relatedTarget;
+            const accountId = button.getAttribute('data-id');
+            const storeName = button.getAttribute('data-name');
+
+            document.getElementById('deleteAccountId').value = accountId;
+            document.getElementById('deleteStoreNameDisplay').textContent = storeName;
+        });
+    </script>
+}
