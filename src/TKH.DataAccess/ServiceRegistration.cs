@@ -14,6 +14,7 @@ namespace TKH.DataAccess
             services.AddDbContext<TKHDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
         }
