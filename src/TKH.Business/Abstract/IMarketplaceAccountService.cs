@@ -5,7 +5,8 @@ namespace TKH.Business.Abstract
 {
     public interface IMarketplaceAccountService
     {
-        Task<IDataResult<List<MarketplaceAccountListDto>>> GetAllAsync();
+        Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync();
+        Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetActiveAccountsAsync();
         Task<IResult> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto);
         Task<IDataResult<MarketplaceAccountUpdateDto>> GetByIdAsync(int id);
         Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto);

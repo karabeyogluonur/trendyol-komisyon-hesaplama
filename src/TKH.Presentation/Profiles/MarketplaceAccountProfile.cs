@@ -9,9 +9,10 @@ namespace TKH.Presentation.Profiles
         public MarketplaceAccountProfile()
         {
             CreateMap<MarketplaceAccountAddViewModel, MarketplaceAccountAddDto>();
-            CreateMap<MarketplaceAccountListDto, MarketplaceAccountListViewModel>();
+            CreateMap<MarketplaceAccountSummaryDto, MarketplaceAccountListViewModel>();
             CreateMap<MarketplaceAccountUpdateDto, MarketplaceAccountUpdateViewModel>();
             CreateMap<MarketplaceAccountUpdateViewModel, MarketplaceAccountUpdateDto>();
+            CreateMap<MarketplaceAccountSummaryDto, MarketplaceAccountSelectorItemViewModel>();
         }
     }
 }

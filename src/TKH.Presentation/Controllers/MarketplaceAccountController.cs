@@ -28,7 +28,7 @@ namespace TKH.Presentation.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            IDataResult<List<MarketplaceAccountListDto>> marketplaceAccountListResult = await _marketplaceService.GetAllAsync();
+            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountListResult = await _marketplaceService.GetAllAsync();
 
             if (marketplaceAccountListResult.Success)
             {

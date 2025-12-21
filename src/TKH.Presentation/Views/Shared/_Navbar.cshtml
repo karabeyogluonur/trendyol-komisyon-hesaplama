@@ -1,5 +1,6 @@
 @using System.Security.Claims
 <div class="app-navbar flex-shrink-0">
+    @await Component.InvokeAsync("MarketplaceAccountSelector")
     <div class="app-navbar-item ms-1 ms-md-4">
         <a href="#"
             class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px"

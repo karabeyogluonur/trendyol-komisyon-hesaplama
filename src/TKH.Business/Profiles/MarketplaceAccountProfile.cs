@@ -8,9 +8,7 @@ namespace TKH.Business.Profiles
     {
         public MarketplaceAccountProfile()
         {
-            CreateMap<MarketplaceAccount, MarketplaceAccountListDto>()
-                .ForMember(dest => dest.MarketplaceTypeName, opt => opt.MapFrom(src => src.MarketplaceType.ToString()));
-
+            CreateMap<MarketplaceAccount, MarketplaceAccountSummaryDto>();
             CreateMap<MarketplaceAccountAddDto, MarketplaceAccount>();
             CreateMap<MarketplaceAccount, MarketplaceAccountUpdateDto>();
         }

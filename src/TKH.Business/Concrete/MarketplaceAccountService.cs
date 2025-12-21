@@ -13,14 +13,16 @@ namespace TKH.Business.Concrete
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<MarketplaceAccount> _marketplaceAccountRepository;
         private readonly IMapper _mapper;
+        private readonly IWorkContext _workContext;
         private readonly ICipherService _cipherService;
 
-        public MarketplaceAccountService(IUnitOfWork unitOfWork, IMapper mapper, ICipherService cipherService)
+        public MarketplaceAccountService(IUnitOfWork unitOfWork, IMapper mapper, IWorkContext workContext, ICipherService cipherService)
         {
             _unitOfWork = unitOfWork;
             _marketplaceAccountRepository = _unitOfWork.GetRepository<MarketplaceAccount>();
             _mapper = mapper;
             _cipherService = cipherService;
+            _workContext = workContext;
         }
 
         public async Task<IResult> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto)
@@ -35,11 +37,11 @@ namespace TKH.Business.Concrete
             return new SuccessResult("Pazar yeri hesabı başarıyla eklendi.");
         }
 
-        public async Task<IDataResult<List<MarketplaceAccountListDto>>> GetAllAsync()
+        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync()
         {
             List<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync();
-            List<MarketplaceAccountListDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountListDto>>(marketplaceAccountEntities);
-            return new SuccessDataResult<List<MarketplaceAccountListDto>>(marketplaceAccountListDtos, "Hesaplar listelendi.");
+            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
+            return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Hesaplar listelendi.");
         }
 
         public async Task<IDataResult<MarketplaceAccountUpdateDto>> GetByIdAsync(int id)
@@ -80,7 +82,10 @@ namespace TKH.Business.Concrete
 
         public async Task<IResult> DeleteAsync(int id)
         {
-            var account = await _marketplaceAccountRepository.GetAsync(x => x.Id == id);
+            if (_workContext.CurrentMarketplaceAccountId == id)
+                return new ErrorResult("Şu anda aktif olarak seçili olan mağazayı silemezsiniz. Lütfen önce başka bir mağazaya geçiş yapın.");
+
+            MarketplaceAccount? account = await _marketplaceAccountRepository.GetAsync(x => x.Id == id);
 
             if (account is null)
                 return new ErrorResult("Silinecek hesap bulunamadı.");
@@ -90,6 +95,13 @@ namespace TKH.Business.Concrete
             await _unitOfWork.SaveChangesAsync();
 
             return new SuccessResult("Pazar yeri hesabı başarıyla silindi.");
+        }
+
+        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetActiveAccountsAsync()
+        {
+            List<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync(marketplaceAccount => marketplaceAccount.IsActive);
+            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
+            return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Aktif Hesaplar listelendi.");
         }
     }
 }

@@ -49,23 +49,18 @@
             <tbody class="fw-semibold text-gray-700">
                 @if (Model != null && Model.Any())
                 {
-                    @foreach (var account in Model)
+                    @foreach (MarketplaceAccountListViewModel account in Model)
                     {
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="me-3">
-                                        @{
-                                            var badgeColor = account.MarketplaceTypeName == "Trendyol" ? "warning" :
-                                            account.MarketplaceTypeName == "Hepsiburada" ? "primary" : "secondary";
-                                            var initial = account.MarketplaceTypeName.Substring(0, 1);
-                                        }
-                                        <div class="symbol symbol-35px symbol-light-@badgeColor">
-                                            <span class="symbol-label fw-bold text-@badgeColor">@initial</span>
+                                        <div class="symbol symbol-35px">
+                                            <marketplace-logo type="@account.MarketplaceType" class="symbol-label p-1" />
                                         </div>
                                     </div>
                                     <div class="d-flex flex-column justify-content-center">
-                                        <span class="fw-bold fs-7 mb-1">@account.MarketplaceTypeName</span>
+                                        <span class="fw-bold fs-7 mb-1">@account.MarketplaceType</span>
                                     </div>
                                 </div>
                             </td>
@@ -133,6 +128,7 @@
 
     </div>
 </div>
+
 <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

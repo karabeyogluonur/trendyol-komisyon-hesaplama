@@ -2,12 +2,11 @@ using TKH.Entities.Enums;
 
 namespace TKH.Presentation.Models.MarketplaceAccount
 {
-    public class MarketplaceAccountListViewModel
+    public class MarketplaceAccountSelectorItemViewModel
     {
         public int Id { get; set; }
-        public MarketplaceType MarketplaceType { get; set; }
         public string StoreName { get; set; } = string.Empty;
+        public MarketplaceType MarketplaceType { get; set; }
         public string MerchantId { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
     }
 }

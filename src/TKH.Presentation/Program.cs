@@ -5,6 +5,7 @@ using FluentValidation.AspNetCore;
 using FluentValidation;
 using System.Reflection;
 using TKH.Presentation.Services;
+using TKH.Business.Abstract;
 
 var builder = WebApplication.CreateBuilder(args);
 var mvcBuilder = builder.Services.AddControllersWithViews();
@@ -24,6 +25,8 @@ builder.Services.AddBusinessServices();
 #region Presentation Service Registration
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IWorkContext, WebWorkContext>();
 
 #endregion
 
