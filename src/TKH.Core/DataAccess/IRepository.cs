@@ -8,7 +8,14 @@ namespace TKH.Core.DataAccess
         Task<T> GetAsync(Expression<Func<T, bool>> filter);
         Task<List<T>> GetAllAsync(Expression<Func<T, bool>> filter = null);
         Task AddAsync(T entity);
+        Task AddAsync(IEnumerable<T> entities);
+
         void Update(T entity);
+        void Update(IEnumerable<T> entities);
         void Delete(T entity);
+        void Delete(IEnumerable<T> entities);
+
+        Task<T> GetAsync(Expression<Func<T, bool>> filter, params Expression<Func<T, object>>[] includes);
+        Task<List<T>> GetAllAsync(Expression<Func<T, bool>> filter = null, params Expression<Func<T, object>>[] includes);
     }
 }
