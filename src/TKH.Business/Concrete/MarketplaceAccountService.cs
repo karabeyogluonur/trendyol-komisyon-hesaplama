@@ -4,7 +4,7 @@ using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Results;
 using TKH.Core.Utilities.Security.Encryption;
-using TKH.Entities.Concrete;
+using TKH.Entities;
 
 namespace TKH.Business.Concrete
 {
@@ -46,7 +46,7 @@ namespace TKH.Business.Concrete
 
         public async Task<IDataResult<MarketplaceAccountUpdateDto>> GetByIdAsync(int id)
         {
-            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetAsync(x => x.Id == id);
+            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetAsync(marketplaceAccount => marketplaceAccount.Id == id);
 
             if (marketplaceAccountEntity is null)
                 return new ErrorDataResult<MarketplaceAccountUpdateDto>("Kayıt bulunamadı.");
@@ -60,7 +60,7 @@ namespace TKH.Business.Concrete
 
         public async Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto)
         {
-            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetAsync(x => x.Id == updateDto.Id);
+            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetAsync(marketplaceAccount => marketplaceAccount.Id == updateDto.Id);
 
             if (marketplaceAccountEntity is null)
                 return new ErrorResult("Düzenlenecek kayıt bulunamadı.");
@@ -85,7 +85,7 @@ namespace TKH.Business.Concrete
             if (_workContext.CurrentMarketplaceAccountId == id)
                 return new ErrorResult("Şu anda aktif olarak seçili olan mağazayı silemezsiniz. Lütfen önce başka bir mağazaya geçiş yapın.");
 
-            MarketplaceAccount? account = await _marketplaceAccountRepository.GetAsync(x => x.Id == id);
+            MarketplaceAccount? account = await _marketplaceAccountRepository.GetAsync(marketplaceAccount => marketplaceAccount.Id == id);
 
             if (account is null)
                 return new ErrorResult("Silinecek hesap bulunamadı.");
@@ -102,6 +102,21 @@ namespace TKH.Business.Concrete
             List<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync(marketplaceAccount => marketplaceAccount.IsActive);
             List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
             return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Aktif Hesaplar listelendi.");
+        }
+
+        public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id)
+        {
+            MarketplaceAccount? marketplaceAccountEntity = await _marketplaceAccountRepository.GetAsync(marketplaceAccount => marketplaceAccount.Id == id);
+
+            if (marketplaceAccountEntity is null)
+                return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>("Bağlantı bilgileri için gerekli hesap bulunamadı.");
+
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountEntity, opt =>
+            {
+                opt.Items["CipherService"] = _cipherService;
+            });
+
+            return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountConnectionDetailsDto);
         }
     }
 }

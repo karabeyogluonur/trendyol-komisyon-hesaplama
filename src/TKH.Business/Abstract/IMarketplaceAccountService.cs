@@ -11,5 +11,7 @@ namespace TKH.Business.Abstract
         Task<IDataResult<MarketplaceAccountUpdateDto>> GetByIdAsync(int id);
         Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto);
         Task<IResult> DeleteAsync(int id);
+
+        Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id);
     }
 }
