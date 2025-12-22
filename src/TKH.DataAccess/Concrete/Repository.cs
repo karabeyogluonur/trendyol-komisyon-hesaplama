@@ -55,6 +55,33 @@ namespace TKH.DataAccess.Concrete
                 _context.ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
             }
         }
+
+        public void AddOrUpdate(IEnumerable<T> entities)
+        {
+            bool autoDetectChangesEnabled = _context.ChangeTracker.AutoDetectChangesEnabled;
+            try
+            {
+                _context.ChangeTracker.AutoDetectChangesEnabled = false;
+
+                foreach (T entity in entities)
+                {
+                    EntityEntry<T> entityEntry = _context.Entry(entity);
+                    PropertyEntry propertyEntry = entityEntry.Property("Id");
+                    object primaryKeyValue = propertyEntry.CurrentValue;
+
+                    bool isNewRecord = primaryKeyValue == null || primaryKeyValue.Equals(0);
+
+                    entityEntry.State = isNewRecord
+                        ? EntityState.Added
+                        : EntityState.Modified;
+                }
+            }
+            finally
+            {
+                _context.ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+            }
+        }
+
         public void Delete(T entity)
         {
             _dbSet.Remove(entity);

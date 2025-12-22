@@ -5,13 +5,12 @@ namespace TKH.Core.DataAccess
 {
     public interface IRepository<T> where T : class, IEntity, new()
     {
-        Task<T> GetAsync(Expression<Func<T, bool>> filter);
-        Task<List<T>> GetAllAsync(Expression<Func<T, bool>> filter = null);
         Task AddAsync(T entity);
         Task AddAsync(IEnumerable<T> entities);
 
         void Update(T entity);
         void Update(IEnumerable<T> entities);
+        void AddOrUpdate(IEnumerable<T> entities);
         void Delete(T entity);
         void Delete(IEnumerable<T> entities);
 
