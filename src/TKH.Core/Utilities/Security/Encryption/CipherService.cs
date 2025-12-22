@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography; // Bu namespace gerekli
 
 namespace TKH.Core.Utilities.Security.Encryption
 {
@@ -20,7 +21,15 @@ namespace TKH.Core.Utilities.Security.Encryption
         public string Decrypt(string cipherText)
         {
             if (string.IsNullOrEmpty(cipherText)) return cipherText;
-            return _protector.Unprotect(cipherText);
+
+            try
+            {
+                return _protector.Unprotect(cipherText);
+            }
+            catch (CryptographicException)
+            {
+                return cipherText;
+            }
         }
     }
 }
