@@ -1,7 +1,12 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Extensions.Http;
 using TKH.Business.Abstract;
 using TKH.Business.Concrete;
+using TKH.Business.Integrations.Concrete;
+using TKH.Business.Integrations.Factories;
+using TKH.Business.Integrations.Providers.Trendyol;
 
 namespace TKH.Business
 {
@@ -9,9 +14,45 @@ namespace TKH.Business
     {
         public static void AddBusinessServices(this IServiceCollection services)
         {
-            services.AddScoped<IMarketplaceAccountService, MarketplaceAccountService>();
+            #region Infrastructure & Core Services
+
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
+            services.AddHttpClient(TrendyolDefaults.HttpClientName).AddPolicyHandler(GetRetryPolicy());
+
+            services.AddHttpClient();
+
+            #endregion
+
+            #region Business Logic Services
+
+            services.AddScoped<IMarketplaceAccountService, MarketplaceAccountService>();
+            services.AddScoped<IProductSyncService, ProductSyncService>();
+
+            #endregion
+
+            #region Integration Services & Providers
+
+            services.AddScoped<MarketplaceProviderFactory>();
+
+            services.AddScoped<TrendyolProductProvider>();
+
+            services.AddSingleton<TrendyolClientFactory>();
+
+            #endregion
         }
+
+        #region Private Helpers (Polly Policies)
+
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                .WaitAndRetryAsync(3, retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+        }
+
+        #endregion
     }
 }
