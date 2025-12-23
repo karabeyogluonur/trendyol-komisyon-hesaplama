@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TKH.Entities.Concrete;
+using TKH.Entities;
 
 namespace TKH.DataAccess.Configurations
 {
@@ -10,12 +10,12 @@ namespace TKH.DataAccess.Configurations
         {
             builder.ToTable("MarketplaceAccounts");
 
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.StoreName).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.ApiKey).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.ApiSecretKey).IsRequired();
-            builder.Property(x => x.MerchantId).IsRequired().HasMaxLength(50);
-            builder.Property(x => x.MarketplaceType).IsRequired();
+            builder.HasKey(marketplaceAccount => marketplaceAccount.Id);
+            builder.Property(marketplaceAccount => marketplaceAccount.StoreName).IsRequired().HasMaxLength(100);
+            builder.Property(marketplaceAccount => marketplaceAccount.ApiKey).IsRequired().HasMaxLength(100);
+            builder.Property(marketplaceAccount => marketplaceAccount.ApiSecretKey).IsRequired();
+            builder.Property(marketplaceAccount => marketplaceAccount.MerchantId).IsRequired().HasMaxLength(50);
+            builder.Property(marketplaceAccount => marketplaceAccount.MarketplaceType).IsRequired();
         }
     }
 }

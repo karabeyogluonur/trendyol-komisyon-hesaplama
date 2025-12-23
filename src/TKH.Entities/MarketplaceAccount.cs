@@ -2,7 +2,7 @@ using TKH.Core.Entities.Abstract;
 using TKH.Entities.Common;
 using TKH.Entities.Enums;
 
-namespace TKH.Entities.Concrete
+namespace TKH.Entities
 {
     public class MarketplaceAccount : BaseEntity, IEntity
     {
