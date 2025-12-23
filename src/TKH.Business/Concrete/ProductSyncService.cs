@@ -4,6 +4,7 @@ using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Abstract;
 using TKH.Business.Integrations.Dtos;
 using TKH.Business.Integrations.Factories;
+using TKH.Core.Common.Constants;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Results;
 using TKH.Entities;
@@ -17,8 +18,6 @@ namespace TKH.Business.Concrete
         private readonly IMarketplaceAccountService _marketplaceAccountService;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
         private readonly IMapper _mapper;
-
-        private const int BATCH_SIZE_LIMIT = 1000;
 
         public ProductSyncService(
             IUnitOfWork unitOfWork,
@@ -37,13 +36,13 @@ namespace TKH.Business.Concrete
         {
             IMarketplaceProductProvider marketplaceProductProvider = _marketplaceProviderFactory.GetProvider(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
-            List<MarketplaceProductDto> marketplaceProductDtoBuffer = new List<MarketplaceProductDto>(BATCH_SIZE_LIMIT);
+            List<MarketplaceProductDto> marketplaceProductDtoBuffer = new List<MarketplaceProductDto>(ApplicationDefaults.ProductBatchSize);
 
             await foreach (MarketplaceProductDto incomingProductDto in marketplaceProductProvider.GetProductsStreamAsync(marketplaceAccountConnectionDetailsDto))
             {
                 marketplaceProductDtoBuffer.Add(incomingProductDto);
 
-                if (marketplaceProductDtoBuffer.Count >= BATCH_SIZE_LIMIT)
+                if (marketplaceProductDtoBuffer.Count >= ApplicationDefaults.ProductBatchSize)
                 {
                     await ProcessProductBatchAsync(marketplaceProductDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
                     marketplaceProductDtoBuffer.Clear();
