@@ -19,7 +19,6 @@ namespace TKH.Business
             #region Infrastructure & Core Services
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
-
             services.AddHttpClient(TrendyolDefaults.HttpClientName)
                     .AddPolicyHandler(GetRetryPolicy());
 
@@ -33,18 +32,18 @@ namespace TKH.Business
             services.AddScoped<IProductSyncService, ProductSyncService>();
             services.AddScoped<IOrderSyncService, OrderSyncService>();
             services.AddScoped<IFinanceSyncService, FinanceSyncService>();
+            services.AddScoped<IMarketplaceReferenceSyncService, MarketplaceReferenceSyncService>();
             services.AddScoped<IStorageService, LocalStorageService>();
 
             #endregion
 
             #region Integration Services & Providers
-
             services.AddScoped<MarketplaceProviderFactory>();
-
             services.AddScoped<TrendyolProductProvider>();
             services.AddScoped<TrendyolOrderProvider>();
             services.AddScoped<TrendyolFinanceProvider>();
 
+            services.AddScoped<TrendyolReferenceProvider>();
             services.AddSingleton<TrendyolClientFactory>();
 
             #endregion

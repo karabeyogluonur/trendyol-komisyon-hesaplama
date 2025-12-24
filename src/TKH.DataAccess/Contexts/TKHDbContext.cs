@@ -7,6 +7,10 @@ namespace TKH.DataAccess.Contexts
     {
         public DbSet<MarketplaceAccount> MarketplaceAccounts { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<CategoryAttribute> CategoryAttributes { get; set; }
+        public DbSet<AttributeValue> AttributeValues { get; set; }
+        public DbSet<ProductAttribute> ProductAttributes { get; set; }
 
         public TKHDbContext(DbContextOptions<TKHDbContext> options) : base(options)
         {
@@ -17,6 +21,5 @@ namespace TKH.DataAccess.Contexts
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(TKHDbContext).Assembly);
         }
-
     }
 }
