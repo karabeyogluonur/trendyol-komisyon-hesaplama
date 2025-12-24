@@ -13,6 +13,8 @@ namespace TKH.Entities
         public string Title { get; set; } = string.Empty;
         public decimal VatRate { get; set; }
         public decimal CommissionRate { get; set; }
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public MarketplaceAccount MarketplaceAccount { get; set; }
         public DateTime LastUpdateDateTime { get; set; }
     }
 }

@@ -3,19 +3,36 @@ using TKH.Business.Integrations.Abstract;
 using TKH.Business.Integrations.Concrete;
 using TKH.Entities.Enums;
 
-
 namespace TKH.Business.Integrations.Factories
 {
     public class MarketplaceProviderFactory(IServiceProvider serviceProvider)
     {
-        public IMarketplaceProductProvider GetProvider(MarketplaceType marketplaceType)
+        public T GetProvider<T>(MarketplaceType marketplaceType)
         {
-            return marketplaceType switch
+            if (typeof(T) == typeof(IMarketplaceProductProvider))
             {
-                MarketplaceType.Trendyol => serviceProvider.GetRequiredService<TrendyolProductProvider>(),
+                var provider = marketplaceType switch
+                {
+                    MarketplaceType.Trendyol => serviceProvider.GetRequiredService<TrendyolProductProvider>(),
 
-                _ => throw new NotImplementedException($"Bu pazaryeri ({marketplaceType}) için Provider yazılmadı!")
-            };
+                    _ => throw new NotImplementedException($"Bu pazaryeri ({marketplaceType}) için Product Provider yazılmadı!")
+                };
+
+                return (T)(object)provider;
+            }
+            if (typeof(T) == typeof(IMarketplaceOrderProvider))
+            {
+                var provider = marketplaceType switch
+                {
+                    MarketplaceType.Trendyol => serviceProvider.GetRequiredService<TrendyolOrderProvider>(),
+
+                    _ => throw new NotImplementedException($"Bu pazaryeri ({marketplaceType}) için Order Provider yazılmadı!")
+                };
+
+                return (T)(object)provider;
+            }
+
+            throw new NotSupportedException($"Factory içinde '{typeof(T).Name}' tipi için tanımlama yapılmamış.");
         }
     }
 }

@@ -28,7 +28,7 @@ namespace TKH.Business.Integrations.Concrete
             if (!long.TryParse(marketplaceAccountConnectionDetailsDto.MerchantId, out long sellerIdentifier))
                 yield break;
 
-            ITrendyolProductService trendyolProductApi = _trendyolClientFactory.CreateClient(
+            ITrendyolProductService trendyolProductApi = _trendyolClientFactory.CreateClient<ITrendyolProductService>(
                 sellerIdentifier,
                 marketplaceAccountConnectionDetailsDto.ApiKey,
                 marketplaceAccountConnectionDetailsDto.ApiSecretKey);
@@ -41,7 +41,7 @@ namespace TKH.Business.Integrations.Concrete
                 TrendyolFilterGetProducts trendyolFilterGetProducts = new TrendyolFilterGetProducts
                 {
                     Page = currentPageIndex,
-                    Size = TrendyolDefaults.MaxPageSize,
+                    Size = TrendyolDefaults.ProductPageSize,
                     Approved = true
                 };
 
@@ -58,12 +58,12 @@ namespace TKH.Business.Integrations.Concrete
                     yield return marketplaceProductDto;
                 }
 
-                if (apiResponse.Content.Content.Count < TrendyolDefaults.MaxPageSize)
+                if (apiResponse.Content.Content.Count < TrendyolDefaults.ProductPageSize)
                     hasMoreProductsToFetch = false;
                 else
                 {
                     currentPageIndex++;
-                    await Task.Delay(200, cancellationToken);
+                    await Task.Delay(TrendyolDefaults.ApiRateLimitDelayMs, cancellationToken);
                 }
 
             }

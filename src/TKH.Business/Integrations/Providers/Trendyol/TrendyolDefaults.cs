@@ -4,9 +4,15 @@ namespace TKH.Business.Integrations.Providers.Trendyol
     {
         public const string BaseUrl = "https://apigw.trendyol.com";
         public const string HttpClientName = "TrendyolClient";
-        public const int DefaultPageSize = 20;
-        public const int MaxPageSize = 100;
-        public const int BatchSize = 1000;
         public const string UserAgentSuffix = "OK";
+
+        public const int ProductPageSize = 100;
+        public const int OrderPageSize = 50;
+
+        public const int ApiRateLimitDelayMs = 200;
+
+        public const int OrderSyncLookbackMonths = -2;
+        public const int OrderSyncDateWindowDays = 14;
+        public const int TimeZoneOffsetHours = 3;
     }
 }

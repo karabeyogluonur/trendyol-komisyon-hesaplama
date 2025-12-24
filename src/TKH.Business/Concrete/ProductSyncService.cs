@@ -6,7 +6,6 @@ using TKH.Business.Integrations.Dtos;
 using TKH.Business.Integrations.Factories;
 using TKH.Core.Common.Constants;
 using TKH.Core.DataAccess;
-using TKH.Core.Utilities.Results;
 using TKH.Entities;
 
 namespace TKH.Business.Concrete
@@ -15,26 +14,23 @@ namespace TKH.Business.Concrete
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<Product> _productRepository;
-        private readonly IMarketplaceAccountService _marketplaceAccountService;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
         private readonly IMapper _mapper;
 
         public ProductSyncService(
             IUnitOfWork unitOfWork,
             MarketplaceProviderFactory marketplaceProviderFactory,
-            IMarketplaceAccountService marketplaceAccountService,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _productRepository = _unitOfWork.GetRepository<Product>();
             _marketplaceProviderFactory = marketplaceProviderFactory;
-            _marketplaceAccountService = marketplaceAccountService;
             _mapper = mapper;
         }
 
         public async Task SyncProductsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
-            IMarketplaceProductProvider marketplaceProductProvider = _marketplaceProviderFactory.GetProvider(marketplaceAccountConnectionDetailsDto.MarketplaceType);
+            IMarketplaceProductProvider marketplaceProductProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceProductProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
             List<MarketplaceProductDto> marketplaceProductDtoBuffer = new List<MarketplaceProductDto>(ApplicationDefaults.ProductBatchSize);
 
