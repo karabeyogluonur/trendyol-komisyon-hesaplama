@@ -38,14 +38,14 @@ namespace TKH.Business.Integrations.Concrete
 
             while (hasMoreProductsToFetch && !cancellationToken.IsCancellationRequested)
             {
-                TrendyolFilterGetProducts trendyolFilterGetProducts = new TrendyolFilterGetProducts
+                TrendyolProductSearchRequest trendyolFilterGetProducts = new TrendyolProductSearchRequest
                 {
                     Page = currentPageIndex,
                     Size = TrendyolDefaults.ProductPageSize,
                     Approved = true
                 };
 
-                IApiResponse<TrendyolResponseGetProducts> apiResponse = await trendyolProductApi.GetProductsAsync(
+                IApiResponse<TrendyolProductResponse> apiResponse = await trendyolProductApi.GetProductsAsync(
                     sellerIdentifier,
                     trendyolFilterGetProducts);
 

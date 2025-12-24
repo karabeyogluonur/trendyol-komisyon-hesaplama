@@ -1,14 +1,15 @@
 using Refit;
+using TKH.Business.Integrations.Providers.Trendyol.Enums;
 
 namespace TKH.Business.Integrations.Providers.Trendyol.Models
 {
-    public class TrendyolFilterGetProducts
+    public class TrendyolProductSearchRequest
     {
         [AliasAs("approved")]
         public bool? Approved { get; set; }
 
         [AliasAs("barcode")]
-        public string Barcode { get; set; }
+        public string? Barcode { get; set; }
 
         [AliasAs("startDate")]
         public long? StartDate { get; set; }
@@ -23,19 +24,19 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         public int? Size { get; set; }
 
         [AliasAs("dateQueryType")]
-        public string DateQueryType { get; set; }
+        public TrendyolDateQueryType? DateQueryType { get; set; }
 
         [AliasAs("supplierId")]
         public long? SupplierId { get; set; }
 
         [AliasAs("stockCode")]
-        public string StockCode { get; set; }
+        public string? StockCode { get; set; }
 
         [AliasAs("archived")]
         public bool? Archived { get; set; }
 
         [AliasAs("productMainId")]
-        public string ProductMainId { get; set; }
+        public string? ProductMainId { get; set; }
 
         [AliasAs("onSale")]
         public bool? OnSale { get; set; }
@@ -47,6 +48,6 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         public bool? Blacklisted { get; set; }
 
         [AliasAs("brandIds")]
-        public List<long> BrandIds { get; set; }
+        public List<int>? BrandIds { get; set; }
     }
 }

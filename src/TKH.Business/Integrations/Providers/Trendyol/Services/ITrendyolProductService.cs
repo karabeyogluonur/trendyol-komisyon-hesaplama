@@ -6,6 +6,6 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Services
     public interface ITrendyolProductService
     {
         [Get("/integration/product/sellers/{sellerId}/products")]
-        Task<IApiResponse<TrendyolResponseGetProducts>> GetProductsAsync(long sellerId, [Query] TrendyolFilterGetProducts filter);
+        Task<IApiResponse<TrendyolProductResponse>> GetProductsAsync(long sellerId, [Query] TrendyolProductSearchRequest filter);
     }
 }

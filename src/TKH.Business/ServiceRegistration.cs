@@ -7,8 +7,8 @@ using TKH.Business.Concrete;
 using TKH.Business.Integrations.Concrete;
 using TKH.Business.Integrations.Factories;
 using TKH.Business.Integrations.Providers.Trendyol;
-using TKH.Business.Utilities.Storage;
 using TKH.Core.Utilities.Storage;
+using TKH.Business.Utilities.Storage;
 
 namespace TKH.Business
 {
@@ -20,7 +20,8 @@ namespace TKH.Business
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-            services.AddHttpClient(TrendyolDefaults.HttpClientName).AddPolicyHandler(GetRetryPolicy());
+            services.AddHttpClient(TrendyolDefaults.HttpClientName)
+                    .AddPolicyHandler(GetRetryPolicy());
 
             services.AddHttpClient();
 
