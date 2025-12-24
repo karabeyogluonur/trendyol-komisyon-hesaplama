@@ -14,5 +14,9 @@ namespace TKH.Business.Integrations.Providers.Trendyol
         public const int OrderSyncLookbackMonths = -2;
         public const int OrderSyncDateWindowDays = 14;
         public const int TimeZoneOffsetHours = 3;
+
+        public const int FinancePageSize = 500;
+        public const int FinanceSyncLookbackMonths = -2;
+        public const int FinanceSyncDateWindowDays = 14;
     }
 }
