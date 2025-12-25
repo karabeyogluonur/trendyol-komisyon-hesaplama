@@ -12,37 +12,44 @@ namespace TKH.DataAccess.Configurations
 
             builder.HasKey(financialTransaction => financialTransaction.Id);
 
+            builder.Property(financialTransaction => financialTransaction.MarketplaceAccountId)
+                .IsRequired();
+
             builder.Property(financialTransaction => financialTransaction.MarketplaceTransactionId)
-                .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(64)
+                .IsRequired();
 
-            builder.HasIndex(financialTransaction => new { financialTransaction.MarketplaceAccountId, financialTransaction.MarketplaceTransactionId })
-                .IsUnique();
+            builder.Property(financialTransaction => financialTransaction.OrderNumber)
+                .HasMaxLength(100)
+                .IsRequired(false);
 
-            builder.Property(financialTransaction => financialTransaction.OrderNumber).HasMaxLength(64);
-            builder.HasIndex(financialTransaction => financialTransaction.OrderNumber);
-            builder.HasIndex(financialTransaction => financialTransaction.TransactionDate);
+            builder.Property(financialTransaction => financialTransaction.TransactionType)
+                .IsRequired();
+
+            builder.Property(financialTransaction => financialTransaction.MarketplaceTransactionType)
+                .HasMaxLength(100)
+                .IsRequired(false);
 
             builder.Property(financialTransaction => financialTransaction.Amount)
                 .HasPrecision(18, 2)
                 .IsRequired();
 
-            builder.Property(financialTransaction => financialTransaction.CommissionAmount)
-                .HasPrecision(18, 2);
+            builder.Property(financialTransaction => financialTransaction.TransactionDate)
+                .IsRequired();
 
-            builder.Property(financialTransaction => financialTransaction.CommissionRate)
-                .HasPrecision(18, 2);
-
-            builder.Property(financialTransaction => financialTransaction.OrderItemBarcode)
-                .HasMaxLength(64);
+            builder.Property(financialTransaction => financialTransaction.Title)
+                .HasMaxLength(500)
+                .IsRequired(false);
 
             builder.Property(financialTransaction => financialTransaction.Description)
-                .HasMaxLength(2000);
+                .HasMaxLength(int.MaxValue)
+                .IsRequired(false);
 
-            builder.HasOne<MarketplaceAccount>()
-                .WithMany()
-                .HasForeignKey(financialTransaction => financialTransaction.MarketplaceAccountId)
-                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(financialTransaction => new { financialTransaction.MarketplaceAccountId, financialTransaction.MarketplaceTransactionId })
+                .IsUnique();
+
+            builder.HasIndex(financialTransaction => financialTransaction.TransactionDate);
+            builder.HasIndex(financialTransaction => financialTransaction.OrderNumber);
         }
     }
 }

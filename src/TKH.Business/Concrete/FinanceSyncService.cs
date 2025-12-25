@@ -1,5 +1,4 @@
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;

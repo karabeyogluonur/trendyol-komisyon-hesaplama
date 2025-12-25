@@ -8,6 +8,7 @@ using Refit;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Providers.Trendyol.Enums;
 using TKH.Business.Integrations.Providers.Trendyol.Models;
+using TKH.Business.Integrations.Providers.Trendyol.Helpers;
 
 namespace TKH.Business.Integrations.Concrete
 {
@@ -103,6 +104,8 @@ namespace TKH.Business.Integrations.Concrete
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
+                        marketplaceFinancialTransactionDto.MarketplaceTransactionType = settlementTransactionType.ToString();
+                        marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapSettlement(settlementTransactionType);
                         yield return marketplaceFinancialTransactionDto;
                     }
 
@@ -156,6 +159,8 @@ namespace TKH.Business.Integrations.Concrete
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
+                        marketplaceFinancialTransactionDto.MarketplaceTransactionType = otherFinancialTransactionType.ToString();
+                        marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapOther(otherFinancialTransactionType);
                         yield return marketplaceFinancialTransactionDto;
                     }
 
