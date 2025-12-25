@@ -76,7 +76,8 @@ namespace TKH.Business.Concrete
 
                 IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingBarcodeList.Contains(product.Barcode),
-                    include: source => source.Include(product => product.ProductAttributes),
+                    include: source => source.Include(product => product.ProductAttributes)
+                                             .Include(product => product.ProductPrices),
                     disableTracking: false
                 );
 
@@ -112,6 +113,8 @@ namespace TKH.Business.Concrete
             product.MarketplaceAccountId = marketplaceAccountId;
             product.LastUpdateDateTime = DateTime.UtcNow;
 
+            SyncProductPrices(product, dto.Prices);
+
             if (matchedCategory is not null)
             {
                 product.CategoryId = matchedCategory.Id;
@@ -120,6 +123,48 @@ namespace TKH.Business.Concrete
             }
             else
                 product.CommissionRate = 0;
+        }
+
+        private void SyncProductPrices(Product product, List<MarketplaceProductPriceDto> incomingPrices)
+        {
+            if (incomingPrices is null || incomingPrices.Count == 0) return;
+
+            if (product.ProductPrices == null)
+                product.ProductPrices = new List<ProductPrice>();
+
+            foreach (MarketplaceProductPriceDto incomingPriceDto in incomingPrices)
+            {
+                ProductPrice? activeProductPrice = product.ProductPrices
+                    .FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null);
+
+                if (activeProductPrice is not null)
+                {
+                    if (activeProductPrice.Amount == incomingPriceDto.Amount)
+                        continue;
+
+                    activeProductPrice.EndDate = DateTime.UtcNow;
+
+                    product.ProductPrices.Add(new ProductPrice
+                    {
+                        Type = incomingPriceDto.Type,
+                        Amount = incomingPriceDto.Amount,
+                        IsVatIncluded = incomingPriceDto.IsVatIncluded,
+                        StartDate = DateTime.UtcNow,
+                        EndDate = null
+                    });
+                }
+                else
+                {
+                    product.ProductPrices.Add(new ProductPrice
+                    {
+                        Type = incomingPriceDto.Type,
+                        Amount = incomingPriceDto.Amount,
+                        IsVatIncluded = incomingPriceDto.IsVatIncluded,
+                        StartDate = DateTime.UtcNow,
+                        EndDate = null
+                    });
+                }
+            }
         }
 
         private void SyncProductAttributes(Product product, List<MarketplaceProductAttributeDto> incomingAttributes, Category matchedCategory)

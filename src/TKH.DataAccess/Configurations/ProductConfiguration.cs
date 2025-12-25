@@ -44,6 +44,10 @@ namespace TKH.DataAccess.Configurations
             builder.HasIndex(product => new { product.MarketplaceAccountId, product.Barcode })
                 .HasDatabaseName("IX_Product_Marketplace_Barcode");
 
+            builder.HasMany(p => p.ProductPrices)
+                .WithOne(pp => pp.Product)
+                .HasForeignKey(pp => pp.ProductId);
+
             builder.HasIndex(product => product.MarketplaceProductId);
         }
     }

@@ -1,3 +1,5 @@
+using TKH.Entities.Enums;
+
 namespace TKH.Business.Integrations.Dtos
 {
     public class MarketplaceProductDto
@@ -15,6 +17,7 @@ namespace TKH.Business.Integrations.Dtos
         public string MarketplaceCategoryId { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public List<MarketplaceProductAttributeDto> Attributes { get; set; } = new();
+        public List<MarketplaceProductPriceDto> Prices { get; set; } = new();
     }
 
     public class MarketplaceProductAttributeDto
@@ -23,5 +26,11 @@ namespace TKH.Business.Integrations.Dtos
         public string AttributeName { get; set; } = string.Empty;
         public string? MarketplaceValueId { get; set; }
         public string Value { get; set; } = string.Empty;
+    }
+    public class MarketplaceProductPriceDto
+    {
+        public ProductPriceType Type { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsVatIncluded { get; set; } = true;
     }
 }
