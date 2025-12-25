@@ -1,4 +1,6 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Abstract;
@@ -12,20 +14,16 @@ namespace TKH.Business.Concrete
 {
     public class ProductSyncService : IProductSyncService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<Product> _productRepository;
-        private readonly IRepository<Category> _categoryRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
         private readonly IMapper _mapper;
 
         public ProductSyncService(
-            IUnitOfWork unitOfWork,
+            IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
             IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
-            _productRepository = _unitOfWork.GetRepository<Product>();
-            _categoryRepository = _unitOfWork.GetRepository<Category>();
+            _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
             _mapper = mapper;
         }
@@ -53,94 +51,111 @@ namespace TKH.Business.Concrete
 
         private async Task ProcessProductBatchAsync(List<MarketplaceProductDto> marketplaceProductDtoList, int marketplaceAccountId)
         {
-            List<string> incomingBarcodeList = marketplaceProductDtoList
-                .Select(marketplaceProductDto => marketplaceProductDto.Barcode)
-                .Where(barcode => !string.IsNullOrEmpty(barcode))
-                .ToList();
-
-            List<string> incomingCategoryIdList = marketplaceProductDtoList
-                .Select(marketplaceProductDto => marketplaceProductDto.MarketplaceCategoryId)
-                .Distinct()
-                .ToList();
-
-            List<Category> relatedCategoryList = await _categoryRepository.GetAllAsync(category => incomingCategoryIdList.Contains(category.MarketplaceCategoryId));
-
-            List<Product> existingProductList = await _productRepository.GetAllAsync(product => product.MarketplaceAccountId == marketplaceAccountId && incomingBarcodeList.Contains(product.Barcode),
-            includes: include => include.ProductAttributes);
-
-            List<Product> productsToProcessList = new List<Product>();
-
-            foreach (MarketplaceProductDto marketplaceProductDto in marketplaceProductDtoList)
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
-                Product existingProduct = existingProductList.FirstOrDefault(product => product.Barcode == marketplaceProductDto.Barcode);
-                Category matchedCategory = relatedCategoryList.FirstOrDefault(category => category.MarketplaceCategoryId == marketplaceProductDto.MarketplaceCategoryId);
+                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
+                IRepository<Category> scopedCategoryRepository = scopedUnitOfWork.GetRepository<Category>();
 
-                if (existingProduct != null)
+                List<string> incomingBarcodeList = marketplaceProductDtoList
+                    .Select(product => product.Barcode)
+                    .Where(barcode => !string.IsNullOrEmpty(barcode))
+                    .ToList();
+
+                List<string> incomingCategoryIdList = marketplaceProductDtoList
+                    .Select(product => product.MarketplaceCategoryId)
+                    .Distinct()
+                    .ToList();
+
+                IList<Category> relatedCategoryList = await scopedCategoryRepository.GetAllAsync(
+                    predicate: category => incomingCategoryIdList.Contains(category.MarketplaceCategoryId),
+                    include: source => source.Include(category => category.CategoryAttributes)
+                                             .ThenInclude(categoryAttribute => categoryAttribute.AttributeValues),
+                    disableTracking: true
+                );
+
+                IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingBarcodeList.Contains(product.Barcode),
+                    include: source => source.Include(product => product.ProductAttributes),
+                    disableTracking: false
+                );
+
+                List<Product> newProductsToAdd = new List<Product>();
+
+                foreach (MarketplaceProductDto marketplaceProductDto in marketplaceProductDtoList)
                 {
-                    _mapper.Map(marketplaceProductDto, existingProduct);
+                    Product? existingProduct = existingProductList.FirstOrDefault(product => product.Barcode == marketplaceProductDto.Barcode);
+                    Category? matchedCategory = relatedCategoryList.FirstOrDefault(category => category.MarketplaceCategoryId == marketplaceProductDto.MarketplaceCategoryId);
 
-                    existingProduct.LastUpdateDateTime = DateTime.UtcNow;
-
-                    if (matchedCategory != null)
+                    if (existingProduct is not null)
                     {
-                        existingProduct.CategoryId = matchedCategory.Id;
-                        existingProduct.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
+                        _mapper.Map(marketplaceProductDto, existingProduct);
+                        UpdateProductDetails(existingProduct, marketplaceProductDto, matchedCategory, marketplaceAccountId);
                     }
                     else
-                        existingProduct.CommissionRate = 0;
-
-                    SyncProductAttributes(existingProduct, marketplaceProductDto.Attributes);
-                    productsToProcessList.Add(existingProduct);
-                }
-                else
-                {
-                    Product newProduct = _mapper.Map<Product>(marketplaceProductDto);
-                    newProduct.MarketplaceAccountId = marketplaceAccountId;
-                    newProduct.LastUpdateDateTime = DateTime.UtcNow;
-
-                    if (matchedCategory != null)
                     {
-                        newProduct.CategoryId = matchedCategory.Id;
-                        newProduct.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
+                        Product newProduct = _mapper.Map<Product>(marketplaceProductDto);
+                        UpdateProductDetails(newProduct, marketplaceProductDto, matchedCategory, marketplaceAccountId);
+                        newProductsToAdd.Add(newProduct);
                     }
-                    else
-                        newProduct.CommissionRate = 0;
-
-                    SyncProductAttributes(newProduct, marketplaceProductDto.Attributes);
-                    productsToProcessList.Add(newProduct);
                 }
+
+                if (newProductsToAdd.Count > 0)
+                    await scopedProductRepository.InsertAsync(newProductsToAdd);
+
+                await scopedUnitOfWork.SaveChangesAsync();
             }
-
-            _productRepository.AddOrUpdate(productsToProcessList);
-            await _unitOfWork.SaveChangesAsync();
         }
 
-        private void SyncProductAttributes(Product product, List<MarketplaceProductAttributeDto> incomingAttributes)
+        private void UpdateProductDetails(Product product, MarketplaceProductDto dto, Category? matchedCategory, int marketplaceAccountId)
         {
-            if (incomingAttributes == null || incomingAttributes.Count == 0)
+            product.MarketplaceAccountId = marketplaceAccountId;
+            product.LastUpdateDateTime = DateTime.UtcNow;
+
+            if (matchedCategory is not null)
+            {
+                product.CategoryId = matchedCategory.Id;
+                product.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
+                SyncProductAttributes(product, dto.Attributes, matchedCategory);
+            }
+            else
+                product.CommissionRate = 0;
+        }
+
+        private void SyncProductAttributes(Product product, List<MarketplaceProductAttributeDto> incomingAttributes, Category matchedCategory)
+        {
+            if (incomingAttributes is null || incomingAttributes.Count == 0 || matchedCategory is null)
                 return;
 
-            foreach (MarketplaceProductAttributeDto marketplaceProductAttributeDto in incomingAttributes)
-            {
-                ProductAttribute existingProductAttribute = product.ProductAttributes
-                    .FirstOrDefault(productAttribute => productAttribute.MarketplaceAttributeId == marketplaceProductAttributeDto.MarketplaceAttributeId);
+            if (product.ProductAttributes == null)
+                product.ProductAttributes = new List<ProductAttribute>();
 
-                if (existingProductAttribute != null)
+            foreach (MarketplaceProductAttributeDto incomingAttributeDto in incomingAttributes)
+            {
+                CategoryAttribute? matchedCategoryAttribute = matchedCategory.CategoryAttributes
+                    .FirstOrDefault(categoryAttribute => categoryAttribute.MarketplaceAttributeId == incomingAttributeDto.MarketplaceAttributeId);
+
+                if (matchedCategoryAttribute is null) continue;
+
+                AttributeValue? matchedAttributeValue = matchedCategoryAttribute.AttributeValues
+                    .FirstOrDefault(attributeValue => attributeValue.MarketplaceValueId == incomingAttributeDto.MarketplaceValueId);
+
+                ProductAttribute? existingProductAttribute = product.ProductAttributes
+                    .FirstOrDefault(productAttribute => productAttribute.CategoryAttributeId == matchedCategoryAttribute.Id);
+
+                if (existingProductAttribute is not null)
                 {
-                    existingProductAttribute.AttributeName = marketplaceProductAttributeDto.AttributeName;
-                    existingProductAttribute.MarketplaceAttributeValueId = marketplaceProductAttributeDto.MarketplaceValueId;
-                    existingProductAttribute.Value = marketplaceProductAttributeDto.Value;
+                    existingProductAttribute.AttributeValueId = matchedAttributeValue?.Id;
+                    existingProductAttribute.CustomValue = matchedAttributeValue is null ? incomingAttributeDto.Value : null;
                 }
                 else
                 {
-                    ProductAttribute newProductAttribute = new ProductAttribute
+                    product.ProductAttributes.Add(new ProductAttribute
                     {
-                        MarketplaceAttributeId = marketplaceProductAttributeDto.MarketplaceAttributeId,
-                        AttributeName = marketplaceProductAttributeDto.AttributeName,
-                        MarketplaceAttributeValueId = marketplaceProductAttributeDto.MarketplaceValueId,
-                        Value = marketplaceProductAttributeDto.Value
-                    };
-                    product.ProductAttributes.Add(newProductAttribute);
+                        CategoryAttributeId = matchedCategoryAttribute.Id,
+                        AttributeValueId = matchedAttributeValue?.Id,
+                        CustomValue = matchedAttributeValue is null ? incomingAttributeDto.Value : null
+                    });
                 }
             }
         }

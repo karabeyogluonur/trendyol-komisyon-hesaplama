@@ -36,29 +36,6 @@ namespace TKH.DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductAttributes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ProductId = table.Column<int>(type: "integer", nullable: false),
-                    MarketplaceAttributeId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    AttributeName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
-                    MarketplaceAttributeValueId = table.Column<string>(type: "text", nullable: true),
-                    Value = table.Column<string>(type: "text", maxLength: 2147483647, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductAttributes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductAttributes_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "CategoryAttributes",
                 columns: table => new
                 {
@@ -101,30 +78,78 @@ namespace TKH.DataAccess.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ProductAttributes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    CategoryAttributeId = table.Column<int>(type: "integer", nullable: false),
+                    AttributeValueId = table.Column<int>(type: "integer", nullable: true),
+                    CustomValue = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductAttributes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductAttributes_AttributeValues_AttributeValueId",
+                        column: x => x.AttributeValueId,
+                        principalTable: "AttributeValues",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductAttributes_CategoryAttributes_CategoryAttributeId",
+                        column: x => x.CategoryAttributeId,
+                        principalTable: "CategoryAttributes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductAttributes_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Products_CategoryId",
                 table: "Products",
                 column: "CategoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AttributeValues_CategoryAttributeId",
+                name: "IX_AttributeValues_CategoryAttributeId_MarketplaceValueId",
                 table: "AttributeValues",
-                column: "CategoryAttributeId");
+                columns: new[] { "CategoryAttributeId", "MarketplaceValueId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_MarketplaceType_MarketplaceCategoryId",
+                table: "Categories",
+                columns: new[] { "MarketplaceType", "MarketplaceCategoryId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CategoryAttributes_CategoryId_MarketplaceAttributeId",
                 table: "CategoryAttributes",
-                columns: new[] { "CategoryId", "MarketplaceAttributeId" });
+                columns: new[] { "CategoryId", "MarketplaceAttributeId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductAttributes_MarketplaceAttributeId",
+                name: "IX_ProductAttributes_AttributeValueId",
                 table: "ProductAttributes",
-                column: "MarketplaceAttributeId");
+                column: "AttributeValueId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductAttributes_ProductId",
+                name: "IX_ProductAttributes_CategoryAttributeId",
                 table: "ProductAttributes",
-                column: "ProductId");
+                column: "CategoryAttributeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductAttributes_ProductId_CategoryAttributeId",
+                table: "ProductAttributes",
+                columns: new[] { "ProductId", "CategoryAttributeId" },
+                unique: true);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Products_Categories_CategoryId",
@@ -142,10 +167,10 @@ namespace TKH.DataAccess.Migrations
                 table: "Products");
 
             migrationBuilder.DropTable(
-                name: "AttributeValues");
+                name: "ProductAttributes");
 
             migrationBuilder.DropTable(
-                name: "ProductAttributes");
+                name: "AttributeValues");
 
             migrationBuilder.DropTable(
                 name: "CategoryAttributes");

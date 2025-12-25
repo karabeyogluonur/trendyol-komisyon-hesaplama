@@ -8,16 +8,22 @@ public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAtt
     {
         builder.ToTable("ProductAttributes");
 
-        builder.HasIndex(productAttribute => productAttribute.ProductId);
-        builder.HasIndex(productAttribute => productAttribute.MarketplaceAttributeId);
-
-        builder.Property(productAttribute => productAttribute.MarketplaceAttributeId).HasMaxLength(100).IsRequired();
-        builder.Property(productAttribute => productAttribute.AttributeName).HasMaxLength(250);
-        builder.Property(productAttribute => productAttribute.Value).HasMaxLength(int.MaxValue);
-
         builder.HasOne(productAttribute => productAttribute.Product)
-            .WithMany(p => p.ProductAttributes)
-            .HasForeignKey(productAttribute => productAttribute.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+               .WithMany(product => product.ProductAttributes)
+               .HasForeignKey(productAttribute => productAttribute.ProductId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(productAttribute => productAttribute.CategoryAttribute)
+               .WithMany()
+               .HasForeignKey(productAttribute => productAttribute.CategoryAttributeId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(productAttribute => productAttribute.AttributeValue)
+               .WithMany()
+               .HasForeignKey(productAttribute => productAttribute.AttributeValueId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(productAttribute => new { productAttribute.ProductId, productAttribute.CategoryAttributeId })
+               .IsUnique();
     }
 }

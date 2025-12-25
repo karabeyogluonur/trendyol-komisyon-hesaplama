@@ -1,4 +1,6 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Abstract;
@@ -12,20 +14,16 @@ namespace TKH.Business.Concrete
 {
     public class OrderSyncService : IOrderSyncService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<Order> _orderRepository;
-        private readonly IRepository<Product> _productRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
         private readonly IMapper _mapper;
 
         public OrderSyncService(
-            IUnitOfWork unitOfWork,
+            IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
             IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
-            _orderRepository = _unitOfWork.GetRepository<Order>();
-            _productRepository = _unitOfWork.GetRepository<Product>();
+            _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
             _mapper = mapper;
         }
@@ -53,79 +51,88 @@ namespace TKH.Business.Concrete
 
         private async Task ProcessOrderBatchAsync(List<MarketplaceOrderDto> marketplaceOrderDtoList, int marketplaceAccountId)
         {
-            List<string> incomingMarketplaceOrderNumberList = marketplaceOrderDtoList
-                .Select(marketplaceOrderDto => marketplaceOrderDto.MarketplaceOrderNumber)
-                .Where(marketplaceOrderNumber => !string.IsNullOrEmpty(marketplaceOrderNumber))
-                .ToList();
-
-            List<Order> existingOrderList = await _orderRepository.GetAllAsync(
-                order => order.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceOrderNumberList.Contains(order.MarketplaceOrderNumber),
-                includes: orderQuery => orderQuery.OrderItems
-            );
-
-            List<string> allMarketplaceOrderItemBarcodeList = marketplaceOrderDtoList
-                .SelectMany(marketplaceOrderDto => marketplaceOrderDto.Items)
-                .Select(marketplaceOrderItemDto => marketplaceOrderItemDto.Barcode)
-                .Distinct()
-                .ToList();
-
-            List<Product> relatedProductList = await _productRepository.GetAllAsync(
-                product => product.MarketplaceAccountId == marketplaceAccountId && allMarketplaceOrderItemBarcodeList.Contains(product.Barcode)
-            );
-
-            List<Order> ordersToProcessList = new List<Order>();
-
-            foreach (MarketplaceOrderDto marketplaceOrderDto in marketplaceOrderDtoList)
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
-                Order existingOrder = existingOrderList.FirstOrDefault(order => order.MarketplaceOrderNumber == marketplaceOrderDto.MarketplaceOrderNumber);
+                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<Order> scopedOrderRepository = scopedUnitOfWork.GetRepository<Order>();
+                IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
 
-                if (existingOrder != null)
+                List<string> incomingMarketplaceOrderNumberList = marketplaceOrderDtoList
+                    .Select(marketplaceOrderDto => marketplaceOrderDto.MarketplaceOrderNumber)
+                    .Where(marketplaceOrderNumber => !string.IsNullOrEmpty(marketplaceOrderNumber))
+                    .ToList();
+
+                List<string> allMarketplaceOrderItemBarcodeList = marketplaceOrderDtoList
+                    .SelectMany(marketplaceOrderDto => marketplaceOrderDto.Items)
+                    .Select(marketplaceOrderItemDto => marketplaceOrderItemDto.Barcode)
+                    .Distinct()
+                    .ToList();
+
+                IList<Product> relatedProductList = await scopedProductRepository.GetAllAsync(
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && allMarketplaceOrderItemBarcodeList.Contains(product.Barcode),
+                    disableTracking: true
+                );
+
+                Dictionary<string, int> productBarcodeToIdMap = relatedProductList
+                    .GroupBy(product => product.Barcode)
+                    .ToDictionary(group => group.Key, group => group.First().Id);
+
+                IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceOrderNumberList.Contains(order.MarketplaceOrderNumber),
+                    include: source => source.Include(order => order.OrderItems),
+                    disableTracking: false
+                );
+
+                List<Order> newOrdersToAdd = new List<Order>();
+
+                foreach (MarketplaceOrderDto marketplaceOrderDto in marketplaceOrderDtoList)
                 {
-                    _mapper.Map(marketplaceOrderDto, existingOrder);
-                    existingOrder.LastUpdateDateTime = DateTime.UtcNow;
+                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.MarketplaceOrderNumber == marketplaceOrderDto.MarketplaceOrderNumber);
 
-                    existingOrder.OrderItems.Clear();
-
-                    foreach (MarketplaceOrderItemDto marketplaceOrderItemDto in marketplaceOrderDto.Items)
+                    if (existingOrder is not null)
                     {
-                        OrderItem newOrderItem = _mapper.Map<OrderItem>(marketplaceOrderItemDto);
-                        Product matchedProduct = relatedProductList.FirstOrDefault(product => product.Barcode == marketplaceOrderItemDto.Barcode);
+                        _mapper.Map(marketplaceOrderDto, existingOrder);
+                        existingOrder.LastUpdateDateTime = DateTime.UtcNow;
 
-                        if (matchedProduct != null)
-                            newOrderItem.ProductId = matchedProduct.Id;
-
-                        existingOrder.OrderItems.Add(newOrderItem);
+                        SyncOrderItems(existingOrder, marketplaceOrderDto.Items, productBarcodeToIdMap);
                     }
+                    else
+                    {
+                        Order newOrder = _mapper.Map<Order>(marketplaceOrderDto);
+                        newOrder.MarketplaceAccountId = marketplaceAccountId;
+                        newOrder.LastUpdateDateTime = DateTime.UtcNow;
 
-                    ordersToProcessList.Add(existingOrder);
+                        SyncOrderItems(newOrder, marketplaceOrderDto.Items, productBarcodeToIdMap);
+
+                        newOrdersToAdd.Add(newOrder);
+                    }
                 }
-                else
-                {
-                    Order newOrder = _mapper.Map<Order>(marketplaceOrderDto);
-                    newOrder.MarketplaceAccountId = marketplaceAccountId;
-                    newOrder.LastUpdateDateTime = DateTime.UtcNow;
 
-                    MatchOrderItemsWithProducts(newOrder, relatedProductList);
+                if (newOrdersToAdd.Count > 0)
+                    await scopedOrderRepository.InsertAsync(newOrdersToAdd);
 
-                    ordersToProcessList.Add(newOrder);
-                }
+                await scopedUnitOfWork.SaveChangesAsync();
             }
-
-            _orderRepository.AddOrUpdate(ordersToProcessList);
-            await _unitOfWork.SaveChangesAsync();
         }
 
-        private void MatchOrderItemsWithProducts(Order orderEntity, List<Product> productList)
+        private void SyncOrderItems(Order order, List<MarketplaceOrderItemDto> marketplaceOrderItemDtos, Dictionary<string, int> productBarcodeToIdMap)
         {
-            if (orderEntity.OrderItems == null)
+            if (marketplaceOrderItemDtos is null)
                 return;
 
-            foreach (OrderItem orderItem in orderEntity.OrderItems)
-            {
-                Product matchedProduct = productList.FirstOrDefault(product => product.Barcode == orderItem.Barcode);
+            if (order.OrderItems is null)
+                order.OrderItems = new List<OrderItem>();
+            else
+                order.OrderItems.Clear();
 
-                if (matchedProduct != null)
-                    orderItem.ProductId = matchedProduct.Id;
+            foreach (MarketplaceOrderItemDto marketplaceOrderItemDto in marketplaceOrderItemDtos)
+            {
+                OrderItem newOrderItem = _mapper.Map<OrderItem>(marketplaceOrderItemDto);
+
+                if (productBarcodeToIdMap.TryGetValue(marketplaceOrderItemDto.Barcode, out int productId))
+                    newOrderItem.ProductId = productId;
+
+                order.OrderItems.Add(newOrderItem);
             }
         }
     }

@@ -1,4 +1,6 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Abstract;
@@ -12,18 +14,16 @@ namespace TKH.Business.Concrete
 {
     public class FinanceSyncService : IFinanceSyncService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<FinancialTransaction> _financialTransactionRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
         private readonly IMapper _mapper;
 
         public FinanceSyncService(
-            IUnitOfWork unitOfWork,
+            IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
             IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
-            _financialTransactionRepository = _unitOfWork.GetRepository<FinancialTransaction>();
+            _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
             _mapper = mapper;
         }
@@ -51,37 +51,47 @@ namespace TKH.Business.Concrete
 
         private async Task ProcessFinancialTransactionBatchAsync(List<MarketplaceFinancialTransactionDto> marketplaceFinancialTransactionDtoList, int marketplaceAccountId)
         {
-            List<string> incomingMarketplaceTransactionIdList = marketplaceFinancialTransactionDtoList
-                .Select(marketplaceFinancialTransactionDto => marketplaceFinancialTransactionDto.MarketplaceTransactionId)
-                .Where(marketplaceTransactionId => !string.IsNullOrEmpty(marketplaceTransactionId))
-                .ToList();
-
-            List<FinancialTransaction> existingFinancialTransactionList = await _financialTransactionRepository.GetAllAsync(
-                financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.MarketplaceTransactionId)
-            );
-
-            List<FinancialTransaction> financialTransactionsToProcessList = new List<FinancialTransaction>();
-
-            foreach (MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto in marketplaceFinancialTransactionDtoList)
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
-                FinancialTransaction existingFinancialTransaction = existingFinancialTransactionList.FirstOrDefault(financialTransaction => financialTransaction.MarketplaceTransactionId == marketplaceFinancialTransactionDto.MarketplaceTransactionId);
+                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<FinancialTransaction> scopedFinancialTransactionRepository = scopedUnitOfWork.GetRepository<FinancialTransaction>();
 
-                if (existingFinancialTransaction != null)
-                {
-                    _mapper.Map(marketplaceFinancialTransactionDto, existingFinancialTransaction);
-                    financialTransactionsToProcessList.Add(existingFinancialTransaction);
-                }
-                else
-                {
-                    FinancialTransaction newFinancialTransaction = _mapper.Map<FinancialTransaction>(marketplaceFinancialTransactionDto);
-                    newFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
+                List<string> incomingMarketplaceTransactionIdList = marketplaceFinancialTransactionDtoList
+                    .Select(marketplaceFinancialTransactionDto => marketplaceFinancialTransactionDto.MarketplaceTransactionId)
+                    .Where(marketplaceTransactionId => !string.IsNullOrEmpty(marketplaceTransactionId))
+                    .ToList();
 
-                    financialTransactionsToProcessList.Add(newFinancialTransaction);
+                IList<FinancialTransaction> existingFinancialTransactionList = await scopedFinancialTransactionRepository.GetAllAsync(
+                    predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.MarketplaceTransactionId),
+                    disableTracking: false
+                );
+
+                Dictionary<string, FinancialTransaction> existingTransactionMap = existingFinancialTransactionList
+                    .GroupBy(transaction => transaction.MarketplaceTransactionId)
+                    .ToDictionary(group => group.Key, group => group.First());
+
+                List<FinancialTransaction> newFinancialTransactionsToAdd = new List<FinancialTransaction>();
+
+                foreach (MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto in marketplaceFinancialTransactionDtoList)
+                {
+                    if (existingTransactionMap.TryGetValue(marketplaceFinancialTransactionDto.MarketplaceTransactionId, out FinancialTransaction? existingFinancialTransaction))
+                    {
+                        _mapper.Map(marketplaceFinancialTransactionDto, existingFinancialTransaction);
+                        existingFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
+                    }
+                    else
+                    {
+                        FinancialTransaction newFinancialTransaction = _mapper.Map<FinancialTransaction>(marketplaceFinancialTransactionDto);
+                        newFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
+                        newFinancialTransactionsToAdd.Add(newFinancialTransaction);
+                    }
                 }
+
+                if (newFinancialTransactionsToAdd.Count > 0)
+                    await scopedFinancialTransactionRepository.InsertAsync(newFinancialTransactionsToAdd);
+
+                await scopedUnitOfWork.SaveChangesAsync();
             }
-
-            _financialTransactionRepository.AddOrUpdate(financialTransactionsToProcessList);
-            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

@@ -45,7 +45,8 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryAttributeId");
+                    b.HasIndex("CategoryAttributeId", "MarketplaceValueId")
+                        .IsUnique();
 
                     b.ToTable("AttributeValues", (string)null);
                 });
@@ -82,6 +83,9 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MarketplaceType", "MarketplaceCategoryId")
+                        .IsUnique();
+
                     b.ToTable("Categories", (string)null);
                 });
 
@@ -111,7 +115,8 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId", "MarketplaceAttributeId");
+                    b.HasIndex("CategoryId", "MarketplaceAttributeId")
+                        .IsUnique();
 
                     b.ToTable("CategoryAttributes", (string)null);
                 });
@@ -371,32 +376,26 @@ namespace TKH.DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AttributeName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                    b.Property<int?>("AttributeValueId")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("MarketplaceAttributeId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<int>("CategoryAttributeId")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("MarketplaceAttributeValueId")
+                    b.Property<string>("CustomValue")
                         .HasColumnType("text");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(2147483647)
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("MarketplaceAttributeId");
+                    b.HasIndex("AttributeValueId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("CategoryAttributeId");
+
+                    b.HasIndex("ProductId", "CategoryAttributeId")
+                        .IsUnique();
 
                     b.ToTable("ProductAttributes", (string)null);
                 });
@@ -415,7 +414,7 @@ namespace TKH.DataAccess.Migrations
             modelBuilder.Entity("TKH.Entities.CategoryAttribute", b =>
                 {
                     b.HasOne("TKH.Entities.Category", "Category")
-                        .WithMany("Attributes")
+                        .WithMany("CategoryAttributes")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -481,18 +480,33 @@ namespace TKH.DataAccess.Migrations
 
             modelBuilder.Entity("TKH.Entities.ProductAttribute", b =>
                 {
+                    b.HasOne("TKH.Entities.AttributeValue", "AttributeValue")
+                        .WithMany()
+                        .HasForeignKey("AttributeValueId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TKH.Entities.CategoryAttribute", "CategoryAttribute")
+                        .WithMany()
+                        .HasForeignKey("CategoryAttributeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("TKH.Entities.Product", "Product")
                         .WithMany("ProductAttributes")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AttributeValue");
+
+                    b.Navigation("CategoryAttribute");
+
                     b.Navigation("Product");
                 });
 
             modelBuilder.Entity("TKH.Entities.Category", b =>
                 {
-                    b.Navigation("Attributes");
+                    b.Navigation("CategoryAttributes");
                 });
 
             modelBuilder.Entity("TKH.Entities.CategoryAttribute", b =>

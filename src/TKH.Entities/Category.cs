@@ -12,6 +12,6 @@ namespace TKH.Entities
         public string? ParentMarketplaceCategoryId { get; set; }
         public bool IsLeaf { get; set; }
         public decimal? DefaultCommissionRate { get; set; }
-        public ICollection<CategoryAttribute> Attributes { get; set; } = new List<CategoryAttribute>();
+        public ICollection<CategoryAttribute> CategoryAttributes { get; set; } = new List<CategoryAttribute>();
     }
 }

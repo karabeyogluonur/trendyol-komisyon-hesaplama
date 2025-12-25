@@ -23,7 +23,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
     public class TrendyolProductContent
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; } // Trendyol GUID ID'si
+        public string Id { get; set; }
 
         [JsonPropertyName("barcode")]
         public string Barcode { get; set; }
@@ -40,7 +40,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         [JsonPropertyName("brand")]
         public string BrandName { get; set; }
 
-        [JsonPropertyName("categoryId")]
+        [JsonPropertyName("pimCategoryId")]
         public int? PimCategoryId { get; set; } // JSON'da pimCategoryId olarak geçiyor
 
         [JsonPropertyName("categoryName")]

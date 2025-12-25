@@ -9,8 +9,11 @@ namespace TKH.DataAccess.Configurations
         public void Configure(EntityTypeBuilder<Category> builder)
         {
             builder.ToTable("Categories");
+
             builder.Property(category => category.MarketplaceCategoryId).HasMaxLength(100).IsRequired();
             builder.Property(category => category.Name).HasMaxLength(250).IsRequired();
+
+            builder.HasIndex(category => new { category.MarketplaceType, category.MarketplaceCategoryId }).IsUnique();
         }
     }
 }

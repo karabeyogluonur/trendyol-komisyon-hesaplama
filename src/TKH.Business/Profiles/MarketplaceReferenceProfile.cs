@@ -9,17 +9,21 @@ namespace TKH.Business.Profiles
         public MarketplaceReferenceProfile()
         {
             CreateMap<MarketplaceCategoryDto, Category>()
-                .ForMember(dest => dest.MarketplaceType, opt => opt.Ignore())
-                .ForMember(dest => dest.Attributes, opt => opt.Ignore())
-                .ForMember(dest => dest.DefaultCommissionRate, opt => opt.Ignore())
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(category => category.MarketplaceType, option => option.Ignore())
+                .ForMember(category => category.CategoryAttributes, option => option.Ignore())
+                .ForMember(category => category.DefaultCommissionRate, option => option.Ignore())
+                .ForMember(category => category.Id, option => option.Ignore());
 
             CreateMap<MarketplaceCategoryAttributeDto, CategoryAttribute>()
-                .ForMember(dest => dest.CategoryId, opt => opt.Ignore())
-                .ForMember(dest => dest.AttributeValues, opt => opt.MapFrom(src => src.AttributeValues));
+                .ForMember(categoryAttribute => categoryAttribute.CategoryId, option => option.Ignore())
+                .ForMember(categoryAttribute => categoryAttribute.Category, option => option.Ignore())
+                .ForMember(categoryAttribute => categoryAttribute.AttributeValues, option => option.MapFrom(src => src.AttributeValues))
+                .ForMember(categoryAttribute => categoryAttribute.Id, option => option.Ignore());
 
             CreateMap<MarketplaceAttributeValueDto, AttributeValue>()
-                .ForMember(dest => dest.CategoryAttributeId, opt => opt.Ignore());
+                .ForMember(attributeValue => attributeValue.CategoryAttributeId, option => option.Ignore())
+                .ForMember(attributeValue => attributeValue.CategoryAttribute, option => option.Ignore())
+                .ForMember(attributeValue => attributeValue.Id, option => option.Ignore());
         }
     }
 }

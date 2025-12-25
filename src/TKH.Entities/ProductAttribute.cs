@@ -6,10 +6,12 @@ namespace TKH.Entities
     public class ProductAttribute : BaseEntity, IEntity
     {
         public int ProductId { get; set; }
-        public Product Product { get; set; }
-        public string MarketplaceAttributeId { get; set; } = string.Empty;
-        public string AttributeName { get; set; } = string.Empty;
-        public string? MarketplaceAttributeValueId { get; set; }
-        public string Value { get; set; } = string.Empty;
+        public virtual Product Product { get; set; }
+        public int CategoryAttributeId { get; set; }
+        public virtual CategoryAttribute CategoryAttribute { get; set; }
+        public int? AttributeValueId { get; set; }
+        public virtual AttributeValue? AttributeValue { get; set; }
+
+        public string? CustomValue { get; set; }
     }
 }
