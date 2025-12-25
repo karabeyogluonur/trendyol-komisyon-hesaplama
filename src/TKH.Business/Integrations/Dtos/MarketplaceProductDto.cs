@@ -18,6 +18,7 @@ namespace TKH.Business.Integrations.Dtos
         public string CategoryName { get; set; } = string.Empty;
         public List<MarketplaceProductAttributeDto> Attributes { get; set; } = new();
         public List<MarketplaceProductPriceDto> Prices { get; set; } = new();
+        public List<MarketplaceProductExpenseDto> Expenses { get; set; } = new();
     }
 
     public class MarketplaceProductAttributeDto
@@ -32,5 +33,12 @@ namespace TKH.Business.Integrations.Dtos
         public ProductPriceType Type { get; set; }
         public decimal Amount { get; set; }
         public bool IsVatIncluded { get; set; } = true;
+    }
+    public class MarketplaceProductExpenseDto
+    {
+        public ProductExpenseType Type { get; set; }
+        public decimal Amount { get; set; }
+        public decimal VatRate { get; set; }
+        public bool IsVatIncluded { get; set; }
     }
 }

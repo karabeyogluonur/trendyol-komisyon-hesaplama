@@ -2,6 +2,9 @@ namespace TKH.Business.Integrations.Providers.Trendyol
 {
     internal static class TrendyolDefaults
     {
+        public const decimal FixedServiceFeeAmount = 12.47m;
+        public const bool IsFixedServiceFeeVatIncluded = true;
+
         public const string BaseUrl = "https://apigw.trendyol.com";
         public const string HttpClientName = "TrendyolClient";
         public const string UserAgentSuffix = "OK";

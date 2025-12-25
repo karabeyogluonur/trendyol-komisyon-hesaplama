@@ -7,6 +7,8 @@ using TKH.Business.Integrations.Providers.Trendyol.Models;
 using TKH.Business.Integrations.Providers.Trendyol.Services;
 using Refit;
 using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Entities.Enums;
+using TKH.Core.Common.Constants;
 
 namespace TKH.Business.Integrations.Concrete
 {
@@ -55,6 +57,7 @@ namespace TKH.Business.Integrations.Concrete
                 foreach (TrendyolProductContent productItem in apiResponse.Content.Content)
                 {
                     MarketplaceProductDto marketplaceProductDto = _mapper.Map<MarketplaceProductDto>(productItem);
+                    EnrichProductWithExpenses(marketplaceProductDto);
                     yield return marketplaceProductDto;
                 }
 
@@ -65,8 +68,20 @@ namespace TKH.Business.Integrations.Concrete
                     currentPageIndex++;
                     await Task.Delay(TrendyolDefaults.ApiRateLimitDelayMs, cancellationToken);
                 }
-
             }
+        }
+
+        private void EnrichProductWithExpenses(MarketplaceProductDto marketplaceProductDto)
+        {
+            MarketplaceProductExpenseDto trendyolServiceFeeExpenseDto = new MarketplaceProductExpenseDto
+            {
+                Type = ProductExpenseType.MarketplaceServiceFee,
+                Amount = TrendyolDefaults.FixedServiceFeeAmount,
+                VatRate = FinancialConstants.StandardServiceVatRate,
+                IsVatIncluded = TrendyolDefaults.IsFixedServiceFeeVatIncluded
+            };
+
+            marketplaceProductDto.Expenses.Add(trendyolServiceFeeExpenseDto);
         }
     }
 }

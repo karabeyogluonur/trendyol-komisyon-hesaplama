@@ -77,7 +77,8 @@ namespace TKH.Business.Concrete
                 IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingBarcodeList.Contains(product.Barcode),
                     include: source => source.Include(product => product.ProductAttributes)
-                                             .Include(product => product.ProductPrices),
+                                             .Include(product => product.ProductPrices)
+                                             .Include(product => product.ProductExpenses),
                     disableTracking: false
                 );
 
@@ -114,6 +115,7 @@ namespace TKH.Business.Concrete
             product.LastUpdateDateTime = DateTime.UtcNow;
 
             SyncProductPrices(product, dto.Prices);
+            SyncProductExpenses(product, dto.Expenses);
 
             if (matchedCategory is not null)
             {
@@ -160,6 +162,52 @@ namespace TKH.Business.Concrete
                         Type = incomingPriceDto.Type,
                         Amount = incomingPriceDto.Amount,
                         IsVatIncluded = incomingPriceDto.IsVatIncluded,
+                        StartDate = DateTime.UtcNow,
+                        EndDate = null
+                    });
+                }
+            }
+        }
+
+        private void SyncProductExpenses(Product product, List<MarketplaceProductExpenseDto> incomingExpenses)
+        {
+            if (incomingExpenses is null || incomingExpenses.Count == 0) return;
+
+            if (product.ProductExpenses == null)
+                product.ProductExpenses = new List<ProductExpense>();
+
+            foreach (MarketplaceProductExpenseDto incomingExpenseDto in incomingExpenses)
+            {
+                ProductExpense? activeProductExpense = product.ProductExpenses
+                    .FirstOrDefault(productExpense => productExpense.Type == incomingExpenseDto.Type && productExpense.EndDate == null);
+
+                if (activeProductExpense is not null)
+                {
+                    if (activeProductExpense.Amount == incomingExpenseDto.Amount &&
+                        activeProductExpense.VatRate == incomingExpenseDto.VatRate &&
+                        activeProductExpense.IsVatIncluded == incomingExpenseDto.IsVatIncluded)
+                        continue;
+
+                    activeProductExpense.EndDate = DateTime.UtcNow;
+
+                    product.ProductExpenses.Add(new ProductExpense
+                    {
+                        Type = incomingExpenseDto.Type,
+                        Amount = incomingExpenseDto.Amount,
+                        VatRate = incomingExpenseDto.VatRate,
+                        IsVatIncluded = incomingExpenseDto.IsVatIncluded,
+                        StartDate = DateTime.UtcNow,
+                        EndDate = null
+                    });
+                }
+                else
+                {
+                    product.ProductExpenses.Add(new ProductExpense
+                    {
+                        Type = incomingExpenseDto.Type,
+                        Amount = incomingExpenseDto.Amount,
+                        VatRate = incomingExpenseDto.VatRate,
+                        IsVatIncluded = incomingExpenseDto.IsVatIncluded,
                         StartDate = DateTime.UtcNow,
                         EndDate = null
                     });

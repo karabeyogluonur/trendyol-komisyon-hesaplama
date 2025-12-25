@@ -20,6 +20,7 @@ namespace TKH.Entities
         public ICollection<ProductAttribute> ProductAttributes { get; set; } = new List<ProductAttribute>();
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public ICollection<ProductPrice> ProductPrices { get; set; } = new List<ProductPrice>();
+        public ICollection<ProductExpense> ProductExpenses { get; set; } = new List<ProductExpense>();
         public MarketplaceAccount MarketplaceAccount { get; set; }
         public DateTime LastUpdateDateTime { get; set; }
     }
