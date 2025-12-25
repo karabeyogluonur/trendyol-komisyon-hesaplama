@@ -20,7 +20,8 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.CategoryName))
                 .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.Attributes))
                 .ForMember(dest => dest.CommissionRate, opt => opt.Ignore())
-                .ForMember(dest => dest.Prices, opt => opt.MapFrom(src => MapPrices(src)));
+                .ForMember(dest => dest.Prices, opt => opt.MapFrom(src => MapPrices(src)))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Images != null && src.Images.Count > 0 ? src.Images[0].Url : string.Empty));
 
             CreateMap<TrendyolProductAttribute, MarketplaceProductAttributeDto>()
                 .ForMember(dest => dest.MarketplaceAttributeId, opt => opt.MapFrom(src => src.AttributeId.ToString()))

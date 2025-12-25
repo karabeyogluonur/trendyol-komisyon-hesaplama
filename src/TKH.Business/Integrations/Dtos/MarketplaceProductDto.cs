@@ -11,7 +11,7 @@ namespace TKH.Business.Integrations.Dtos
         public string Barcode { get; set; } = string.Empty;
         public string StockCode { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
-
+        public string ImageUrl { get; set; } = string.Empty;
         public decimal VatRate { get; set; }
         public decimal CommissionRate { get; set; }
         public string MarketplaceCategoryId { get; set; } = string.Empty;
