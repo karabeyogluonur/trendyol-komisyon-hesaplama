@@ -34,6 +34,7 @@ namespace TKH.Business
             services.AddScoped<IFinanceSyncService, FinanceSyncService>();
             services.AddScoped<IMarketplaceReferenceSyncService, MarketplaceReferenceSyncService>();
             services.AddScoped<IStorageService, LocalStorageService>();
+            services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
 
             #endregion
 

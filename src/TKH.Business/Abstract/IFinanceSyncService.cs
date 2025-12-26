@@ -5,5 +5,6 @@ namespace TKH.Business.Abstract
     public interface IFinanceSyncService
     {
         Task SyncFinancialTransactionsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto);
+        Task SyncShipmentTransactionsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto);
     }
 }

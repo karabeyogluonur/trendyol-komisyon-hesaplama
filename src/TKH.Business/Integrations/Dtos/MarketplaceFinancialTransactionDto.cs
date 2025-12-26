@@ -8,6 +8,7 @@ namespace TKH.Business.Integrations.Dtos
         public string MarketplaceTransactionId { get; set; } = string.Empty;
         public string? OrderNumber { get; set; }
         public FinancialTransactionType TransactionType { get; set; }
+        public ShipmentTransactionSyncStatus ShipmentTransactionSyncStatus { get; set; }
         public string MarketplaceTransactionType { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public string? Title { get; set; }

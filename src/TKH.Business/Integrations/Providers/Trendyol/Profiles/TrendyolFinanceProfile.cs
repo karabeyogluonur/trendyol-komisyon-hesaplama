@@ -18,6 +18,15 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Credit - src.Debt))
                 .ForMember(dest => dest.MarketplaceAccountId, opt => opt.Ignore())
                 .ForMember(dest => dest.TransactionType, opt => opt.Ignore());
+
+
+
+            CreateMap<TrendyolCargoInvoiceContent, MarketplaceShipmentTransactionDto>()
+            .ForMember(dest => dest.MarketplaceOrderNumber, opt => opt.MapFrom(src => src.OrderNumber))
+            .ForMember(dest => dest.MarketplaceParcelId, opt => opt.MapFrom(src => src.ParcelUniqueId.ToString()))
+            .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
+            .ForMember(dest => dest.Desi, opt => opt.MapFrom(src => src.Desi))
+            .ForMember(dest => dest.MarketplaceAccountId, opt => opt.Ignore());
         }
     }
 }

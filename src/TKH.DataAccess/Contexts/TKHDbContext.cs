@@ -11,6 +11,9 @@ namespace TKH.DataAccess.Contexts
         public DbSet<CategoryAttribute> CategoryAttributes { get; set; }
         public DbSet<AttributeValue> AttributeValues { get; set; }
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
+        public DbSet<ProductExpense> ProductExpenses { get; set; }
+        public DbSet<ProductPrice> ProductPrices { get; set; }
+        public DbSet<ShipmentTransaction> ShipmentTransactions { get; set; }
 
         public TKHDbContext(DbContextOptions<TKHDbContext> options) : base(options)
         {

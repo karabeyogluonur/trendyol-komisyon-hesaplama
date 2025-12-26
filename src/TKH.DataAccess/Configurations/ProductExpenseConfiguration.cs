@@ -10,30 +10,30 @@ namespace TKH.DataAccess.Configurations
         {
             builder.ToTable("ProductExpenses");
 
-            builder.Property(x => x.Amount)
+            builder.Property(productExpense => productExpense.Amount)
                 .HasPrecision(18, 2)
                 .IsRequired();
 
-            builder.Property(x => x.VatRate)
+            builder.Property(productExpense => productExpense.VatRate)
                 .HasPrecision(18, 2)
                 .IsRequired();
 
-            builder.Property(x => x.IsVatIncluded)
+            builder.Property(productExpense => productExpense.IsVatIncluded)
                 .IsRequired()
                 .HasDefaultValue(true);
 
-            builder.Property(x => x.Type).IsRequired();
-            builder.Property(x => x.StartDate).IsRequired();
+            builder.Property(productExpense => productExpense.Type).IsRequired();
+            builder.Property(productExpense => productExpense.StartDate).IsRequired();
 
-            builder.HasOne(x => x.Product)
+            builder.HasOne(productExpense => productExpense.Product)
                 .WithMany(p => p.ProductExpenses)
-                .HasForeignKey(x => x.ProductId)
+                .HasForeignKey(productExpense => productExpense.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(x => new { x.ProductId, x.Type, x.EndDate })
+            builder.HasIndex(productExpense => new { productExpense.ProductId, productExpense.Type, productExpense.EndDate })
                 .HasDatabaseName("IX_ProductExpenses_ActiveLookup");
 
-            builder.HasIndex(x => new { x.ProductId, x.Type, x.StartDate })
+            builder.HasIndex(productExpense => new { productExpense.ProductId, productExpense.Type, productExpense.StartDate })
                .HasDatabaseName("IX_ProductExpenses_HistoryLookup");
         }
     }

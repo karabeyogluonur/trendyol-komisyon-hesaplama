@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Abstract;
+using TKH.Business.Dtos.FinancialTransaction;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Abstract;
 using TKH.Business.Integrations.Dtos;
@@ -8,6 +9,7 @@ using TKH.Business.Integrations.Factories;
 using TKH.Core.Common.Constants;
 using TKH.Core.DataAccess;
 using TKH.Entities;
+using TKH.Entities.Enums;
 
 namespace TKH.Business.Concrete
 {
@@ -92,5 +94,87 @@ namespace TKH.Business.Concrete
                 await scopedUnitOfWork.SaveChangesAsync();
             }
         }
+
+        public async Task SyncShipmentTransactionsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
+        {
+            IMarketplaceFinanceProvider marketplaceFinanceProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceFinanceProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
+
+            List<MarketplaceShipmentSyncResultDto> marketplaceShipmentSyncResultDtoBuffer = new List<MarketplaceShipmentSyncResultDto>(ApplicationDefaults.FinanceBatchSize);
+
+            await foreach (MarketplaceShipmentSyncResultDto marketplaceShipmentSyncResultDto in marketplaceFinanceProvider.GetShipmentTransactionsStreamAsync(marketplaceAccountConnectionDetailsDto))
+            {
+                marketplaceShipmentSyncResultDtoBuffer.Add(marketplaceShipmentSyncResultDto);
+
+                if (marketplaceShipmentSyncResultDtoBuffer.Count >= ApplicationDefaults.FinanceBatchSize)
+                {
+                    await ProcessShipmentTransactionBatchAsync(marketplaceShipmentSyncResultDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
+                    marketplaceShipmentSyncResultDtoBuffer.Clear();
+                }
+            }
+
+            if (marketplaceShipmentSyncResultDtoBuffer.Count > 0)
+                await ProcessShipmentTransactionBatchAsync(marketplaceShipmentSyncResultDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
+        }
+
+        private async Task ProcessShipmentTransactionBatchAsync(List<MarketplaceShipmentSyncResultDto> marketplaceShipmentSyncResultDtoList, int marketplaceAccountId)
+        {
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            {
+                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<ShipmentTransaction> scopedShipmentTransactionRepository = scopedUnitOfWork.GetRepository<ShipmentTransaction>();
+                IFinancialTransactionService scopedFinancialTransactionService = scope.ServiceProvider.GetRequiredService<IFinancialTransactionService>();
+
+                List<MarketplaceShipmentTransactionDto> validShipmentTransactionDtoList = marketplaceShipmentSyncResultDtoList
+                    .Where(result => result.ResultStatus == ShipmentTransactionSyncStatus.Synced && result.Shipments.Any())
+                    .SelectMany(result => result.Shipments)
+                    .ToList();
+
+                if (validShipmentTransactionDtoList.Count > 0)
+                {
+                    List<string> incomingParcelIdList = validShipmentTransactionDtoList
+                        .Select(dto => dto.MarketplaceParcelId)
+                        .Where(id => !string.IsNullOrEmpty(id))
+                        .ToList();
+
+                    IList<ShipmentTransaction> existingShipmentTransactionList = await scopedShipmentTransactionRepository.GetAllAsync(
+                        predicate: shipment => shipment.MarketplaceAccountId == marketplaceAccountId && incomingParcelIdList.Contains(shipment.MarketplaceParcelId),
+                        disableTracking: true
+                    );
+
+                    HashSet<string> existingParcelIdSet = existingShipmentTransactionList
+                        .Select(shipment => shipment.MarketplaceParcelId)
+                        .ToHashSet();
+
+                    List<ShipmentTransaction> newShipmentTransactionsToAdd = new List<ShipmentTransaction>();
+
+                    foreach (MarketplaceShipmentTransactionDto marketplaceShipmentTransactionDto in validShipmentTransactionDtoList)
+                    {
+                        if (!existingParcelIdSet.Contains(marketplaceShipmentTransactionDto.MarketplaceParcelId))
+                        {
+                            ShipmentTransaction newShipmentTransaction = _mapper.Map<ShipmentTransaction>(marketplaceShipmentTransactionDto);
+                            newShipmentTransaction.MarketplaceAccountId = marketplaceAccountId;
+                            newShipmentTransactionsToAdd.Add(newShipmentTransaction);
+                        }
+                    }
+
+                    if (newShipmentTransactionsToAdd.Count > 0)
+                        await scopedShipmentTransactionRepository.InsertAsync(newShipmentTransactionsToAdd);
+                }
+
+                List<ShipmentSyncStatusUpdateDto> shipmentSyncStatusUpdateDtoList = marketplaceShipmentSyncResultDtoList
+                    .Select(result => new ShipmentSyncStatusUpdateDto
+                    {
+                        MarketplaceTransactionId = result.SourceTransactionId,
+                        NewStatus = result.ResultStatus
+                    })
+                    .ToList();
+
+                if (shipmentSyncStatusUpdateDtoList.Count > 0)
+                    await scopedFinancialTransactionService.BulkUpdateShipmentSyncStatusAsync(marketplaceAccountId, shipmentSyncStatusUpdateDtoList);
+
+                await scopedUnitOfWork.SaveChangesAsync();
+            }
+        }
+
     }
 }

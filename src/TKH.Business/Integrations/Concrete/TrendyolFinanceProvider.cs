@@ -9,18 +9,25 @@ using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Providers.Trendyol.Enums;
 using TKH.Business.Integrations.Providers.Trendyol.Models;
 using TKH.Business.Integrations.Providers.Trendyol.Helpers;
+using TKH.Entities.Enums;
+using TKH.Business.Abstract;
+using TKH.Business.Dtos.FinancialTransaction;
+using TKH.Core.Common.Constants;
 
 namespace TKH.Business.Integrations.Concrete
 {
     public class TrendyolFinanceProvider : IMarketplaceFinanceProvider
     {
         private readonly TrendyolClientFactory _trendyolClientFactory;
+        private readonly IFinancialTransactionService _financialTransactionService;
         private readonly IMapper _mapper;
 
         public TrendyolFinanceProvider(
             TrendyolClientFactory trendyolClientFactory,
+            IFinancialTransactionService financialTransactionService,
             IMapper mapper)
         {
+            _financialTransactionService = financialTransactionService;
             _trendyolClientFactory = trendyolClientFactory;
             _mapper = mapper;
         }
@@ -106,6 +113,7 @@ namespace TKH.Business.Integrations.Concrete
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
                         marketplaceFinancialTransactionDto.MarketplaceTransactionType = settlementTransactionType.ToString();
                         marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapSettlement(settlementTransactionType);
+                        marketplaceFinancialTransactionDto.ShipmentTransactionSyncStatus = ShipmentTransactionSyncStatus.NotRequired;
                         yield return marketplaceFinancialTransactionDto;
                     }
 
@@ -161,6 +169,10 @@ namespace TKH.Business.Integrations.Concrete
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
                         marketplaceFinancialTransactionDto.MarketplaceTransactionType = otherFinancialTransactionType.ToString();
                         marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapOther(otherFinancialTransactionType);
+
+                        bool isFinancialCargoTransaction = otherFinancialTransactionType == TrendyolOtherFinancialTransactionType.DeductionInvoices && !string.IsNullOrEmpty(trendyolFinancialContent.TransactionType) && trendyolFinancialContent.TransactionType.Contains("Kargo", StringComparison.OrdinalIgnoreCase);
+
+                        marketplaceFinancialTransactionDto.ShipmentTransactionSyncStatus = isFinancialCargoTransaction ? ShipmentTransactionSyncStatus.Pending : ShipmentTransactionSyncStatus.NotRequired;
                         yield return marketplaceFinancialTransactionDto;
                     }
 
@@ -172,6 +184,50 @@ namespace TKH.Business.Integrations.Concrete
                         await Task.Delay(TrendyolDefaults.ApiRateLimitDelayMs, cancellationToken);
                     }
                 }
+            }
+        }
+
+        public async IAsyncEnumerable<MarketplaceShipmentSyncResultDto> GetShipmentTransactionsStreamAsync(
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (!long.TryParse(marketplaceAccountConnectionDetailsDto.MerchantId, out long sellerIdentifier))
+                yield break;
+
+            IList<string> pendingTransactionIdList = await _financialTransactionService.GetPendingShipmentSyncTransactionIdsAsync(marketplaceAccountConnectionDetailsDto.Id);
+
+            if (!pendingTransactionIdList.Any())
+                yield break;
+
+            ITrendyolFinanceService trendyolFinanceService = _trendyolClientFactory.CreateClient<ITrendyolFinanceService>(
+                    sellerIdentifier,
+                    marketplaceAccountConnectionDetailsDto.ApiKey,
+                    marketplaceAccountConnectionDetailsDto.ApiSecretKey);
+
+            foreach (string pendingTransactionId in pendingTransactionIdList)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                MarketplaceShipmentSyncResultDto marketplaceShipmentSyncResultDto = new MarketplaceShipmentSyncResultDto
+                {
+                    SourceTransactionId = pendingTransactionId,
+                    ResultStatus = ShipmentTransactionSyncStatus.Failed
+                };
+
+                IApiResponse<TrendyolCargoInvoiceResponse> trendyolCargoInvoiceResponse = await trendyolFinanceService.GetCargoInvoiceAsync(sellerIdentifier, pendingTransactionId);
+
+                if (trendyolCargoInvoiceResponse.IsSuccessStatusCode)
+                {
+                    marketplaceShipmentSyncResultDto.ResultStatus = ShipmentTransactionSyncStatus.Synced;
+
+                    if (trendyolCargoInvoiceResponse.Content?.Content != null && trendyolCargoInvoiceResponse.Content.Content.Count > 0)
+                        marketplaceShipmentSyncResultDto.Shipments = _mapper.Map<List<MarketplaceShipmentTransactionDto>>(trendyolCargoInvoiceResponse.Content.Content);
+                }
+
+                yield return marketplaceShipmentSyncResultDto;
+
+                await Task.Delay(TrendyolDefaults.ApiRateLimitDelayMs, cancellationToken);
             }
         }
     }

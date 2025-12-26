@@ -14,6 +14,10 @@ namespace TKH.Business.Profiles
                     src.TransactionDate.Kind == DateTimeKind.Utc
                         ? src.TransactionDate
                         : DateTime.SpecifyKind(src.TransactionDate, DateTimeKind.Utc)));
+
+
+            CreateMap<MarketplaceShipmentTransactionDto, ShipmentTransaction>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
         }
     }
 }
