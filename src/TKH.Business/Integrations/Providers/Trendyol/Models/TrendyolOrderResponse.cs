@@ -42,6 +42,12 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         [JsonPropertyName("orderDate")]
         public long OrderDate { get; set; }
 
+        [JsonPropertyName("packageTyDiscount")]
+        public decimal? PackageTyDiscount { get; set; }
+
+        [JsonPropertyName("currencyCode")]
+        public string? CurrencyCode { get; set; }
+
         [JsonPropertyName("deliveryType")]
         public string DeliveryType { get; set; }
 

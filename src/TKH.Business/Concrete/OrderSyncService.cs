@@ -57,9 +57,9 @@ namespace TKH.Business.Concrete
                 IRepository<Order> scopedOrderRepository = scopedUnitOfWork.GetRepository<Order>();
                 IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
 
-                List<string> incomingMarketplaceOrderNumberList = marketplaceOrderDtoList
-                    .Select(marketplaceOrderDto => marketplaceOrderDto.MarketplaceOrderNumber)
-                    .Where(marketplaceOrderNumber => !string.IsNullOrEmpty(marketplaceOrderNumber))
+                List<string> incomingShipmentIdList = marketplaceOrderDtoList
+                    .Select(marketplaceOrderDto => marketplaceOrderDto.MarketplaceShipmentId)
+                    .Where(shipmentId => !string.IsNullOrEmpty(shipmentId))
                     .ToList();
 
                 List<string> allMarketplaceOrderItemBarcodeList = marketplaceOrderDtoList
@@ -78,7 +78,7 @@ namespace TKH.Business.Concrete
                     .ToDictionary(group => group.Key, group => group.First().Id);
 
                 IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
-                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceOrderNumberList.Contains(order.MarketplaceOrderNumber),
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.MarketplaceShipmentId),
                     include: source => source.Include(order => order.OrderItems),
                     disableTracking: false
                 );
@@ -87,22 +87,18 @@ namespace TKH.Business.Concrete
 
                 foreach (MarketplaceOrderDto marketplaceOrderDto in marketplaceOrderDtoList)
                 {
-                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.MarketplaceOrderNumber == marketplaceOrderDto.MarketplaceOrderNumber);
+                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.MarketplaceShipmentId == marketplaceOrderDto.MarketplaceShipmentId);
 
                     if (existingOrder is not null)
                     {
                         _mapper.Map(marketplaceOrderDto, existingOrder);
-                        existingOrder.LastUpdateDateTime = DateTime.UtcNow;
-
-                        SyncOrderItems(existingOrder, marketplaceOrderDto.Items, productBarcodeToIdMap);
+                        SyncOrderItemsProductIds(existingOrder, productBarcodeToIdMap);
                     }
                     else
                     {
                         Order newOrder = _mapper.Map<Order>(marketplaceOrderDto);
                         newOrder.MarketplaceAccountId = marketplaceAccountId;
-                        newOrder.LastUpdateDateTime = DateTime.UtcNow;
-
-                        SyncOrderItems(newOrder, marketplaceOrderDto.Items, productBarcodeToIdMap);
+                        SyncOrderItemsProductIds(newOrder, productBarcodeToIdMap);
 
                         newOrdersToAdd.Add(newOrder);
                     }
@@ -115,24 +111,15 @@ namespace TKH.Business.Concrete
             }
         }
 
-        private void SyncOrderItems(Order order, List<MarketplaceOrderItemDto> marketplaceOrderItemDtos, Dictionary<string, int> productBarcodeToIdMap)
+        private void SyncOrderItemsProductIds(Order order, Dictionary<string, int> productBarcodeToIdMap)
         {
-            if (marketplaceOrderItemDtos is null)
+            if (order.OrderItems is null || !order.OrderItems.Any())
                 return;
 
-            if (order.OrderItems is null)
-                order.OrderItems = new List<OrderItem>();
-            else
-                order.OrderItems.Clear();
-
-            foreach (MarketplaceOrderItemDto marketplaceOrderItemDto in marketplaceOrderItemDtos)
+            foreach (OrderItem orderItem in order.OrderItems)
             {
-                OrderItem newOrderItem = _mapper.Map<OrderItem>(marketplaceOrderItemDto);
-
-                if (productBarcodeToIdMap.TryGetValue(marketplaceOrderItemDto.Barcode, out int productId))
-                    newOrderItem.ProductId = productId;
-
-                order.OrderItems.Add(newOrderItem);
+                if (!string.IsNullOrEmpty(orderItem.Barcode) && productBarcodeToIdMap.TryGetValue(orderItem.Barcode, out int productId))
+                    orderItem.ProductId = productId;
             }
         }
     }

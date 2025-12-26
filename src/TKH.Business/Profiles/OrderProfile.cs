@@ -9,8 +9,6 @@ namespace TKH.Business.Mappers
         public OrderProfile()
         {
             CreateMap<MarketplaceOrderItemDto, OrderItem>()
-                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Price))
-                .ForMember(dest => dest.OrderItemStatus, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductId, opt => opt.Ignore())
                 .ForMember(dest => dest.OrderId, opt => opt.Ignore())
@@ -18,7 +16,6 @@ namespace TKH.Business.Mappers
                 .ForMember(dest => dest.Order, opt => opt.Ignore());
 
             CreateMap<MarketplaceOrderDto, Order>()
-                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.TotalAmount))
                 .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.Items))
                 .ForMember(dest => dest.LastUpdateDateTime, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src =>

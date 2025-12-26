@@ -37,9 +37,9 @@ namespace TKH.Business.Integrations.Concrete
                     marketplaceAccountConnectionDetailsDto.ApiKey,
                     marketplaceAccountConnectionDetailsDto.ApiSecretKey);
 
+
             DateTimeOffset searchEndDate = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(TrendyolDefaults.TimeZoneOffsetHours));
             DateTimeOffset searchStartDate = searchEndDate.AddMonths(TrendyolDefaults.OrderSyncLookbackMonths);
-
             DateTimeOffset currentWindowStartDate = searchStartDate;
 
             while (currentWindowStartDate < searchEndDate && !cancellationToken.IsCancellationRequested)
@@ -63,7 +63,6 @@ namespace TKH.Business.Integrations.Concrete
                         Size = TrendyolDefaults.OrderPageSize,
                         StartDate = startDateTimestamp,
                         EndDate = endDateTimestamp,
-                        Status = TrendyolOrderStatus.Delivered,
                         OrderByField = TrendyolOrderByField.CreatedDate,
                         OrderByDirection = TrendyolOrderByDirection.DESC
                     };
@@ -83,6 +82,7 @@ namespace TKH.Business.Integrations.Concrete
                     {
                         MarketplaceOrderDto dto = _mapper.Map<MarketplaceOrderDto>(order);
                         dto.MarketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
+
                         yield return dto;
                     }
 

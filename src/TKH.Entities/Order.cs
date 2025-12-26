@@ -7,12 +7,25 @@ namespace TKH.Entities
     public class Order : BaseEntity, IEntity
     {
         public string MarketplaceOrderNumber { get; set; } = string.Empty;
+        public string MarketplaceShipmentId { get; set; } = string.Empty;
         public int MarketplaceAccountId { get; set; }
+
+        public decimal GrossAmount { get; set; }
+        public decimal TotalDiscount { get; set; }
+        public decimal PlatformCoveredDiscount { get; set; }
+        public string CurrencyCode { get; set; } = "TRY";
+
         public OrderStatus Status { get; set; }
-        public decimal Amount { get; set; }
         public DateTime OrderDate { get; set; }
         public DateTime LastUpdateDateTime { get; set; }
+
+        public string CargoTrackingNumber { get; set; } = string.Empty;
+        public string CargoProviderName { get; set; } = string.Empty;
+        public double CargoDeci { get; set; }
+        public bool IsShipmentPaidBySeller { get; set; }
+        public bool IsMicroExport { get; set; }
+
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-        public MarketplaceAccount MarketplaceAccount { get; set; }
+        public MarketplaceAccount? MarketplaceAccount { get; set; }
     }
 }
