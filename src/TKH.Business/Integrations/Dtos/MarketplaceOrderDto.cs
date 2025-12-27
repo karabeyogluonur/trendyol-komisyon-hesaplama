@@ -25,6 +25,7 @@ namespace TKH.Business.Integrations.Dtos
     public class MarketplaceOrderItemDto
     {
         public string MarketplaceSku { get; set; } = string.Empty;
+        public string MarketplaceProductCode { get; set; } = string.Empty;
         public string Barcode { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }

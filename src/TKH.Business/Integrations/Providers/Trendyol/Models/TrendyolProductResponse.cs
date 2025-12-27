@@ -34,6 +34,9 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         [JsonPropertyName("productMainId")]
         public string ProductMainId { get; set; }
 
+        [JsonPropertyName("productCode")]
+        public long ProductCode { get; set; }
+
         [JsonPropertyName("brandId")]
         public int BrandId { get; set; }
 
@@ -41,7 +44,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         public string BrandName { get; set; }
 
         [JsonPropertyName("pimCategoryId")]
-        public int? PimCategoryId { get; set; } // JSON'da pimCategoryId olarak geçiyor
+        public int? PimCategoryId { get; set; }
 
         [JsonPropertyName("categoryName")]
         public string CategoryName { get; set; }
@@ -53,7 +56,10 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         public string StockCode { get; set; }
 
         [JsonPropertyName("dimensionalWeight")]
-        public decimal? DimensionalWeight { get; set; } // Desi
+        public decimal? DimensionalWeight { get; set; }
+
+        [JsonPropertyName("stockUnitType")]
+        public string StockUnitType { get; set; }
 
         [JsonPropertyName("description")]
         public string Description { get; set; }

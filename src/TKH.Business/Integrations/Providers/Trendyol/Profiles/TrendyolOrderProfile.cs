@@ -12,6 +12,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
         {
             CreateMap<TrendyolOrderLine, MarketplaceOrderItemDto>()
                 .ForMember(dest => dest.MarketplaceSku, opt => opt.MapFrom(src => src.MerchantSku))
+                .ForMember(dest => dest.MarketplaceProductCode, opt => opt.MapFrom(src => src.ProductCode.ToString()))
                 .ForMember(dest => dest.Barcode, opt => opt.MapFrom(src => src.Barcode))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.Price))

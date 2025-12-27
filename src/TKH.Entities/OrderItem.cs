@@ -7,7 +7,7 @@ namespace TKH.Entities
     public class OrderItem : BaseEntity, IEntity
     {
         public int OrderId { get; set; }
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; }
 
         public string Barcode { get; set; } = string.Empty;
         public string MarketplaceSku { get; set; } = string.Empty;

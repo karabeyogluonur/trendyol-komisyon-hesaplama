@@ -44,7 +44,6 @@ namespace TKH.Business.Integrations.Concrete
                 {
                     Page = currentPageIndex,
                     Size = TrendyolDefaults.ProductPageSize,
-                    Approved = true
                 };
 
                 IApiResponse<TrendyolProductResponse> apiResponse = await trendyolProductApi.GetProductsAsync(

@@ -43,7 +43,8 @@ namespace TKH.DataAccess.Configurations
             builder.HasOne(orderItem => orderItem.Product)
                 .WithMany(product => product.OrderItems)
                 .HasForeignKey(orderItem => orderItem.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
         }
     }
 }

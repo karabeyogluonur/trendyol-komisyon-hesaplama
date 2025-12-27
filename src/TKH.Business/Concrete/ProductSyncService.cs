@@ -57,25 +57,28 @@ namespace TKH.Business.Concrete
                 IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
                 IRepository<Category> scopedCategoryRepository = scopedUnitOfWork.GetRepository<Category>();
 
-                List<string> incomingBarcodeList = marketplaceProductDtoList
-                    .Select(product => product.Barcode)
-                    .Where(barcode => !string.IsNullOrEmpty(barcode))
+                List<string> incomingMarketplaceProductIdList = marketplaceProductDtoList
+                    .Select(product => product.MarketplaceProductId)
+                    .Where(id => !string.IsNullOrEmpty(id))
                     .ToList();
 
-                List<string> incomingCategoryIdList = marketplaceProductDtoList
+                List<int> incomingCategoryIdList = marketplaceProductDtoList
                     .Select(product => product.MarketplaceCategoryId)
                     .Distinct()
                     .ToList();
 
+
+                List<string> incomingCategoryIdStringList = incomingCategoryIdList.Select(id => id.ToString()).ToList();
+
                 IList<Category> relatedCategoryList = await scopedCategoryRepository.GetAllAsync(
-                    predicate: category => incomingCategoryIdList.Contains(category.MarketplaceCategoryId),
+                    predicate: category => incomingCategoryIdStringList.Contains(category.MarketplaceCategoryId),
                     include: source => source.Include(category => category.CategoryAttributes)
                                              .ThenInclude(categoryAttribute => categoryAttribute.AttributeValues),
                     disableTracking: true
                 );
 
                 IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
-                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingBarcodeList.Contains(product.Barcode),
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceProductIdList.Contains(product.MarketplaceProductId),
                     include: source => source.Include(product => product.ProductAttributes)
                                              .Include(product => product.ProductPrices)
                                              .Include(product => product.ProductExpenses),
@@ -86,8 +89,8 @@ namespace TKH.Business.Concrete
 
                 foreach (MarketplaceProductDto marketplaceProductDto in marketplaceProductDtoList)
                 {
-                    Product? existingProduct = existingProductList.FirstOrDefault(product => product.Barcode == marketplaceProductDto.Barcode);
-                    Category? matchedCategory = relatedCategoryList.FirstOrDefault(category => category.MarketplaceCategoryId == marketplaceProductDto.MarketplaceCategoryId);
+                    Product? existingProduct = existingProductList.FirstOrDefault(product => product.MarketplaceProductId == marketplaceProductDto.MarketplaceProductId);
+                    Category? matchedCategory = relatedCategoryList.FirstOrDefault(category => category.MarketplaceCategoryId == marketplaceProductDto.MarketplaceCategoryId.ToString());
 
                     if (existingProduct is not null)
                     {
@@ -120,11 +123,11 @@ namespace TKH.Business.Concrete
             if (matchedCategory is not null)
             {
                 product.CategoryId = matchedCategory.Id;
-                product.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
+                if (product.CommissionRate == 0)
+                    product.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
+
                 SyncProductAttributes(product, dto.Attributes, matchedCategory);
             }
-            else
-                product.CommissionRate = 0;
         }
 
         private void SyncProductPrices(Product product, List<MarketplaceProductPriceDto> incomingPrices)

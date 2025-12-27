@@ -9,14 +9,16 @@ namespace TKH.Business.Profiles
         public ProductProfile()
         {
             CreateMap<MarketplaceProductDto, Product>()
-            .ForMember(dest => dest.ProductAttributes, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductPrices, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUpdateDateTime, opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.MarketplaceAccountId, opt => opt.Ignore())
+                .ForMember(dest => dest.CommissionRate, opt => opt.Ignore())
                 .ForMember(dest => dest.CategoryId, opt => opt.Ignore())
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
-                .ForMember(dest => dest.CommissionRate, opt => opt.Ignore())
+                .ForMember(dest => dest.ProductAttributes, opt => opt.Ignore())
+                .ForMember(dest => dest.ProductPrices, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductExpenses, opt => opt.Ignore())
-                .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
-                .ForMember(dest => dest.LastUpdateDateTime, opt => opt.Ignore());
+                .ForMember(dest => dest.OrderItems, opt => opt.Ignore());
         }
     }
 }

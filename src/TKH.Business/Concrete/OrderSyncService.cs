@@ -57,26 +57,34 @@ namespace TKH.Business.Concrete
                 IRepository<Order> scopedOrderRepository = scopedUnitOfWork.GetRepository<Order>();
                 IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
 
+                // 1. Shipment ID Listesi (Sipariş Benzersizliği İçin)
                 List<string> incomingShipmentIdList = marketplaceOrderDtoList
-                    .Select(marketplaceOrderDto => marketplaceOrderDto.MarketplaceShipmentId)
-                    .Where(shipmentId => !string.IsNullOrEmpty(shipmentId))
+                    .Select(dto => dto.MarketplaceShipmentId)
+                    .Where(id => !string.IsNullOrEmpty(id))
                     .ToList();
 
-                List<string> allMarketplaceOrderItemBarcodeList = marketplaceOrderDtoList
-                    .SelectMany(marketplaceOrderDto => marketplaceOrderDto.Items)
-                    .Select(marketplaceOrderItemDto => marketplaceOrderItemDto.Barcode)
+                // 2. Product Code Listesi (Eşleşme İçin - ARTIK MARKETPLACE PRODUCT CODE KULLANIYORUZ)
+                // DTO'daki MarketplaceProductCode alanını topluyoruz.
+                List<string> allMarketplaceProductCodes = marketplaceOrderDtoList
+                    .SelectMany(dto => dto.Items)
+                    .Select(item => item.MarketplaceProductCode) // Değişiklik Burada
+                    .Where(code => !string.IsNullOrEmpty(code))
                     .Distinct()
                     .ToList();
 
+                // 3. Veritabanından Ürünleri ProductCode'a Göre Çek
                 IList<Product> relatedProductList = await scopedProductRepository.GetAllAsync(
-                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && allMarketplaceOrderItemBarcodeList.Contains(product.Barcode),
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId &&
+                                          allMarketplaceProductCodes.Contains(product.MarketplaceProductCode), // Değişiklik Burada
                     disableTracking: true
                 );
 
-                Dictionary<string, int> productBarcodeToIdMap = relatedProductList
-                    .GroupBy(product => product.Barcode)
+                // 4. Map: ProductCode -> Local Database ID (PK)
+                Dictionary<string, int> codeToLocalIdMap = relatedProductList
+                    .GroupBy(product => product.MarketplaceProductCode) // Değişiklik Burada
                     .ToDictionary(group => group.Key, group => group.First().Id);
 
+                // Mevcut Siparişleri Çek
                 IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
                     predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.MarketplaceShipmentId),
                     include: source => source.Include(order => order.OrderItems),
@@ -92,13 +100,15 @@ namespace TKH.Business.Concrete
                     if (existingOrder is not null)
                     {
                         _mapper.Map(marketplaceOrderDto, existingOrder);
-                        SyncOrderItemsProductIds(existingOrder, productBarcodeToIdMap);
+                        existingOrder.LastUpdateDateTime = DateTime.UtcNow;
+                        SyncOrderItems(existingOrder, marketplaceOrderDto.Items, codeToLocalIdMap);
                     }
                     else
                     {
                         Order newOrder = _mapper.Map<Order>(marketplaceOrderDto);
                         newOrder.MarketplaceAccountId = marketplaceAccountId;
-                        SyncOrderItemsProductIds(newOrder, productBarcodeToIdMap);
+                        newOrder.LastUpdateDateTime = DateTime.UtcNow;
+                        SyncOrderItems(newOrder, marketplaceOrderDto.Items, codeToLocalIdMap);
 
                         newOrdersToAdd.Add(newOrder);
                     }
@@ -111,15 +121,26 @@ namespace TKH.Business.Concrete
             }
         }
 
-        private void SyncOrderItemsProductIds(Order order, Dictionary<string, int> productBarcodeToIdMap)
+        private void SyncOrderItems(Order order, List<MarketplaceOrderItemDto> marketplaceItems, Dictionary<string, int> codeToLocalIdMap)
         {
-            if (order.OrderItems is null || !order.OrderItems.Any())
+            if (marketplaceItems is null || !marketplaceItems.Any())
                 return;
 
-            foreach (OrderItem orderItem in order.OrderItems)
+            if (order.OrderItems is null)
+                order.OrderItems = new List<OrderItem>();
+            else
+                order.OrderItems.Clear();
+
+            foreach (MarketplaceOrderItemDto itemDto in marketplaceItems)
             {
-                if (!string.IsNullOrEmpty(orderItem.Barcode) && productBarcodeToIdMap.TryGetValue(orderItem.Barcode, out int productId))
+                OrderItem orderItem = _mapper.Map<OrderItem>(itemDto);
+
+                if (!string.IsNullOrEmpty(itemDto.MarketplaceProductCode) && codeToLocalIdMap.TryGetValue(itemDto.MarketplaceProductCode, out int productId))
                     orderItem.ProductId = productId;
+                else
+                    orderItem.ProductId = null;
+
+                order.OrderItems.Add(orderItem);
             }
         }
     }
