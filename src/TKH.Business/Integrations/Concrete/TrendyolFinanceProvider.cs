@@ -8,11 +8,9 @@ using Refit;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Business.Integrations.Providers.Trendyol.Enums;
 using TKH.Business.Integrations.Providers.Trendyol.Models;
-using TKH.Business.Integrations.Providers.Trendyol.Helpers;
 using TKH.Entities.Enums;
 using TKH.Business.Abstract;
-using TKH.Business.Dtos.FinancialTransaction;
-using TKH.Core.Common.Constants;
+using TKH.Business.Integrations.Providers.Trendyol.Extensions;
 
 namespace TKH.Business.Integrations.Concrete
 {
@@ -112,7 +110,7 @@ namespace TKH.Business.Integrations.Concrete
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
                         marketplaceFinancialTransactionDto.ExternalTransactionType = settlementTransactionType.ToString();
-                        marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapSettlement(settlementTransactionType);
+                        marketplaceFinancialTransactionDto.TransactionType = settlementTransactionType.ToFinancialTransactionType();
                         marketplaceFinancialTransactionDto.ShipmentTransactionSyncStatus = ShipmentTransactionSyncStatus.NotRequired;
                         yield return marketplaceFinancialTransactionDto;
                     }
@@ -168,7 +166,7 @@ namespace TKH.Business.Integrations.Concrete
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
                         marketplaceFinancialTransactionDto.ExternalTransactionType = otherFinancialTransactionType.ToString();
-                        marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapOther(otherFinancialTransactionType);
+                        marketplaceFinancialTransactionDto.TransactionType = otherFinancialTransactionType.ToFinancialTransactionType();
 
                         bool isFinancialCargoTransaction = otherFinancialTransactionType == TrendyolOtherFinancialTransactionType.DeductionInvoices && !string.IsNullOrEmpty(trendyolFinancialContent.TransactionType) && trendyolFinancialContent.TransactionType.Contains("Kargo", StringComparison.OrdinalIgnoreCase);
 
