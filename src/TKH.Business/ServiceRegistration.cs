@@ -35,6 +35,7 @@ namespace TKH.Business
             services.AddScoped<IMarketplaceReferenceSyncService, MarketplaceReferenceSyncService>();
             services.AddScoped<IStorageService, LocalStorageService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
+            services.AddScoped<IClaimSyncService, ClaimSyncService>();
 
             #endregion
 
@@ -43,6 +44,7 @@ namespace TKH.Business
             services.AddScoped<TrendyolProductProvider>();
             services.AddScoped<TrendyolOrderProvider>();
             services.AddScoped<TrendyolFinanceProvider>();
+            services.AddScoped<TrendyolClaimProvider>();
 
             services.AddScoped<TrendyolReferenceProvider>();
             services.AddSingleton<TrendyolClientFactory>();

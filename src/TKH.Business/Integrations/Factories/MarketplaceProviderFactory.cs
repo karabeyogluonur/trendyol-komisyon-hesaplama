@@ -31,6 +31,17 @@ namespace TKH.Business.Integrations.Factories
 
                 return (T)(object)provider;
             }
+            if (typeof(T) == typeof(IMarketplaceClaimProvider))
+            {
+                var provider = marketplaceType switch
+                {
+                    MarketplaceType.Trendyol => serviceProvider.GetRequiredService<TrendyolClaimProvider>(),
+
+                    _ => throw new NotImplementedException($"Bu pazaryeri ({marketplaceType}) için Order Provider yazılmadı!")
+                };
+
+                return (T)(object)provider;
+            }
             if (typeof(T) == typeof(IMarketplaceFinanceProvider))
             {
                 var provider = marketplaceType switch
