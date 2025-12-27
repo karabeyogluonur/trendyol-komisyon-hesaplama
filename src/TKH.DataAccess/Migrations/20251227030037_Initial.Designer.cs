@@ -12,8 +12,8 @@ using TKH.DataAccess.Contexts;
 namespace TKH.DataAccess.Migrations
 {
     [DbContext(typeof(TKHDbContext))]
-    [Migration("20251225172055_ProductExpenseEntity")]
-    partial class ProductExpenseEntity
+    [Migration("20251227030037_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,19 +36,19 @@ namespace TKH.DataAccess.Migrations
                     b.Property<int>("CategoryAttributeId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("MarketplaceValueId")
+                    b.Property<string>("ExternalId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(2147483647)
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryAttributeId", "MarketplaceValueId")
+                    b.HasIndex("CategoryAttributeId", "ExternalId")
                         .IsUnique();
 
                     b.ToTable("AttributeValues", (string)null);
@@ -63,15 +63,16 @@ namespace TKH.DataAccess.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("DefaultCommissionRate")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
 
-                    b.Property<bool>("IsLeaf")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MarketplaceCategoryId")
+                    b.Property<string>("ExternalId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsLeaf")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("MarketplaceType")
                         .HasColumnType("integer");
@@ -81,12 +82,13 @@ namespace TKH.DataAccess.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<string>("ParentMarketplaceCategoryId")
-                        .HasColumnType("text");
+                    b.Property<string>("ParentExternalId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MarketplaceType", "MarketplaceCategoryId")
+                    b.HasIndex("MarketplaceType", "ExternalId")
                         .IsUnique();
 
                     b.ToTable("Categories", (string)null);
@@ -103,13 +105,13 @@ namespace TKH.DataAccess.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("IsVarianter")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MarketplaceAttributeId")
+                    b.Property<string>("ExternalId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsVariant")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -118,7 +120,7 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId", "MarketplaceAttributeId")
+                    b.HasIndex("CategoryId", "ExternalId")
                         .IsUnique();
 
                     b.ToTable("CategoryAttributes", (string)null);
@@ -136,33 +138,33 @@ namespace TKH.DataAccess.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<decimal>("CommissionAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("CommissionRate")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("MarketplaceAccountId")
-                        .HasColumnType("integer");
+                    b.Property<string>("ExternalOrderNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<string>("MarketplaceTransactionId")
+                    b.Property<string>("ExternalTransactionId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("OrderItemBarcode")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                    b.Property<string>("ExternalTransactionType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<string>("OrderNumber")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                    b.Property<int>("MarketplaceAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ShipmentTransactionSyncStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
 
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("timestamp with time zone");
@@ -172,12 +174,13 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderNumber");
+                    b.HasIndex("ExternalOrderNumber");
+
+                    b.HasIndex("ExternalTransactionId");
+
+                    b.HasIndex("MarketplaceAccountId");
 
                     b.HasIndex("TransactionDate");
-
-                    b.HasIndex("MarketplaceAccountId", "MarketplaceTransactionId")
-                        .IsUnique();
 
                     b.ToTable("FinancialTransactions", (string)null);
                 });
@@ -192,16 +195,13 @@ namespace TKH.DataAccess.Migrations
 
                     b.Property<string>("ApiKey")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("ApiSecretKey")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("BaseUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -211,13 +211,13 @@ namespace TKH.DataAccess.Migrations
 
                     b.Property<string>("MerchantId")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("StoreName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
@@ -232,9 +232,43 @@ namespace TKH.DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
+                    b.Property<string>("CargoProviderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CargoTrackingNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<double>("Deci")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("ExternalOrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ExternalShipmentId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("GrossAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("IsMicroExport")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsShipmentPaidBySeller")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastUpdateDateTime")
                         .HasColumnType("timestamp with time zone");
@@ -242,22 +276,29 @@ namespace TKH.DataAccess.Migrations
                     b.Property<int>("MarketplaceAccountId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("MarketplaceOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("PlatformCoveredDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("TotalDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ExternalOrderNumber");
+
+                    b.HasIndex("ExternalShipmentId");
 
                     b.HasIndex("MarketplaceAccountId");
 
-                    b.HasIndex("MarketplaceOrderNumber");
+                    b.HasIndex("OrderDate");
 
                     b.ToTable("Orders", (string)null);
                 });
@@ -270,20 +311,12 @@ namespace TKH.DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("Barcode")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("CommissionRate")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("MarketplaceDiscount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -293,13 +326,30 @@ namespace TKH.DataAccess.Migrations
                     b.Property<int>("OrderItemStatus")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ProductId")
+                    b.Property<decimal>("PlatformCoveredDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("ProductId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("SellerDiscount")
+                    b.Property<decimal>("SellerCoveredDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("VatRate")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -321,6 +371,7 @@ namespace TKH.DataAccess.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Barcode")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -331,8 +382,40 @@ namespace TKH.DataAccess.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<double>("Deci")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ExternalProductCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ExternalUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsOnSale")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastUpdateDateTime")
                         .HasColumnType("timestamp with time zone");
@@ -340,23 +423,26 @@ namespace TKH.DataAccess.Migrations
                     b.Property<int>("MarketplaceAccountId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("MarketplaceProductId")
+                    b.Property<string>("ModelCode")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("ModelCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("StockCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Title")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UnitType")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("VatRate")
                         .HasPrecision(18, 2)
@@ -364,12 +450,17 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Barcode");
+
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("MarketplaceProductId");
+                    b.HasIndex("ExternalId");
 
-                    b.HasIndex("MarketplaceAccountId", "Barcode")
-                        .HasDatabaseName("IX_Product_Marketplace_Barcode");
+                    b.HasIndex("ExternalProductCode");
+
+                    b.HasIndex("MarketplaceAccountId");
+
+                    b.HasIndex("Sku");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -389,7 +480,8 @@ namespace TKH.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("CustomValue")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -400,8 +492,7 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasIndex("CategoryAttributeId");
 
-                    b.HasIndex("ProductId", "CategoryAttributeId")
-                        .IsUnique();
+                    b.HasIndex("ProductId");
 
                     b.ToTable("ProductAttributes", (string)null);
                 });
@@ -422,9 +513,7 @@ namespace TKH.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsVatIncluded")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -441,11 +530,7 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId", "Type", "EndDate")
-                        .HasDatabaseName("IX_ProductExpenses_ActiveLookup");
-
-                    b.HasIndex("ProductId", "Type", "StartDate")
-                        .HasDatabaseName("IX_ProductExpenses_HistoryLookup");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("ProductExpenses", (string)null);
                 });
@@ -466,9 +551,7 @@ namespace TKH.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsVatIncluded")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -481,30 +564,61 @@ namespace TKH.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId", "Type", "EndDate")
-                        .HasDatabaseName("IX_ProductPrices_ActiveLookup");
-
-                    b.HasIndex("ProductId", "Type", "StartDate")
-                        .HasDatabaseName("IX_ProductPrices_HistoryLookup");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("ProductPrices", (string)null);
                 });
 
+            modelBuilder.Entity("TKH.Entities.ShipmentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("Deci")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ExternalOrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ExternalParcelId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("MarketplaceAccountId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MarketplaceAccountId");
+
+                    b.ToTable("ShipmentTransactions", (string)null);
+                });
+
             modelBuilder.Entity("TKH.Entities.AttributeValue", b =>
                 {
-                    b.HasOne("TKH.Entities.CategoryAttribute", "CategoryAttribute")
-                        .WithMany("AttributeValues")
+                    b.HasOne("TKH.Entities.CategoryAttribute", "Attribute")
+                        .WithMany("Values")
                         .HasForeignKey("CategoryAttributeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CategoryAttribute");
+                    b.Navigation("Attribute");
                 });
 
             modelBuilder.Entity("TKH.Entities.CategoryAttribute", b =>
                 {
                     b.HasOne("TKH.Entities.Category", "Category")
-                        .WithMany("CategoryAttributes")
+                        .WithMany("Attributes")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -514,19 +628,21 @@ namespace TKH.DataAccess.Migrations
 
             modelBuilder.Entity("TKH.Entities.FinancialTransaction", b =>
                 {
-                    b.HasOne("TKH.Entities.MarketplaceAccount", null)
+                    b.HasOne("TKH.Entities.MarketplaceAccount", "MarketplaceAccount")
                         .WithMany()
                         .HasForeignKey("MarketplaceAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("MarketplaceAccount");
                 });
 
             modelBuilder.Entity("TKH.Entities.Order", b =>
                 {
                     b.HasOne("TKH.Entities.MarketplaceAccount", "MarketplaceAccount")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("MarketplaceAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("MarketplaceAccount");
@@ -543,8 +659,7 @@ namespace TKH.DataAccess.Migrations
                     b.HasOne("TKH.Entities.Product", "Product")
                         .WithMany("OrderItems")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Order");
 
@@ -554,13 +669,14 @@ namespace TKH.DataAccess.Migrations
             modelBuilder.Entity("TKH.Entities.Product", b =>
                 {
                     b.HasOne("TKH.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId");
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("TKH.Entities.MarketplaceAccount", "MarketplaceAccount")
-                        .WithMany()
+                        .WithMany("Products")
                         .HasForeignKey("MarketplaceAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Category");
@@ -570,34 +686,33 @@ namespace TKH.DataAccess.Migrations
 
             modelBuilder.Entity("TKH.Entities.ProductAttribute", b =>
                 {
-                    b.HasOne("TKH.Entities.AttributeValue", "AttributeValue")
-                        .WithMany()
-                        .HasForeignKey("AttributeValueId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("TKH.Entities.AttributeValue", "Value")
+                        .WithMany("ProductAttributes")
+                        .HasForeignKey("AttributeValueId");
 
-                    b.HasOne("TKH.Entities.CategoryAttribute", "CategoryAttribute")
-                        .WithMany()
+                    b.HasOne("TKH.Entities.CategoryAttribute", "Attribute")
+                        .WithMany("ProductAttributes")
                         .HasForeignKey("CategoryAttributeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TKH.Entities.Product", "Product")
-                        .WithMany("ProductAttributes")
+                        .WithMany("Attributes")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AttributeValue");
-
-                    b.Navigation("CategoryAttribute");
+                    b.Navigation("Attribute");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Value");
                 });
 
             modelBuilder.Entity("TKH.Entities.ProductExpense", b =>
                 {
                     b.HasOne("TKH.Entities.Product", "Product")
-                        .WithMany("ProductExpenses")
+                        .WithMany("Expenses")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -608,7 +723,7 @@ namespace TKH.DataAccess.Migrations
             modelBuilder.Entity("TKH.Entities.ProductPrice", b =>
                 {
                     b.HasOne("TKH.Entities.Product", "Product")
-                        .WithMany("ProductPrices")
+                        .WithMany("Prices")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -616,14 +731,43 @@ namespace TKH.DataAccess.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("TKH.Entities.ShipmentTransaction", b =>
+                {
+                    b.HasOne("TKH.Entities.MarketplaceAccount", "MarketplaceAccount")
+                        .WithMany("ShipmentTransactions")
+                        .HasForeignKey("MarketplaceAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MarketplaceAccount");
+                });
+
+            modelBuilder.Entity("TKH.Entities.AttributeValue", b =>
+                {
+                    b.Navigation("ProductAttributes");
+                });
+
             modelBuilder.Entity("TKH.Entities.Category", b =>
                 {
-                    b.Navigation("CategoryAttributes");
+                    b.Navigation("Attributes");
+
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("TKH.Entities.CategoryAttribute", b =>
                 {
-                    b.Navigation("AttributeValues");
+                    b.Navigation("ProductAttributes");
+
+                    b.Navigation("Values");
+                });
+
+            modelBuilder.Entity("TKH.Entities.MarketplaceAccount", b =>
+                {
+                    b.Navigation("Orders");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("ShipmentTransactions");
                 });
 
             modelBuilder.Entity("TKH.Entities.Order", b =>
@@ -633,13 +777,13 @@ namespace TKH.DataAccess.Migrations
 
             modelBuilder.Entity("TKH.Entities.Product", b =>
                 {
+                    b.Navigation("Attributes");
+
+                    b.Navigation("Expenses");
+
                     b.Navigation("OrderItems");
 
-                    b.Navigation("ProductAttributes");
-
-                    b.Navigation("ProductExpenses");
-
-                    b.Navigation("ProductPrices");
+                    b.Navigation("Prices");
                 });
 #pragma warning restore 612, 618
         }

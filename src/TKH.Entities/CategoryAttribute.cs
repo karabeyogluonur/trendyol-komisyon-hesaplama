@@ -6,10 +6,12 @@ namespace TKH.Entities
     public class CategoryAttribute : BaseEntity, IEntity
     {
         public int CategoryId { get; set; }
-        public virtual Category Category { get; set; }
-        public string MarketplaceAttributeId { get; set; } = string.Empty;
+        public string ExternalId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public bool IsVarianter { get; set; }
-        public ICollection<AttributeValue> AttributeValues { get; set; } = new List<AttributeValue>();
+        public bool IsVariant { get; set; }
+        public virtual Category Category { get; set; }
+        public virtual ICollection<AttributeValue> Values { get; set; } = new List<AttributeValue>();
+
+        public virtual ICollection<ProductAttribute> ProductAttributes { get; set; } = new List<ProductAttribute>();
     }
 }

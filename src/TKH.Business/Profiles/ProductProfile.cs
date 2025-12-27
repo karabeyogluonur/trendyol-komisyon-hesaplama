@@ -15,9 +15,9 @@ namespace TKH.Business.Profiles
                 .ForMember(dest => dest.CommissionRate, opt => opt.Ignore())
                 .ForMember(dest => dest.CategoryId, opt => opt.Ignore())
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductAttributes, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductPrices, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductExpenses, opt => opt.Ignore())
+                .ForMember(dest => dest.Attributes, opt => opt.Ignore())
+                .ForMember(dest => dest.Prices, opt => opt.Ignore())
+                .ForMember(dest => dest.Expenses, opt => opt.Ignore())
                 .ForMember(dest => dest.OrderItems, opt => opt.Ignore());
         }
     }

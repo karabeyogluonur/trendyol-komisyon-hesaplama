@@ -2,9 +2,9 @@ namespace TKH.Business.Integrations.Dtos
 {
     public class MarketplaceCategoryAttributeDto
     {
-        public string MarketplaceAttributeId { get; set; }
-        public string Name { get; set; }
-        public bool IsVarianter { get; set; }
-        public List<MarketplaceAttributeValueDto> AttributeValues { get; set; }
+        public string ExternalId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public bool IsVariant { get; set; }
+        public List<MarketplaceAttributeValueDto> Values { get; set; } = new();
     }
 }

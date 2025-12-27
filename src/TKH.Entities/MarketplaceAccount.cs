@@ -11,7 +11,10 @@ namespace TKH.Entities
         public string ApiKey { get; set; } = string.Empty;
         public string ApiSecretKey { get; set; } = string.Empty;
         public string MerchantId { get; set; } = string.Empty;
-        public string BaseUrl { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public virtual ICollection<ShipmentTransaction> ShipmentTransactions { get; set; } = new List<ShipmentTransaction>();
     }
 }

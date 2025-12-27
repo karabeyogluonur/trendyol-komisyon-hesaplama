@@ -8,21 +8,17 @@ namespace TKH.Entities
     {
         public int OrderId { get; set; }
         public int? ProductId { get; set; }
-
         public string Barcode { get; set; } = string.Empty;
-        public string MarketplaceSku { get; set; } = string.Empty;
-
+        public string Sku { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal VatRate { get; set; }
         public decimal CommissionRate { get; set; }
-
         public decimal PlatformCoveredDiscount { get; set; }
         public decimal SellerCoveredDiscount { get; set; }
 
         public OrderItemStatus OrderItemStatus { get; set; }
-
+        public virtual Order Order { get; set; }
         public virtual Product? Product { get; set; }
-        public virtual Order? Order { get; set; }
     }
 }

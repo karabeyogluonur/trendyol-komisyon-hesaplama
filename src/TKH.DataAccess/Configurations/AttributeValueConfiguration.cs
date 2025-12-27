@@ -10,16 +10,16 @@ namespace TKH.DataAccess.Configurations
         {
             builder.ToTable("AttributeValues");
 
-            builder.Property(attributeValue => attributeValue.MarketplaceValueId).HasMaxLength(100).IsRequired();
-            builder.Property(attributeValue => attributeValue.Value).HasMaxLength(int.MaxValue);
+            builder.Property(attributeValue => attributeValue.ExternalId).IsRequired().HasMaxLength(100);
 
-            builder.HasOne(attributeValue => attributeValue.CategoryAttribute)
-                   .WithMany(categoryAttribute => categoryAttribute.AttributeValues)
+            builder.Property(attributeValue => attributeValue.Value).IsRequired().HasMaxLength(500);
+
+            builder.HasIndex(attributeValue => new { attributeValue.CategoryAttributeId, attributeValue.ExternalId }).IsUnique();
+
+            builder.HasOne(attributeValue => attributeValue.Attribute)
+                   .WithMany(categoryAttribute => categoryAttribute.Values)
                    .HasForeignKey(attributeValue => attributeValue.CategoryAttributeId)
                    .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasIndex(attributeValue => new { attributeValue.CategoryAttributeId, attributeValue.MarketplaceValueId })
-                   .IsUnique();
         }
     }
 }

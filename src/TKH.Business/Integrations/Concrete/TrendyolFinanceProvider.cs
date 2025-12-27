@@ -111,7 +111,7 @@ namespace TKH.Business.Integrations.Concrete
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
-                        marketplaceFinancialTransactionDto.MarketplaceTransactionType = settlementTransactionType.ToString();
+                        marketplaceFinancialTransactionDto.ExternalTransactionType = settlementTransactionType.ToString();
                         marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapSettlement(settlementTransactionType);
                         marketplaceFinancialTransactionDto.ShipmentTransactionSyncStatus = ShipmentTransactionSyncStatus.NotRequired;
                         yield return marketplaceFinancialTransactionDto;
@@ -167,7 +167,7 @@ namespace TKH.Business.Integrations.Concrete
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
-                        marketplaceFinancialTransactionDto.MarketplaceTransactionType = otherFinancialTransactionType.ToString();
+                        marketplaceFinancialTransactionDto.ExternalTransactionType = otherFinancialTransactionType.ToString();
                         marketplaceFinancialTransactionDto.TransactionType = TrendyolTypeMapper.MapOther(otherFinancialTransactionType);
 
                         bool isFinancialCargoTransaction = otherFinancialTransactionType == TrendyolOtherFinancialTransactionType.DeductionInvoices && !string.IsNullOrEmpty(trendyolFinancialContent.TransactionType) && trendyolFinancialContent.TransactionType.Contains("Kargo", StringComparison.OrdinalIgnoreCase);
@@ -211,7 +211,7 @@ namespace TKH.Business.Integrations.Concrete
 
                 MarketplaceShipmentSyncResultDto marketplaceShipmentSyncResultDto = new MarketplaceShipmentSyncResultDto
                 {
-                    SourceTransactionId = pendingTransactionId,
+                    ExternalTransactionId = pendingTransactionId,
                     ResultStatus = ShipmentTransactionSyncStatus.Failed
                 };
 

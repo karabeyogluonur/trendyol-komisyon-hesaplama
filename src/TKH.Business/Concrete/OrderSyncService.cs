@@ -57,36 +57,30 @@ namespace TKH.Business.Concrete
                 IRepository<Order> scopedOrderRepository = scopedUnitOfWork.GetRepository<Order>();
                 IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
 
-                // 1. Shipment ID Listesi (Sipariş Benzersizliği İçin)
                 List<string> incomingShipmentIdList = marketplaceOrderDtoList
-                    .Select(dto => dto.MarketplaceShipmentId)
+                    .Select(dto => dto.ExternalShipmentId)
                     .Where(id => !string.IsNullOrEmpty(id))
                     .ToList();
 
-                // 2. Product Code Listesi (Eşleşme İçin - ARTIK MARKETPLACE PRODUCT CODE KULLANIYORUZ)
-                // DTO'daki MarketplaceProductCode alanını topluyoruz.
                 List<string> allMarketplaceProductCodes = marketplaceOrderDtoList
                     .SelectMany(dto => dto.Items)
-                    .Select(item => item.MarketplaceProductCode) // Değişiklik Burada
+                    .Select(item => item.ExternalProductCode)
                     .Where(code => !string.IsNullOrEmpty(code))
                     .Distinct()
                     .ToList();
 
-                // 3. Veritabanından Ürünleri ProductCode'a Göre Çek
                 IList<Product> relatedProductList = await scopedProductRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId &&
-                                          allMarketplaceProductCodes.Contains(product.MarketplaceProductCode), // Değişiklik Burada
+                                          allMarketplaceProductCodes.Contains(product.ExternalProductCode),
                     disableTracking: true
                 );
 
-                // 4. Map: ProductCode -> Local Database ID (PK)
                 Dictionary<string, int> codeToLocalIdMap = relatedProductList
-                    .GroupBy(product => product.MarketplaceProductCode) // Değişiklik Burada
+                    .GroupBy(product => product.ExternalProductCode)
                     .ToDictionary(group => group.Key, group => group.First().Id);
 
-                // Mevcut Siparişleri Çek
                 IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
-                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.MarketplaceShipmentId),
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.ExternalShipmentId),
                     include: source => source.Include(order => order.OrderItems),
                     disableTracking: false
                 );
@@ -95,7 +89,7 @@ namespace TKH.Business.Concrete
 
                 foreach (MarketplaceOrderDto marketplaceOrderDto in marketplaceOrderDtoList)
                 {
-                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.MarketplaceShipmentId == marketplaceOrderDto.MarketplaceShipmentId);
+                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.ExternalShipmentId == marketplaceOrderDto.ExternalShipmentId);
 
                     if (existingOrder is not null)
                     {
@@ -135,7 +129,7 @@ namespace TKH.Business.Concrete
             {
                 OrderItem orderItem = _mapper.Map<OrderItem>(itemDto);
 
-                if (!string.IsNullOrEmpty(itemDto.MarketplaceProductCode) && codeToLocalIdMap.TryGetValue(itemDto.MarketplaceProductCode, out int productId))
+                if (!string.IsNullOrEmpty(itemDto.ExternalProductCode) && codeToLocalIdMap.TryGetValue(itemDto.ExternalProductCode, out int productId))
                     orderItem.ProductId = productId;
                 else
                     orderItem.ProductId = null;

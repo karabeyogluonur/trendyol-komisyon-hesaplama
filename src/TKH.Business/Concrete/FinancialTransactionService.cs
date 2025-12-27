@@ -26,9 +26,9 @@ namespace TKH.Business.Concrete
             foreach (var groupedshipmentSyncStatusUpdateDto in groupedshipmentSyncStatusUpdateDtos)
             {
                 ShipmentTransactionSyncStatus targetStatus = groupedshipmentSyncStatusUpdateDto.Key;
-                List<string> transactionIds = groupedshipmentSyncStatusUpdateDto.Select(groupedshipmentSyncStatusUpdateDto => groupedshipmentSyncStatusUpdateDto.MarketplaceTransactionId).ToList();
+                List<string> transactionIds = groupedshipmentSyncStatusUpdateDto.Select(groupedshipmentSyncStatusUpdateDto => groupedshipmentSyncStatusUpdateDto.ExternalTransactionId).ToList();
 
-                IQueryable<FinancialTransaction> financialTransactions = _financialTransactionRepository.GetAll(predicate: x => x.MarketplaceAccountId == marketplaceAccountId && transactionIds.Contains(x.MarketplaceTransactionId)
+                IQueryable<FinancialTransaction> financialTransactions = _financialTransactionRepository.GetAll(predicate: x => x.MarketplaceAccountId == marketplaceAccountId && transactionIds.Contains(x.ExternalTransactionId)
                 );
 
                 await financialTransactions.ExecuteUpdateAsync(financialTransaction => financialTransaction.SetProperty(p => p.ShipmentTransactionSyncStatus, targetStatus));
@@ -39,7 +39,7 @@ namespace TKH.Business.Concrete
         {
             return await _financialTransactionRepository.GetAllAsync(
                 predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && financialTransaction.ShipmentTransactionSyncStatus == ShipmentTransactionSyncStatus.Pending,
-                selector: financialTransaction => financialTransaction.MarketplaceTransactionId
+                selector: financialTransaction => financialTransaction.ExternalTransactionId
             );
         }
     }

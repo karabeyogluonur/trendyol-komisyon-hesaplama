@@ -58,24 +58,24 @@ namespace TKH.Business.Concrete
                 IRepository<FinancialTransaction> scopedFinancialTransactionRepository = scopedUnitOfWork.GetRepository<FinancialTransaction>();
 
                 List<string> incomingMarketplaceTransactionIdList = marketplaceFinancialTransactionDtoList
-                    .Select(marketplaceFinancialTransactionDto => marketplaceFinancialTransactionDto.MarketplaceTransactionId)
+                    .Select(marketplaceFinancialTransactionDto => marketplaceFinancialTransactionDto.ExternalTransactionId)
                     .Where(marketplaceTransactionId => !string.IsNullOrEmpty(marketplaceTransactionId))
                     .ToList();
 
                 IList<FinancialTransaction> existingFinancialTransactionList = await scopedFinancialTransactionRepository.GetAllAsync(
-                    predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.MarketplaceTransactionId),
+                    predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.ExternalTransactionId),
                     disableTracking: false
                 );
 
                 Dictionary<string, FinancialTransaction> existingTransactionMap = existingFinancialTransactionList
-                    .GroupBy(transaction => transaction.MarketplaceTransactionId)
+                    .GroupBy(transaction => transaction.ExternalTransactionId)
                     .ToDictionary(group => group.Key, group => group.First());
 
                 List<FinancialTransaction> newFinancialTransactionsToAdd = new List<FinancialTransaction>();
 
                 foreach (MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto in marketplaceFinancialTransactionDtoList)
                 {
-                    if (existingTransactionMap.TryGetValue(marketplaceFinancialTransactionDto.MarketplaceTransactionId, out FinancialTransaction? existingFinancialTransaction))
+                    if (existingTransactionMap.TryGetValue(marketplaceFinancialTransactionDto.ExternalTransactionId, out FinancialTransaction? existingFinancialTransaction))
                     {
                         _mapper.Map(marketplaceFinancialTransactionDto, existingFinancialTransaction);
                         existingFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
@@ -132,24 +132,24 @@ namespace TKH.Business.Concrete
                 if (validShipmentTransactionDtoList.Count > 0)
                 {
                     List<string> incomingParcelIdList = validShipmentTransactionDtoList
-                        .Select(dto => dto.MarketplaceParcelId)
+                        .Select(dto => dto.ExternalParcelId)
                         .Where(id => !string.IsNullOrEmpty(id))
                         .ToList();
 
                     IList<ShipmentTransaction> existingShipmentTransactionList = await scopedShipmentTransactionRepository.GetAllAsync(
-                        predicate: shipment => shipment.MarketplaceAccountId == marketplaceAccountId && incomingParcelIdList.Contains(shipment.MarketplaceParcelId),
+                        predicate: shipment => shipment.MarketplaceAccountId == marketplaceAccountId && incomingParcelIdList.Contains(shipment.ExternalParcelId),
                         disableTracking: true
                     );
 
                     HashSet<string> existingParcelIdSet = existingShipmentTransactionList
-                        .Select(shipment => shipment.MarketplaceParcelId)
+                        .Select(shipment => shipment.ExternalParcelId)
                         .ToHashSet();
 
                     List<ShipmentTransaction> newShipmentTransactionsToAdd = new List<ShipmentTransaction>();
 
                     foreach (MarketplaceShipmentTransactionDto marketplaceShipmentTransactionDto in validShipmentTransactionDtoList)
                     {
-                        if (!existingParcelIdSet.Contains(marketplaceShipmentTransactionDto.MarketplaceParcelId))
+                        if (!existingParcelIdSet.Contains(marketplaceShipmentTransactionDto.ExternalParcelId))
                         {
                             ShipmentTransaction newShipmentTransaction = _mapper.Map<ShipmentTransaction>(marketplaceShipmentTransactionDto);
                             newShipmentTransaction.MarketplaceAccountId = marketplaceAccountId;
@@ -164,7 +164,7 @@ namespace TKH.Business.Concrete
                 List<ShipmentSyncStatusUpdateDto> shipmentSyncStatusUpdateDtoList = marketplaceShipmentSyncResultDtoList
                     .Select(result => new ShipmentSyncStatusUpdateDto
                     {
-                        MarketplaceTransactionId = result.SourceTransactionId,
+                        ExternalTransactionId = result.ExternalTransactionId,
                         NewStatus = result.ResultStatus
                     })
                     .ToList();

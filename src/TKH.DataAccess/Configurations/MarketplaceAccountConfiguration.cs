@@ -10,12 +10,26 @@ namespace TKH.DataAccess.Configurations
         {
             builder.ToTable("MarketplaceAccounts");
 
-            builder.HasKey(marketplaceAccount => marketplaceAccount.Id);
-            builder.Property(marketplaceAccount => marketplaceAccount.StoreName).IsRequired().HasMaxLength(100);
-            builder.Property(marketplaceAccount => marketplaceAccount.ApiKey).IsRequired().HasMaxLength(100);
-            builder.Property(marketplaceAccount => marketplaceAccount.ApiSecretKey).IsRequired();
-            builder.Property(marketplaceAccount => marketplaceAccount.MerchantId).IsRequired().HasMaxLength(50);
-            builder.Property(marketplaceAccount => marketplaceAccount.MarketplaceType).IsRequired();
+            builder.Property(marketplaceAccount => marketplaceAccount.ApiKey).HasMaxLength(500).IsRequired();
+            builder.Property(marketplaceAccount => marketplaceAccount.ApiSecretKey).HasMaxLength(500).IsRequired();
+
+            builder.Property(marketplaceAccount => marketplaceAccount.StoreName).HasMaxLength(200).IsRequired();
+            builder.Property(marketplaceAccount => marketplaceAccount.MerchantId).HasMaxLength(100).IsRequired();
+
+            builder.HasMany(marketplaceAccount => marketplaceAccount.Products)
+                   .WithOne(marketplaceAccount => marketplaceAccount.MarketplaceAccount)
+                   .HasForeignKey(marketplaceAccount => marketplaceAccount.MarketplaceAccountId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(marketplaceAccount => marketplaceAccount.Orders)
+                   .WithOne(marketplaceAccount => marketplaceAccount.MarketplaceAccount)
+                   .HasForeignKey(marketplaceAccount => marketplaceAccount.MarketplaceAccountId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(marketplaceAccount => marketplaceAccount.ShipmentTransactions)
+                  .WithOne(marketplaceAccount => marketplaceAccount.MarketplaceAccount)
+                  .HasForeignKey(marketplaceAccount => marketplaceAccount.MarketplaceAccountId)
+                  .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

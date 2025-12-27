@@ -2,28 +2,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TKH.Entities;
 
-public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttribute>
+namespace TKH.DataAccess.Configurations
 {
-    public void Configure(EntityTypeBuilder<ProductAttribute> builder)
+    public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttribute>
     {
-        builder.ToTable("ProductAttributes");
+        public void Configure(EntityTypeBuilder<ProductAttribute> builder)
+        {
+            builder.ToTable("ProductAttributes");
 
-        builder.HasOne(productAttribute => productAttribute.Product)
-               .WithMany(product => product.ProductAttributes)
-               .HasForeignKey(productAttribute => productAttribute.ProductId)
-               .OnDelete(DeleteBehavior.Cascade);
+            builder.Property(productAttribute => productAttribute.CustomValue).HasMaxLength(500);
 
-        builder.HasOne(productAttribute => productAttribute.CategoryAttribute)
-               .WithMany()
-               .HasForeignKey(productAttribute => productAttribute.CategoryAttributeId)
-               .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(productAttribute => productAttribute.Product)
+                   .WithMany(product => product.Attributes)
+                   .HasForeignKey(productAttribute => productAttribute.ProductId)
+                   .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(productAttribute => productAttribute.AttributeValue)
-               .WithMany()
-               .HasForeignKey(productAttribute => productAttribute.AttributeValueId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasIndex(productAttribute => new { productAttribute.ProductId, productAttribute.CategoryAttributeId })
-               .IsUnique();
+            builder.HasOne(productAttribute => productAttribute.Attribute)
+                   .WithMany(categoryAttribute => categoryAttribute.ProductAttributes)
+                   .HasForeignKey(productAttribute => productAttribute.CategoryAttributeId)
+                   .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

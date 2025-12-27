@@ -9,34 +9,12 @@ namespace TKH.DataAccess.Configurations
         public void Configure(EntityTypeBuilder<ProductPrice> builder)
         {
             builder.ToTable("ProductPrices");
+            builder.Property(productPrice => productPrice.Amount).HasPrecision(18, 2);
 
-            builder.Property(x => x.Amount)
-                .HasPrecision(18, 2)
-                .IsRequired();
-
-            builder.Property(x => x.Type)
-                .IsRequired();
-
-            builder.Property(x => x.IsVatIncluded)
-                .IsRequired()
-                .HasDefaultValue(true);
-
-            builder.Property(x => x.StartDate)
-                .IsRequired();
-
-            builder.Property(x => x.EndDate)
-                .IsRequired(false);
-
-            builder.HasOne(x => x.Product)
-                .WithMany(p => p.ProductPrices)
-                .HasForeignKey(x => x.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasIndex(x => new { x.ProductId, x.Type, x.EndDate })
-                .HasDatabaseName("IX_ProductPrices_ActiveLookup");
-
-            builder.HasIndex(x => new { x.ProductId, x.Type, x.StartDate })
-                .HasDatabaseName("IX_ProductPrices_HistoryLookup");
+            builder.HasOne(productPrice => productPrice.Product)
+                   .WithMany(product => product.Prices)
+                   .HasForeignKey(productPrice => productPrice.ProductId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

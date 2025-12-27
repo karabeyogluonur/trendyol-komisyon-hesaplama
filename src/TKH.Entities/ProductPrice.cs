@@ -8,9 +8,11 @@ namespace TKH.Entities
     {
         public int ProductId { get; set; }
         public virtual Product Product { get; set; }
+
         public ProductPriceType Type { get; set; }
         public decimal Amount { get; set; }
         public bool IsVatIncluded { get; set; }
+
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
         public DateTime? EndDate { get; set; }
     }

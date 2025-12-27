@@ -7,11 +7,13 @@ namespace TKH.Entities
     public class Category : BaseEntity, IEntity
     {
         public MarketplaceType MarketplaceType { get; set; }
-        public string MarketplaceCategoryId { get; set; } = string.Empty;
+        public string ExternalId { get; set; } = string.Empty;
+        public string? ParentExternalId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public string? ParentMarketplaceCategoryId { get; set; }
         public bool IsLeaf { get; set; }
         public decimal? DefaultCommissionRate { get; set; }
-        public ICollection<CategoryAttribute> CategoryAttributes { get; set; } = new List<CategoryAttribute>();
+        public virtual ICollection<CategoryAttribute> Attributes { get; set; } = new List<CategoryAttribute>();
+
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

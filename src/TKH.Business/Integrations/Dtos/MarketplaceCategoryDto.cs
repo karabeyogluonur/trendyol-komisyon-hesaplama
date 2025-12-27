@@ -2,9 +2,9 @@ namespace TKH.Business.Integrations.Dtos
 {
     public class MarketplaceCategoryDto
     {
-        public string MarketplaceCategoryId { get; set; }
-        public string Name { get; set; }
-        public string? ParentMarketplaceCategoryId { get; set; }
+        public string ExternalId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? ParentExternalId { get; set; }
         public bool IsLeaf { get; set; }
     }
 }

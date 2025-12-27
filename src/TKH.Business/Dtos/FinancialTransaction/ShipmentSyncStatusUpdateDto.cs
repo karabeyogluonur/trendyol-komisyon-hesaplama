@@ -4,7 +4,7 @@ namespace TKH.Business.Dtos.FinancialTransaction
 {
     public class ShipmentSyncStatusUpdateDto
     {
-        public string MarketplaceTransactionId { get; set; } = string.Empty;
+        public string ExternalTransactionId { get; set; } = string.Empty;
         public ShipmentTransactionSyncStatus NewStatus { get; set; }
     }
 }

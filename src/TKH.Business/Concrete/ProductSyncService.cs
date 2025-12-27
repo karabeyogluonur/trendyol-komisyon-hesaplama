@@ -58,12 +58,12 @@ namespace TKH.Business.Concrete
                 IRepository<Category> scopedCategoryRepository = scopedUnitOfWork.GetRepository<Category>();
 
                 List<string> incomingMarketplaceProductIdList = marketplaceProductDtoList
-                    .Select(product => product.MarketplaceProductId)
+                    .Select(product => product.ExternalId)
                     .Where(id => !string.IsNullOrEmpty(id))
                     .ToList();
 
                 List<int> incomingCategoryIdList = marketplaceProductDtoList
-                    .Select(product => product.MarketplaceCategoryId)
+                    .Select(product => product.ExternalCategoryId)
                     .Distinct()
                     .ToList();
 
@@ -71,17 +71,17 @@ namespace TKH.Business.Concrete
                 List<string> incomingCategoryIdStringList = incomingCategoryIdList.Select(id => id.ToString()).ToList();
 
                 IList<Category> relatedCategoryList = await scopedCategoryRepository.GetAllAsync(
-                    predicate: category => incomingCategoryIdStringList.Contains(category.MarketplaceCategoryId),
-                    include: source => source.Include(category => category.CategoryAttributes)
-                                             .ThenInclude(categoryAttribute => categoryAttribute.AttributeValues),
+                    predicate: category => incomingCategoryIdStringList.Contains(category.ExternalId),
+                    include: source => source.Include(category => category.Attributes)
+                                             .ThenInclude(categoryAttribute => categoryAttribute.Values),
                     disableTracking: true
                 );
 
                 IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
-                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceProductIdList.Contains(product.MarketplaceProductId),
-                    include: source => source.Include(product => product.ProductAttributes)
-                                             .Include(product => product.ProductPrices)
-                                             .Include(product => product.ProductExpenses),
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceProductIdList.Contains(product.ExternalId),
+                    include: source => source.Include(product => product.Attributes)
+                                             .Include(product => product.Prices)
+                                             .Include(product => product.Expenses),
                     disableTracking: false
                 );
 
@@ -89,8 +89,8 @@ namespace TKH.Business.Concrete
 
                 foreach (MarketplaceProductDto marketplaceProductDto in marketplaceProductDtoList)
                 {
-                    Product? existingProduct = existingProductList.FirstOrDefault(product => product.MarketplaceProductId == marketplaceProductDto.MarketplaceProductId);
-                    Category? matchedCategory = relatedCategoryList.FirstOrDefault(category => category.MarketplaceCategoryId == marketplaceProductDto.MarketplaceCategoryId.ToString());
+                    Product? existingProduct = existingProductList.FirstOrDefault(product => product.ExternalId == marketplaceProductDto.ExternalId);
+                    Category? matchedCategory = relatedCategoryList.FirstOrDefault(category => category.ExternalId == marketplaceProductDto.ExternalCategoryId.ToString());
 
                     if (existingProduct is not null)
                     {
@@ -134,12 +134,12 @@ namespace TKH.Business.Concrete
         {
             if (incomingPrices is null || incomingPrices.Count == 0) return;
 
-            if (product.ProductPrices == null)
-                product.ProductPrices = new List<ProductPrice>();
+            if (product.Prices == null)
+                product.Prices = new List<ProductPrice>();
 
             foreach (MarketplaceProductPriceDto incomingPriceDto in incomingPrices)
             {
-                ProductPrice? activeProductPrice = product.ProductPrices
+                ProductPrice? activeProductPrice = product.Prices
                     .FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null);
 
                 if (activeProductPrice is not null)
@@ -149,7 +149,7 @@ namespace TKH.Business.Concrete
 
                     activeProductPrice.EndDate = DateTime.UtcNow;
 
-                    product.ProductPrices.Add(new ProductPrice
+                    product.Prices.Add(new ProductPrice
                     {
                         Type = incomingPriceDto.Type,
                         Amount = incomingPriceDto.Amount,
@@ -160,7 +160,7 @@ namespace TKH.Business.Concrete
                 }
                 else
                 {
-                    product.ProductPrices.Add(new ProductPrice
+                    product.Prices.Add(new ProductPrice
                     {
                         Type = incomingPriceDto.Type,
                         Amount = incomingPriceDto.Amount,
@@ -176,12 +176,12 @@ namespace TKH.Business.Concrete
         {
             if (incomingExpenses is null || incomingExpenses.Count == 0) return;
 
-            if (product.ProductExpenses == null)
-                product.ProductExpenses = new List<ProductExpense>();
+            if (product.Expenses == null)
+                product.Expenses = new List<ProductExpense>();
 
             foreach (MarketplaceProductExpenseDto incomingExpenseDto in incomingExpenses)
             {
-                ProductExpense? activeProductExpense = product.ProductExpenses
+                ProductExpense? activeProductExpense = product.Expenses
                     .FirstOrDefault(productExpense => productExpense.Type == incomingExpenseDto.Type && productExpense.EndDate == null);
 
                 if (activeProductExpense is not null)
@@ -193,7 +193,7 @@ namespace TKH.Business.Concrete
 
                     activeProductExpense.EndDate = DateTime.UtcNow;
 
-                    product.ProductExpenses.Add(new ProductExpense
+                    product.Expenses.Add(new ProductExpense
                     {
                         Type = incomingExpenseDto.Type,
                         Amount = incomingExpenseDto.Amount,
@@ -205,7 +205,7 @@ namespace TKH.Business.Concrete
                 }
                 else
                 {
-                    product.ProductExpenses.Add(new ProductExpense
+                    product.Expenses.Add(new ProductExpense
                     {
                         Type = incomingExpenseDto.Type,
                         Amount = incomingExpenseDto.Amount,
@@ -223,20 +223,20 @@ namespace TKH.Business.Concrete
             if (incomingAttributes is null || incomingAttributes.Count == 0 || matchedCategory is null)
                 return;
 
-            if (product.ProductAttributes == null)
-                product.ProductAttributes = new List<ProductAttribute>();
+            if (product.Attributes == null)
+                product.Attributes = new List<ProductAttribute>();
 
             foreach (MarketplaceProductAttributeDto incomingAttributeDto in incomingAttributes)
             {
-                CategoryAttribute? matchedCategoryAttribute = matchedCategory.CategoryAttributes
-                    .FirstOrDefault(categoryAttribute => categoryAttribute.MarketplaceAttributeId == incomingAttributeDto.MarketplaceAttributeId);
+                CategoryAttribute? matchedCategoryAttribute = matchedCategory.Attributes
+                    .FirstOrDefault(categoryAttribute => categoryAttribute.ExternalId == incomingAttributeDto.ExternalAttributeId);
 
                 if (matchedCategoryAttribute is null) continue;
 
-                AttributeValue? matchedAttributeValue = matchedCategoryAttribute.AttributeValues
-                    .FirstOrDefault(attributeValue => attributeValue.MarketplaceValueId == incomingAttributeDto.MarketplaceValueId);
+                AttributeValue? matchedAttributeValue = matchedCategoryAttribute.Values
+                    .FirstOrDefault(attributeValue => attributeValue.ExternalId == incomingAttributeDto.ExternalValueId);
 
-                ProductAttribute? existingProductAttribute = product.ProductAttributes
+                ProductAttribute? existingProductAttribute = product.Attributes
                     .FirstOrDefault(productAttribute => productAttribute.CategoryAttributeId == matchedCategoryAttribute.Id);
 
                 if (existingProductAttribute is not null)
@@ -246,7 +246,7 @@ namespace TKH.Business.Concrete
                 }
                 else
                 {
-                    product.ProductAttributes.Add(new ProductAttribute
+                    product.Attributes.Add(new ProductAttribute
                     {
                         CategoryAttributeId = matchedCategoryAttribute.Id,
                         AttributeValueId = matchedAttributeValue?.Id,
