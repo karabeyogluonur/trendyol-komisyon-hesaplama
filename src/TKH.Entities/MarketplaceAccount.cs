@@ -12,6 +12,11 @@ namespace TKH.Entities
         public string ApiSecretKey { get; set; } = string.Empty;
         public string MerchantId { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public MarketplaceConnectionState ConnectionState { get; set; } = MarketplaceConnectionState.Initializing;
+        public string? LastErrorMessage { get; set; }
+        public DateTime? LastErrorDate { get; set; }
+        public MarketplaceSyncState SyncState { get; set; } = MarketplaceSyncState.Idle;
+        public DateTime? LastSyncStartTime { get; set; }
 
         public virtual ICollection<Product> Products { get; set; } = new List<Product>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();

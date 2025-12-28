@@ -24,5 +24,9 @@ namespace TKH.Presentation.Models.MarketplaceAccount
 
         [Display(Name = "Durum")]
         public bool IsActive { get; set; }
+
+        public MarketplaceConnectionState ConnectionState { get; set; }
+        public MarketplaceSyncState SyncState { get; set; }
+        public string? LastErrorMessage { get; set; }
     }
 }

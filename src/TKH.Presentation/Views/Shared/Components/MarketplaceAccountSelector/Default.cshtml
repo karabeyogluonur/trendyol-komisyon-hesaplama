@@ -11,6 +11,7 @@
         document.getElementById('accountSwitcherForm').submit();
     }
 </script>
+
 <div class="app-navbar-item ms-1 ms-md-4">
     <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-auto h-35px px-3"
         data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent"
@@ -72,20 +73,65 @@
                         {
                             foreach (var account in Model.MarketplaceAccounts)
                             {
-                                var isActive = account.Id == Model.CurrentMarketplaceAccountId;
-                                var activeClass = isActive ? "bg-light-primary border border-primary border-dashed" :
+                                bool isCurrent = account.Id == Model.CurrentMarketplaceAccountId;
+                                bool isLocked = false;
+                                string lockReason = "";
+                                string activeClass = isCurrent ? "bg-light-primary border border-primary border-dashed" :
                                 "bg-hover-light";
+                                string opacityClass = "";
+                                string cursorClass = "";
+
+                                if (account.SyncState == MarketplaceSyncState.Syncing)
+                                {
+                                    isLocked = true;
+                                    lockReason = "Veri eşitleniyor, lütfen bekleyin.";
+                                }
+                                else if (account.SyncState == MarketplaceSyncState.Queued)
+                                {
+                                    isLocked = true;
+                                    lockReason = "İşlem sırada bekliyor.";
+                                }
+                                else if (account.ConnectionState == MarketplaceConnectionState.Initializing)
+                                {
+                                    isLocked = true;
+                                    lockReason = "Kurulum henüz tamamlanmadı.";
+                                }
+                                else if (account.ConnectionState == MarketplaceConnectionState.AuthError)
+                                {
+                                    isLocked = true;
+                                    lockReason = "Bağlantı hatası mevcut.";
+                                }
+                                else if (account.ConnectionState == MarketplaceConnectionState.SystemError)
+                                {
+                                    isLocked = true;
+                                    lockReason = "Sistem hatası.";
+                                }
+
+                                if (isLocked && !isCurrent)
+                                {
+                                    opacityClass = "opacity-50";
+                                    cursorClass = "cursor-not-allowed";
+                                    activeClass = "bg-light-danger border border-danger border-dashed";
+                                }
 
                                 <div class="col-4">
-                                    <a href="javascript:;" onclick="switchAccount(@account.Id)"
-                                        class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 mb-3 @activeClass">
+                                    <a href="javascript:;" onclick="@(isLocked ? "" : $"switchAccount({account.Id})")"
+                                        class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 mb-3 @activeClass @opacityClass @cursorClass"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="@(isLocked? lockReason : account.StoreName)">
 
                                         <div class="symbol symbol-35px mb-2">
                                             <marketplace-logo type="@account.MarketplaceType" class="symbol-label p-1" />
                                         </div>
-                                        <span class="fw-semibold text-truncate w-100 fs-7" title="@account.StoreName">
+
+                                        <span class="fw-semibold text-truncate w-100 fs-7">
                                             @account.StoreName
                                         </span>
+
+                                        @if (isLocked)
+                                        {
+                                            <span class="fs-9 text-danger fw-bold mt-1">Seçilemez</span>
+                                        }
                                     </a>
                                 </div>
                             }

@@ -1,3 +1,4 @@
+@using TKH.Entities.Enums
 @model MarketplaceAccountAddViewModel
 
 <div class="card mb-5">
@@ -16,7 +17,7 @@
                             <span class="bullet bg-gray-400 w-5px h-2px"></span>
                         </li>
                         <li class="breadcrumb-item">
-                            <a href="@Url.Action("Index", "Marketplace")"
+                            <a href="@Url.Action("Index", "MarketplaceAccount")"
                                 class="text-gray-600 text-hover-primary">Pazaryeri Hesapları</a>
                         </li>
                         <li class="breadcrumb-item">
@@ -31,36 +32,30 @@
         </div>
     </div>
 </div>
+
 <div
-    class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-5">
-    <i class="ki-duotone ki-shield-tick fs-2hx text-primary me-4 mb-5 mb-sm-0 flex-shrink-0">
-        <span class="path1"></span><span class="path2"></span>
+    class="alert alert-dismissible bg-light-info border border-info border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-5">
+    <i class="ki-duotone ki-information-2 fs-2hx text-info me-4 mb-5 mb-sm-0 flex-shrink-0">
+        <span class="path1"></span><span class="path2"></span><span class="path3"></span>
     </i>
-
     <div class="d-flex flex-column pe-0 pe-sm-10 flex-grow-1">
-        <span class="fw-bold text-gray-900 fs-6 mb-2">Güvenlik Bilgilendirmesi</span>
-        <ul class="text-gray-600 fs-7 mb-0 lh-base ps-4">
-            <li class="mb-1">
-                <strong>Şifreleme:</strong> Gireceğiniz <code>API Secret Key</code> veritabanında 256-bit şifreleme ile
-                saklanacaktır.
-            </li>
-            <li class="mb-1">
-                <strong>Doğruluk:</strong> Lütfen API bilgilerini ilgili pazar yeri panelinden kopyalayıp yapıştırırken
-                boşluk bırakmadığınızdan emin olun.
-            </li>
-        </ul>
+        <span class="fw-bold text-gray-900 fs-6 mb-2">Süreç Nasıl İşler?</span>
+        <div class="text-gray-700 fs-7">
+            Hesabı eklediğinizde sistem güvenlik ve veri bütünlüğü için şu adımları izler:
+            <ol class="mb-0 mt-2 ps-4">
+                <li>Hesap <strong>"Sırada Bekliyor"</strong> statüsünde kuyruğa alınır.</li>
+                <li>Sırası geldiğinde bağlantı test edilir ve ürünler arka planda çekilmeye başlar.</li>
+                <li>İşlem tamamlandığında hesap <strong>"Bağlı"</strong> durumuna geçer ve yönetilebilir hale gelir.
+                </li>
+            </ol>
+        </div>
     </div>
-
-    <button type="button" class="btn btn-icon btn-sm btn-active-color-primary ms-sm-auto align-self-sm-start"
-        data-bs-dismiss="alert">
-        <i class="ki-duotone ki-cross fs-2">
-            <span class="path1"></span><span class="path2"></span>
-        </i>
-    </button>
 </div>
+
 <div class="card mb-5">
     <div class="card-body">
-        <form asp-controller="MarketplaceAccount" asp-action="Add" method="post" class="form">
+        <form asp-controller="MarketplaceAccount" asp-action="Add" method="post" class="form"
+            id="kt_marketplace_add_form">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
             @Html.AntiForgeryToken()
@@ -73,16 +68,14 @@
                         data-placeholder="Seçiniz...">
                         <option value="">Seçiniz...</option>
                     </select>
-                    <span asp-validation-for="MarketplaceType"
-                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    <span asp-validation-for="MarketplaceType" class="text-danger fs-8"></span>
                 </div>
 
                 <div class="col-md-6 fv-row mb-7">
                     <label asp-for="StoreName" class="required form-label fs-7 fw-semibold"></label>
                     <input asp-for="StoreName" class="form-control form-control-sm"
                         placeholder="Örn: Trendyol Ana Mağaza" maxlength="50" />
-                    <span asp-validation-for="StoreName"
-                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    <span asp-validation-for="StoreName" class="text-danger fs-8"></span>
                 </div>
             </div>
 
@@ -91,35 +84,49 @@
                     <label asp-for="MerchantId" class="required form-label fs-7 fw-semibold"></label>
                     <input asp-for="MerchantId" class="form-control form-control-sm"
                         placeholder="Satıcı ID / Merchant ID" />
-                    <div class="text-muted fs-8 mt-1">Trendyol panelinde sağ üst köşede 'Satıcı ID' olarak yazar.</div>
-                    <span asp-validation-for="MerchantId"
-                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    <div class="text-muted fs-8 mt-1">Pazaryeri panelinde genellikle sağ üst köşede veya API ayarlarında
+                        'Satıcı ID' olarak yazar.</div>
+                    <span asp-validation-for="MerchantId" class="text-danger fs-8"></span>
                 </div>
             </div>
 
             <div class="separator separator-dashed my-6"></div>
+
+            <div class="notice d-flex bg-light-primary rounded border-primary border border-dashed mb-9 p-6">
+                <i class="ki-duotone ki-shield-tick fs-2tx text-primary me-4">
+                    <span class="path1"></span><span class="path2"></span>
+                </i>
+                <div class="d-flex flex-stack flex-grow-1">
+                    <div class="fw-semibold">
+                        <div class="fs-6 text-gray-700">
+                            Gireceğiniz <strong>API Secret Key</strong> veritabanında 256-bit şifreleme ile
+                            saklanacaktır.
+                            Lütfen bilgileri kopyalarken başında veya sonunda boşluk bırakmadığınızdan emin olun.
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-md-6 fv-row mb-7">
                     <label asp-for="ApiKey" class="required form-label fs-7 fw-semibold"></label>
                     <input asp-for="ApiKey" class="form-control form-control-sm" placeholder="API Anahtarı"
                         autocomplete="off" />
-                    <span asp-validation-for="ApiKey" class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    <span asp-validation-for="ApiKey" class="text-danger fs-8"></span>
                 </div>
 
                 <div class="col-md-6 fv-row mb-7">
                     <label asp-for="ApiSecretKey" class="required form-label fs-7 fw-semibold"></label>
                     <input asp-for="ApiSecretKey" type="password" class="form-control form-control-sm"
                         placeholder="Gizli Anahtar" autocomplete="new-password" />
-                    <span asp-validation-for="ApiSecretKey"
-                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    <span asp-validation-for="ApiSecretKey" class="text-danger fs-8"></span>
                 </div>
             </div>
 
             <div class="d-flex justify-content-end pt-5">
                 <a asp-action="Index" class="btn btn-sm btn-light me-3">İptal</a>
                 <button type="submit" class="btn btn-sm btn-primary" id="kt_btn_submit">
-                    <span class="indicator-label">Kaydet</span>
+                    <span class="indicator-label">Kaydet ve Kurulumu Başlat</span>
                     <span class="indicator-progress">
                         Lütfen bekleyin...
                         <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
@@ -129,10 +136,12 @@
         </form>
     </div>
 </div>
+
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $("form").submit(function () {
+            // Form ID'sini güncelledik: #kt_marketplace_add_form
+            $("#kt_marketplace_add_form").submit(function () {
                 if ($(this).valid()) {
                     var btn = $("#kt_btn_submit");
                     btn.attr("data-kt-indicator", "on");

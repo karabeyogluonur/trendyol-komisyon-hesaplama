@@ -12,6 +12,7 @@ namespace TKH.Business.Profiles
             CreateMap<MarketplaceAccount, MarketplaceAccountSummaryDto>();
             CreateMap<MarketplaceAccountAddDto, MarketplaceAccount>();
             CreateMap<MarketplaceAccount, MarketplaceAccountUpdateDto>();
+            CreateMap<MarketplaceAccount, MarketplaceAccountDetailsDto>();
             CreateMap<MarketplaceAccount, MarketplaceAccountConnectionDetailsDto>()
             .ForMember(dest => dest.ApiSecretKey, opt => opt.MapFrom((src, dest, destMember, context) =>
             {

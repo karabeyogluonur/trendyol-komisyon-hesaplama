@@ -5,6 +5,7 @@ using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Results;
 using TKH.Core.Utilities.Security.Encryption;
 using TKH.Entities;
+using TKH.Entities.Enums;
 
 namespace TKH.Business.Concrete
 {
@@ -30,10 +31,15 @@ namespace TKH.Business.Concrete
             MarketplaceAccount marketplaceAccountEntity = _mapper.Map<MarketplaceAccount>(marketplaceAccountAddDto);
 
             marketplaceAccountEntity.ApiSecretKey = _cipherService.Encrypt(marketplaceAccountAddDto.ApiSecretKey);
+            marketplaceAccountEntity.ConnectionState = MarketplaceConnectionState.Initializing;
+            marketplaceAccountEntity.SyncState = MarketplaceSyncState.Queued;
+            marketplaceAccountEntity.IsActive = true;
+            marketplaceAccountEntity.LastErrorMessage = null;
+
             await _marketplaceAccountRepository.InsertAsync(marketplaceAccountEntity);
             await _unitOfWork.SaveChangesAsync();
 
-            return new SuccessResult("Pazar yeri hesabı başarıyla eklendi.");
+            return new SuccessResult("Pazar yeri hesabı başarıyla eklendi ve kurulum kuyruğuna alındı.");
         }
 
         public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync()
@@ -45,18 +51,18 @@ namespace TKH.Business.Concrete
             return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Hesaplar listelendi.");
         }
 
-        public async Task<IDataResult<MarketplaceAccountUpdateDto>> GetByIdAsync(int id)
+        public async Task<IDataResult<MarketplaceAccountDetailsDto>> GetByIdAsync(int id)
         {
             MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
 
             if (marketplaceAccountEntity is null)
-                return new ErrorDataResult<MarketplaceAccountUpdateDto>("Kayıt bulunamadı.");
+                return new ErrorDataResult<MarketplaceAccountDetailsDto>("Kayıt bulunamadı.");
 
-            MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountEntity);
+            MarketplaceAccountDetailsDto marketplaceAccountDetailsDto = _mapper.Map<MarketplaceAccountDetailsDto>(marketplaceAccountEntity);
 
-            marketplaceAccountUpdateDto.ApiSecretKey = string.Empty;
+            marketplaceAccountDetailsDto.ApiSecretKey = string.Empty;
 
-            return new SuccessDataResult<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateDto);
+            return new SuccessDataResult<MarketplaceAccountDetailsDto>(marketplaceAccountDetailsDto);
         }
 
         public async Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto)
@@ -65,6 +71,21 @@ namespace TKH.Business.Concrete
 
             if (marketplaceAccountEntity is null)
                 return new ErrorResult("Düzenlenecek kayıt bulunamadı.");
+
+            if (marketplaceAccountEntity.SyncState == MarketplaceSyncState.Syncing)
+            {
+                bool isZombieLock = marketplaceAccountEntity.LastSyncStartTime.HasValue &&
+                                    marketplaceAccountEntity.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
+
+                if (!isZombieLock)
+                {
+                    return new ErrorResult("Bu mağaza şu anda veri eşitleme işlemi yaptığı için düzenlenemez. Lütfen işlem bitince tekrar deneyin.");
+                }
+            }
+
+            bool isCredentialsChanged = marketplaceAccountEntity.ApiKey != updateDto.ApiKey ||
+                                        marketplaceAccountEntity.MerchantId != updateDto.MerchantId ||
+                                        (!string.IsNullOrEmpty(updateDto.ApiSecretKey));
 
             marketplaceAccountEntity.StoreName = updateDto.StoreName;
             marketplaceAccountEntity.MerchantId = updateDto.MerchantId;
@@ -75,10 +96,22 @@ namespace TKH.Business.Concrete
             if (!string.IsNullOrEmpty(updateDto.ApiSecretKey))
                 marketplaceAccountEntity.ApiSecretKey = _cipherService.Encrypt(updateDto.ApiSecretKey);
 
+
+            if (isCredentialsChanged)
+            {
+                marketplaceAccountEntity.ConnectionState = MarketplaceConnectionState.Initializing;
+                marketplaceAccountEntity.LastErrorMessage = null;
+                marketplaceAccountEntity.LastErrorDate = null;
+            }
+
             _marketplaceAccountRepository.Update(marketplaceAccountEntity);
             await _unitOfWork.SaveChangesAsync();
 
-            return new SuccessResult("Hesap başarıyla güncellendi.");
+            string resultMessage = isCredentialsChanged
+                ? "Hesap güncellendi ve bağlantı ayarları değiştiği için yeniden doğrulama kuyruğuna alındı."
+                : "Hesap başarıyla güncellendi.";
+
+            return new SuccessResult(resultMessage);
         }
 
         public async Task<IResult> DeleteAsync(int id)
@@ -90,6 +123,14 @@ namespace TKH.Business.Concrete
 
             if (account is null)
                 return new ErrorResult("Silinecek hesap bulunamadı.");
+
+            if (account.SyncState == MarketplaceSyncState.Syncing)
+            {
+                bool isZombieLock = account.LastSyncStartTime.HasValue && account.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
+
+                if (!isZombieLock)
+                    return new ErrorResult("Veri eşitlemesi devam eden bir mağazayı silemezsiniz. Lütfen işlemin bitmesini bekleyin.");
+            }
 
             _marketplaceAccountRepository.Delete(account);
             await _unitOfWork.SaveChangesAsync();

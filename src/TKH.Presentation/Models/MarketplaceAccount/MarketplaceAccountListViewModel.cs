@@ -9,5 +9,9 @@ namespace TKH.Presentation.Models.MarketplaceAccount
         public string StoreName { get; set; } = string.Empty;
         public string MerchantId { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public MarketplaceConnectionState ConnectionState { get; set; }
+        public MarketplaceSyncState SyncState { get; set; }
+        public string? LastErrorMessage { get; set; }
+        public DateTime? LastErrorDate { get; set; }
     }
 }

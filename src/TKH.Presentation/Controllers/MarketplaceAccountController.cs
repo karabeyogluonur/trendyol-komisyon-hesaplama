@@ -74,15 +74,15 @@ namespace TKH.Presentation.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            IDataResult<MarketplaceAccountUpdateDto> marketplaceAccountUpdateDtoResult = await _marketplaceService.GetByIdAsync(id);
+            IDataResult<MarketplaceAccountDetailsDto> result = await _marketplaceService.GetByIdAsync(id);
 
-            if (!marketplaceAccountUpdateDtoResult.Success)
+            if (!result.Success)
             {
-                _notificationService.Error(marketplaceAccountUpdateDtoResult.Message);
+                _notificationService.Error(result.Message);
                 return RedirectToAction("Index");
             }
 
-            var marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(marketplaceAccountUpdateDtoResult.Data);
+            var marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(result.Data);
             return View(marketplaceAccountUpdateViewModel);
         }
 
@@ -93,10 +93,12 @@ namespace TKH.Presentation.Controllers
             if (!ModelState.IsValid)
             {
                 _notificationService.Warning("Lütfen girdiğiniz bilgileri kontrol ediniz.");
+                await ReloadStatusFields(marketplaceAccountUpdateViewModel);
                 return View(marketplaceAccountUpdateViewModel);
             }
 
             MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
+
             IResult marketplaceAccountUpdateResult = await _marketplaceService.UpdateAsync(marketplaceAccountUpdateDto);
 
             if (marketplaceAccountUpdateResult.Success)
@@ -107,7 +109,21 @@ namespace TKH.Presentation.Controllers
 
             _notificationService.Error(marketplaceAccountUpdateResult.Message);
             ModelState.AddModelError("", marketplaceAccountUpdateResult.Message);
+
+            await ReloadStatusFields(marketplaceAccountUpdateViewModel);
+
             return View(marketplaceAccountUpdateViewModel);
+        }
+
+        private async Task ReloadStatusFields(MarketplaceAccountUpdateViewModel model)
+        {
+            var result = await _marketplaceService.GetByIdAsync(model.Id);
+            if (result.Success && result.Data != null)
+            {
+                model.ConnectionState = result.Data.ConnectionState;
+                model.SyncState = result.Data.SyncState;
+                model.LastErrorMessage = result.Data.LastErrorMessage;
+            }
         }
 
         [HttpPost]

@@ -1,9 +1,5 @@
 @model MarketplaceAccountUpdateViewModel
 
-@{
-    ViewData["Title"] = "Pazar Yeri Düzenle";
-}
-
 <div class="card mb-5">
     <div class="card-body py-4">
         <div id="kt_app_toolbar" class="app-toolbar">
@@ -20,7 +16,7 @@
                             <span class="bullet bg-gray-400 w-5px h-2px"></span>
                         </li>
                         <li class="breadcrumb-item">
-                            <a href="@Url.Action("Index", "Marketplace")"
+                            <a href="@Url.Action("Index", "MarketplaceAccount")"
                                 class="text-gray-600 text-hover-primary">Pazaryeri Hesapları</a>
                         </li>
                         <li class="breadcrumb-item">
@@ -43,7 +39,68 @@
 
     <input type="hidden" asp-for="Id" />
 
+    @if (Model.SyncState == MarketplaceSyncState.Syncing || Model.SyncState == MarketplaceSyncState.Queued)
+    {
+        <div
+            class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
+            <div class="me-4 mb-5 mb-sm-0 flex-shrink-0">
+                @if (Model.SyncState == MarketplaceSyncState.Syncing)
+                {
+                    <div class="spinner-border text-primary w-30px h-30px" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                }
+                else
+                {
+                    <i class="ki-outline ki-time fs-2hx text-primary"></i>
+                }
+            </div>
+            <div class="d-flex flex-column pe-0 pe-sm-10">
+                <h5 class="mb-1 fs-6 text-primary">Veri Eşitlemesi Sürüyor</h5>
+                <span class="fs-7 text-gray-600">
+                    Şu anda arka planda veri senkronizasyonu devam etmektedir (veya sırada beklemektedir).
+                    Veri tutarlılığı için bu süreçte <strong>düzenleme yapılması kısıtlanmıştır.</strong>
+                    Lütfen işlem bittikten sonra tekrar deneyiniz.
+                </span>
+            </div>
+        </div>
+    }
+    else if (Model.ConnectionState == MarketplaceConnectionState.AuthError)
+    {
+        <div
+            class="alert alert-dismissible bg-light-danger border border-danger border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
+            <i class="ki-outline ki-shield-cross fs-2hx text-danger me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
+            <div class="d-flex flex-column pe-0 pe-sm-10">
+                <h5 class="mb-1 fs-6 text-danger">Bağlantı Hatası Tespit Edildi</h5>
+                <span class="fs-7 text-gray-600 mb-2">
+                    Entegrasyon şu anda çalışmıyor. Son alınan hata mesajı aşağıdadır:
+                </span>
+                <div class="bg-white rounded border border-danger border-dashed p-3 text-danger fw-semibold fs-7 mb-2">
+                    @Model.LastErrorMessage
+                </div>
+                <span class="fs-7 text-gray-600">
+                    Lütfen <strong>API Konfigürasyonu</strong> sekmesinden API anahtarlarınızı kontrol edip güncelleyiniz.
+                </span>
+            </div>
+        </div>
+    }
+    else if (Model.ConnectionState == MarketplaceConnectionState.Initializing)
+    {
+        <div
+            class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
+            <i class="ki-outline ki-arrows-circle fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
+            <div class="d-flex flex-column pe-0 pe-sm-10">
+                <h5 class="mb-1 fs-6 text-warning">Kurulum Bekliyor</h5>
+                <span class="fs-7 text-gray-600">
+                    Hesap bilgileri güncellendi veya yeni eklendi. Sistem kısa süre içinde bağlantıyı test edip ilk
+                    veri çekimini başlatacaktır.
+                </span>
+            </div>
+        </div>
+    }
+
     <div class="card card-flush">
+
         <div class="card-header card-header-stretch min-h-50px">
             <div class="card-toolbar">
                 <ul class="nav nav-tabs nav-line-tabs nav-stretch fs-7 border-0">
@@ -60,9 +117,10 @@
                 </ul>
             </div>
         </div>
-        <div class="card-body pt-10">
-            <div class="tab-content">
 
+        <div class="card-body pt-5">
+
+            <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab_general" role="tabpanel">
 
                     <div class="row mb-5">
@@ -101,11 +159,14 @@
                         </i>
                         <div class="d-flex flex-column pe-0 pe-sm-10">
                             <h5 class="mb-1 fs-6">Bilgilendirme</h5>
-                            <span class="fs-7 text-gray-600">Mağaza adını değiştirmek, geçmiş sipariş verilerini
-                                etkilemez. Sadece paneldeki görünür ismi günceller.</span>
+                            <span class="fs-7 text-gray-600">
+                                Mağaza adını değiştirmek, geçmiş sipariş verilerini etkilemez. Sadece paneldeki görünür
+                                ismi günceller.
+                            </span>
                         </div>
                     </div>
                 </div>
+
                 <div class="tab-pane fade" id="tab_api_config" role="tabpanel">
 
                     <div
@@ -115,8 +176,12 @@
                         </i>
                         <div class="d-flex flex-column pe-0 pe-sm-10">
                             <h5 class="mb-1 fs-6">Hassas Alanlar</h5>
-                            <span class="fs-7 text-gray-600">API bilgilerini değiştirirken dikkatli olun. Yanlış bilgi
-                                girilmesi entegrasyonu durduracaktır.</span>
+                            <span class="fs-7 text-gray-600">
+                                API bilgilerini değiştirirken dikkatli olun. Yanlış bilgi girilmesi entegrasyonu
+                                durduracaktır.
+                                <br />
+                                <strong>Not:</strong> Şifre alanını boş bırakırsanız mevcut şifreniz korunur.
+                            </span>
                         </div>
                     </div>
 
@@ -141,7 +206,7 @@
                             <input asp-for="ApiSecretKey" type="password" class="form-control form-control-sm"
                                 placeholder="Değiştirmek için yeni şifreyi girin..." autocomplete="new-password" />
                             <div class="text-muted fs-8 mt-1">
-                                Boş bırakırsanız mevcut şifre korunur. Değiştirmek isterseniz doldurun.
+                                Gizli anahtarınız güvenlik nedeniyle maskelenmiştir.
                             </div>
                             <span asp-validation-for="ApiSecretKey" class="text-danger"></span>
                         </div>
@@ -152,13 +217,24 @@
 
         <div class="card-footer d-flex justify-content-end py-6 px-9">
             <a asp-action="Index" class="btn btn-sm btn-light me-3">Vazgeç</a>
-            <button type="submit" class="btn btn-sm btn-primary" id="kt_btn_submit">
-                <span class="indicator-label">Değişiklikleri Kaydet</span>
-                <span class="indicator-progress">
-                    Lütfen bekleyin...
-                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-                </span>
-            </button>
+
+            @if (Model.SyncState != MarketplaceSyncState.Idle)
+            {
+                <button type="button" class="btn btn-sm btn-secondary" disabled>
+                    <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                    İşlem Sürüyor...
+                </button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-sm btn-primary" id="kt_btn_submit">
+                    <span class="indicator-label">Değişiklikleri Kaydet</span>
+                    <span class="indicator-progress">
+                        Lütfen bekleyin...
+                        <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                </button>
+            }
         </div>
     </div>
 </form>
@@ -166,7 +242,6 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Form submit loading efekti
             $("#kt_marketplace_edit_form").submit(function () {
                 if ($(this).valid()) {
                     var btn = $("#kt_btn_submit");
