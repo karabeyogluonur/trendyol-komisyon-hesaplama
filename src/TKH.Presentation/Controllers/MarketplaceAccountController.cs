@@ -11,16 +11,19 @@ namespace TKH.Presentation.Controllers
 {
     public class MarketplaceAccountController : Controller
     {
-        private readonly IMarketplaceAccountService _marketplaceService;
+        private readonly IMarketplaceAccountService _marketplaceAccountService;
+        private readonly IMarketplaceJobService _marketplaceJobService;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
 
         public MarketplaceAccountController(
-            IMarketplaceAccountService marketplaceService,
+            IMarketplaceAccountService marketplaceAccountService,
+            IMarketplaceJobService marketplaceJobService,
             IMapper mapper,
             INotificationService notificationService)
         {
-            _marketplaceService = marketplaceService;
+            _marketplaceAccountService = marketplaceAccountService;
+            _marketplaceJobService = marketplaceJobService;
             _mapper = mapper;
             _notificationService = notificationService;
         }
@@ -28,7 +31,7 @@ namespace TKH.Presentation.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountListResult = await _marketplaceService.GetAllAsync();
+            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountListResult = await _marketplaceAccountService.GetAllAsync();
 
             if (marketplaceAccountListResult.Success)
             {
@@ -48,33 +51,35 @@ namespace TKH.Presentation.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(MarketplaceAccountAddViewModel model)
+        public async Task<IActionResult> Add(MarketplaceAccountAddViewModel marketplaceAccountAddViewModel)
         {
             if (!ModelState.IsValid)
             {
                 _notificationService.Warning("Lütfen zorunlu alanları kontrol ediniz.");
-                return View(model);
+                return View(marketplaceAccountAddViewModel);
             }
 
-            MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(model);
+            MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(marketplaceAccountAddViewModel);
 
-            IResult marketplaceAccountAddResult = await _marketplaceService.AddAsync(marketplaceAccountAddDto);
+            IDataResult<int> marketplaceAccountAddResult = await _marketplaceAccountService.AddAsync(marketplaceAccountAddDto);
 
             if (marketplaceAccountAddResult.Success)
             {
+                _marketplaceJobService.DispatchImmediateSingleAccountDataSync(marketplaceAccountAddResult.Data);
+
                 _notificationService.Success(marketplaceAccountAddResult.Message);
                 return RedirectToAction("Index");
             }
 
             _notificationService.Error(marketplaceAccountAddResult.Message);
             ModelState.AddModelError("", marketplaceAccountAddResult.Message);
-            return View(model);
+            return View(marketplaceAccountAddViewModel);
         }
 
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            IDataResult<MarketplaceAccountDetailsDto> result = await _marketplaceService.GetByIdAsync(id);
+            IDataResult<MarketplaceAccountDetailsDto> result = await _marketplaceAccountService.GetByIdAsync(id);
 
             if (!result.Success)
             {
@@ -82,7 +87,7 @@ namespace TKH.Presentation.Controllers
                 return RedirectToAction("Index");
             }
 
-            var marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(result.Data);
+            MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(result.Data);
             return View(marketplaceAccountUpdateViewModel);
         }
 
@@ -99,10 +104,12 @@ namespace TKH.Presentation.Controllers
 
             MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
 
-            IResult marketplaceAccountUpdateResult = await _marketplaceService.UpdateAsync(marketplaceAccountUpdateDto);
+            IResult marketplaceAccountUpdateResult = await _marketplaceAccountService.UpdateAsync(marketplaceAccountUpdateDto);
 
             if (marketplaceAccountUpdateResult.Success)
             {
+                _marketplaceJobService.DispatchImmediateSingleAccountDataSync(marketplaceAccountUpdateViewModel.Id);
+
                 _notificationService.Success(marketplaceAccountUpdateResult.Message);
                 return RedirectToAction("Index");
             }
@@ -115,14 +122,15 @@ namespace TKH.Presentation.Controllers
             return View(marketplaceAccountUpdateViewModel);
         }
 
-        private async Task ReloadStatusFields(MarketplaceAccountUpdateViewModel model)
+        private async Task ReloadStatusFields(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
         {
-            var result = await _marketplaceService.GetByIdAsync(model.Id);
-            if (result.Success && result.Data != null)
+            IDataResult<MarketplaceAccountDetailsDto> marketplaceAccountDetailsResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountUpdateViewModel.Id);
+
+            if (marketplaceAccountDetailsResult.Success && marketplaceAccountDetailsResult.Data != null)
             {
-                model.ConnectionState = result.Data.ConnectionState;
-                model.SyncState = result.Data.SyncState;
-                model.LastErrorMessage = result.Data.LastErrorMessage;
+                marketplaceAccountUpdateViewModel.ConnectionState = marketplaceAccountDetailsResult.Data.ConnectionState;
+                marketplaceAccountUpdateViewModel.SyncState = marketplaceAccountDetailsResult.Data.SyncState;
+                marketplaceAccountUpdateViewModel.LastErrorMessage = marketplaceAccountDetailsResult.Data.LastErrorMessage;
             }
         }
 
@@ -130,7 +138,7 @@ namespace TKH.Presentation.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            IResult marketplaceAccountDeleteResult = await _marketplaceService.DeleteAsync(id);
+            IResult marketplaceAccountDeleteResult = await _marketplaceAccountService.DeleteAsync(id);
 
             if (marketplaceAccountDeleteResult.Success)
                 _notificationService.Success(marketplaceAccountDeleteResult.Message);

@@ -1,6 +1,7 @@
 using AutoMapper;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Core.Common.Exceptions;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Results;
 using TKH.Core.Utilities.Security.Encryption;
@@ -26,7 +27,7 @@ namespace TKH.Business.Concrete
             _workContext = workContext;
         }
 
-        public async Task<IResult> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto)
+        public async Task<IDataResult<int>> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto)
         {
             MarketplaceAccount marketplaceAccountEntity = _mapper.Map<MarketplaceAccount>(marketplaceAccountAddDto);
 
@@ -39,7 +40,7 @@ namespace TKH.Business.Concrete
             await _marketplaceAccountRepository.InsertAsync(marketplaceAccountEntity);
             await _unitOfWork.SaveChangesAsync();
 
-            return new SuccessResult("Pazar yeri hesabı başarıyla eklendi ve kurulum kuyruğuna alındı.");
+            return new SuccessDataResult<int>(marketplaceAccountEntity.Id, "Pazar yeri hesabı başarıyla eklendi ve kurulum kuyruğuna alındı.");
         }
 
         public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync()
@@ -154,12 +155,99 @@ namespace TKH.Business.Concrete
             if (marketplaceAccountEntity is null)
                 return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>("Bağlantı bilgileri için gerekli hesap bulunamadı.");
 
-            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountEntity, opt =>
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountEntity);
+
+            if (!string.IsNullOrEmpty(marketplaceAccountEntity.ApiSecretKey))
             {
-                opt.Items["CipherService"] = _cipherService;
-            });
+                marketplaceAccountConnectionDetailsDto = marketplaceAccountConnectionDetailsDto with
+                {
+                    ApiSecretKey = _cipherService.Decrypt(marketplaceAccountEntity.ApiSecretKey)
+                };
+            }
 
             return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountConnectionDetailsDto);
+        }
+
+        public void MarkAsSyncing(int accountId)
+        {
+            MarketplaceAccount marketplaceAccount = _marketplaceAccountRepository.GetFirstOrDefault(predicate: marketplaceAccount => marketplaceAccount.Id == accountId);
+            if (marketplaceAccount is null) return;
+
+            marketplaceAccount.SyncState = MarketplaceSyncState.Syncing;
+            marketplaceAccount.LastSyncStartTime = DateTime.UtcNow;
+
+            if (marketplaceAccount.ConnectionState == MarketplaceConnectionState.AuthError || marketplaceAccount.ConnectionState == MarketplaceConnectionState.SystemError)
+                marketplaceAccount.ConnectionState = MarketplaceConnectionState.Initializing;
+
+            _marketplaceAccountRepository.Update(marketplaceAccount);
+            _unitOfWork.SaveChanges();
+        }
+
+        public void MarkAsIdle(int accountId, Exception? exception)
+        {
+            MarketplaceAccount marketplaceAccount = _marketplaceAccountRepository.GetFirstOrDefault(predicate: marketplaceAccount => marketplaceAccount.Id == accountId);
+            if (marketplaceAccount is null) return;
+
+            marketplaceAccount.SyncState = MarketplaceSyncState.Idle;
+
+            if (exception is not null)
+            {
+                marketplaceAccount.LastErrorMessage = exception.Message;
+                marketplaceAccount.LastErrorDate = DateTime.UtcNow;
+
+                if (exception is MarketplaceAuthException)
+                    marketplaceAccount.ConnectionState = MarketplaceConnectionState.AuthError;
+
+                else if (exception is MarketplaceTransientException)
+                {
+                    // Geçici hata (Retry yapılacak)
+                }
+                else
+                    marketplaceAccount.ConnectionState = MarketplaceConnectionState.SystemError;
+            }
+            else
+            {
+                marketplaceAccount.ConnectionState = MarketplaceConnectionState.Connected;
+                marketplaceAccount.LastErrorMessage = null;
+                marketplaceAccount.LastErrorDate = null;
+            }
+
+            _marketplaceAccountRepository.Update(marketplaceAccount);
+            _unitOfWork.SaveChanges();
+        }
+
+        public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsAsync(int accountId)
+        {
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                predicate: marketplaceAccount => marketplaceAccount.Id == accountId,
+                disableTracking: true
+            );
+
+            if (marketplaceAccount is null)
+                return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>(null, "Hesap bulunamadı");
+
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccount);
+
+            if (!string.IsNullOrEmpty(marketplaceAccount.ApiSecretKey))
+            {
+                marketplaceAccountConnectionDetailsDto = marketplaceAccountConnectionDetailsDto with
+                {
+                    ApiSecretKey = _cipherService.Decrypt(marketplaceAccount.ApiSecretKey)
+                };
+            }
+
+            return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountConnectionDetailsDto);
+        }
+
+        public async Task<IDataResult<IList<int>>> GetActiveConnectedAccountIdsAsync()
+        {
+            IList<int> accountIds = await _marketplaceAccountRepository.GetAllAsync(
+                selector: marketplaceAccount => marketplaceAccount.Id,
+                predicate: marketplaceAccount => marketplaceAccount.IsActive && marketplaceAccount.ConnectionState == MarketplaceConnectionState.Connected,
+                disableTracking: true
+            );
+
+            return new SuccessDataResult<IList<int>>(accountIds);
         }
     }
 }

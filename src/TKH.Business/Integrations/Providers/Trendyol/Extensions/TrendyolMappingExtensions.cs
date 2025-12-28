@@ -49,7 +49,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Extensions
             TrendyolSettlementTransactionType.Sale => FinancialTransactionType.Sale,
             TrendyolSettlementTransactionType.Return => FinancialTransactionType.Return,
             TrendyolSettlementTransactionType.Discount or TrendyolSettlementTransactionType.Coupon or
-            TrendyolSettlementTransactionType.TYDiscount or TrendyolSettlementTransactionType.TYCoupon or
+            TrendyolSettlementTransactionType.TyDiscount or TrendyolSettlementTransactionType.TyCoupon or
             TrendyolSettlementTransactionType.DiscountCancel or TrendyolSettlementTransactionType.CouponCancel => FinancialTransactionType.Promotion,
             TrendyolSettlementTransactionType.CommissionNegative or TrendyolSettlementTransactionType.CommissionPositive or
             TrendyolSettlementTransactionType.CommissionPositiveCancel or TrendyolSettlementTransactionType.CommissionNegativeCancel => FinancialTransactionType.Commission,

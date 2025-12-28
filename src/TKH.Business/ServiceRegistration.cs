@@ -9,6 +9,8 @@ using TKH.Business.Integrations.Factories;
 using TKH.Business.Integrations.Providers.Trendyol;
 using TKH.Core.Utilities.Storage;
 using TKH.Business.Utilities.Storage;
+using TKH.Business.Jobs;
+using TKH.Business.Integrations.Handlers;
 
 namespace TKH.Business
 {
@@ -17,9 +19,10 @@ namespace TKH.Business
         public static void AddBusinessServices(this IServiceCollection services)
         {
             #region Infrastructure & Core Services
-
+            services.AddTransient<MarketplaceErrorHandler>();
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddHttpClient(TrendyolDefaults.HttpClientName)
+                    .AddHttpMessageHandler<MarketplaceErrorHandler>()
                     .AddPolicyHandler(GetRetryPolicy());
 
             services.AddHttpClient();
@@ -36,6 +39,8 @@ namespace TKH.Business
             services.AddScoped<IStorageService, LocalStorageService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
             services.AddScoped<IClaimSyncService, ClaimSyncService>();
+            services.AddScoped<IMarketplaceJobService, MarketplaceJobService>();
+            services.AddScoped<MarketplaceWorkerJob>();
 
             #endregion
 

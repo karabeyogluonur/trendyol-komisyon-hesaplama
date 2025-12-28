@@ -13,7 +13,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol
         public const int OrderPageSize = 50;
         public const int ClaimPageSize = 50;
 
-        public const int ApiRateLimitDelayMs = 200;
+        public const int ApiRateLimitDelayMs = 3000;
 
         public const int OrderSyncLookbackMonths = -2;
         public const int OrderSyncDateWindowDays = 14;

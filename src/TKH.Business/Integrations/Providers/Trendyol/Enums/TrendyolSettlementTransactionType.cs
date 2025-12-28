@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace TKH.Business.Integrations.Providers.Trendyol.Enums
@@ -15,10 +16,10 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Enums
         ProvisionNegative,
         ManualRefund,
         ManualRefundCancel,
-        TYDiscount,
-        TYDiscountCancel,
-        TYCoupon,
-        TYCouponCancel,
+        TyDiscount,
+        TyDiscountCancel,
+        TyCoupon,
+        TyCouponCancel,
         SellerRevenuePositive,
         SellerRevenueNegative,
         CommissionPositive,
@@ -26,6 +27,9 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Enums
         SellerRevenuePositiveCancel,
         SellerRevenueNegativeCancel,
         CommissionPositiveCancel,
-        CommissionNegativeCancel
+        CommissionNegativeCancel,
+        DeliveryFee,
+        DeliveryFeeCancel,
+        PayByLink
     }
 }

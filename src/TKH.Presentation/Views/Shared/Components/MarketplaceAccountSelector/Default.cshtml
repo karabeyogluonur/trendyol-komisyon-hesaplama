@@ -68,7 +68,6 @@
             <div class="card-body py-5">
                 <div class="mh-450px scroll-y me-n5 pe-5">
                     <div class="row g-2">
-
                         @if (Model.MarketplaceAccounts != null && Model.MarketplaceAccounts.Any())
                         {
                             foreach (var account in Model.MarketplaceAccounts)
@@ -116,7 +115,7 @@
 
                                 <div class="col-4">
                                     <a href="javascript:;" onclick="@(isLocked ? "" : $"switchAccount({account.Id})")"
-                                        class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 mb-3 @activeClass @opacityClass @cursorClass"
+                                        class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 h-100 @activeClass @opacityClass @cursorClass"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                         title="@(isLocked? lockReason : account.StoreName)">
 
@@ -138,7 +137,7 @@
 
                             <div class="col-4">
                                 <a href="@Url.Action("Add", "MarketplaceAccount")"
-                                    class="d-flex flex-column flex-center text-center text-gray-400 text-hover-primary bg-hover-light rounded py-4 px-3 mb-3">
+                                    class="d-flex flex-column flex-center text-center text-gray-400 text-hover-primary bg-hover-light rounded py-4 px-3 h-100">
                                     <i class="ki-duotone ki-plus fs-2x mb-2"></i>
                                     <span class="fw-semibold fs-7">Yeni Ekle</span>
                                 </a>

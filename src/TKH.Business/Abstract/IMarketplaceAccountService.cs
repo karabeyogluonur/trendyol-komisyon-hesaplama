@@ -7,11 +7,14 @@ namespace TKH.Business.Abstract
     {
         Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync();
         Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetActiveAccountsAsync();
-        Task<IResult> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto);
+        Task<IDataResult<int>> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto);
         Task<IDataResult<MarketplaceAccountDetailsDto>> GetByIdAsync(int id);
         Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto);
         Task<IResult> DeleteAsync(int id);
-
         Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id);
+        Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsAsync(int accountId);
+        Task<IDataResult<IList<int>>> GetActiveConnectedAccountIdsAsync();
+        void MarkAsSyncing(int accountId);
+        void MarkAsIdle(int accountId, Exception? exception);
     }
 }

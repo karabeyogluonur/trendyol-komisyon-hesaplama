@@ -6,6 +6,8 @@ using FluentValidation;
 using System.Reflection;
 using TKH.Presentation.Services;
 using TKH.Business.Abstract;
+using TKH.Presentation.Extensions;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 var mvcBuilder = builder.Services.AddControllersWithViews();
@@ -27,6 +29,12 @@ builder.Services.AddBusinessServices();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IWorkContext, WebWorkContext>();
+
+#endregion
+
+#region Hangfire Services
+
+builder.Services.AddHangfireServices(builder.Configuration);
 
 #endregion
 
@@ -61,6 +69,10 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseHangfireDashboard();
+
+app.RegisterRecurringJobs();
 
 app.MapStaticAssets();
 
