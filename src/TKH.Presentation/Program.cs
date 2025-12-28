@@ -8,6 +8,7 @@ using TKH.Presentation.Services;
 using TKH.Business.Abstract;
 using TKH.Presentation.Extensions;
 using Hangfire;
+using TKH.Core.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var mvcBuilder = builder.Services.AddControllersWithViews();
@@ -59,11 +60,11 @@ builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
+app.UseStatusCodePagesWithReExecute("/Error/404");
+app.UseMiddleware<ExceptionMiddleware>();
+
 if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-}
 
 app.UseHttpsRedirection();
 app.UseRouting();

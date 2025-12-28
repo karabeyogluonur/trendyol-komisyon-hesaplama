@@ -1,0 +1,19 @@
+using Microsoft.AspNetCore.Mvc;
+
+namespace TKH.Presentation.Controllers
+{
+    public class ErrorController : Controller
+    {
+        [Route("Error/500")]
+        public IActionResult General()
+        {
+            return View();
+        }
+
+        [Route("Error/404")]
+        public IActionResult NotFound()
+        {
+            return View();
+        }
+    }
+}
