@@ -2,6 +2,7 @@ using Hangfire;
 using Serilog;
 using Serilog.Events;
 using TKH.Core.Extensions;
+using TKH.DataAccess.Persistence;
 using TKH.Presentation.Middlewares;
 
 namespace TKH.Presentation.Extensions
@@ -23,6 +24,15 @@ namespace TKH.Presentation.Extensions
                     return LogEventLevel.Information;
                 };
             });
+        }
+
+        public static async Task InitialiseDatabaseAsync(this WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+
+            DatabaseInitialiser initialiser = scope.ServiceProvider.GetRequiredService<DatabaseInitialiser>();
+
+            await initialiser.InitialiseAsync();
         }
 
         public static void UseCustomErrorHandling(this WebApplication app)

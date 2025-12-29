@@ -25,6 +25,7 @@ try
 
     var app = builder.Build();
 
+    await app.InitialiseDatabaseAsync();
 
     app.UseCustomSerilogRequestLogging();
     app.UseCustomErrorHandling();

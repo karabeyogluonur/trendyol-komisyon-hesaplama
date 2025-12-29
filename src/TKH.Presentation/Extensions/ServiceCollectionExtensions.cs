@@ -6,6 +6,7 @@ using TKH.Business.Abstract;
 using TKH.Core;
 using TKH.DataAccess;
 using TKH.Presentation.Services;
+using TKH.DataAccess.Persistence;
 
 namespace TKH.Presentation.Extensions
 {
