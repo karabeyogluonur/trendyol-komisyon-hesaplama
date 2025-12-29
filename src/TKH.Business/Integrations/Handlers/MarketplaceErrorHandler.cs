@@ -1,28 +1,100 @@
 using System.Net;
+using Microsoft.Extensions.Logging;
 using TKH.Core.Common.Exceptions;
 
 namespace TKH.Business.Integrations.Handlers
 {
     public class MarketplaceErrorHandler : DelegatingHandler
     {
+        private readonly ILogger<MarketplaceErrorHandler> _logger;
+        private const int MaxLogLength = 1000;
+
+        public MarketplaceErrorHandler(ILogger<MarketplaceErrorHandler> logger)
+        {
+            _logger = logger;
+        }
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var response = await base.SendAsync(request, cancellationToken);
+            string requestBodyPreview = "[Not Logged]";
+
+            if (_logger.IsEnabled(LogLevel.Debug) || request.Content is not null)
+                requestBodyPreview = await ReadContentAsync(request.Content, cancellationToken);
+
+            string requestUri = request.RequestUri?.ToString();
+            string method = request.Method.Method;
+
+            HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
+
+            bool shouldLogBody = !response.IsSuccessStatusCode || _logger.IsEnabled(LogLevel.Debug);
+            string responseBodyPreview = "[Not Logged]";
+
+            if (response.Content is not null && shouldLogBody)
+            {
+                await response.Content.LoadIntoBufferAsync();
+                responseBodyPreview = await ReadContentAsync(response.Content, cancellationToken);
+            }
 
             if (response.IsSuccessStatusCode)
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug("API Success: {Method} {Url} ({StatusCode}) \nReq: {RequestBody} \nRes: {ResponseBody}",
+                        method, requestUri, (int)response.StatusCode, requestBodyPreview, responseBodyPreview);
+                }
+                else
+                {
+                    _logger.LogInformation("API Success: {Method} {Url} ({StatusCode})",
+                        method, requestUri, (int)response.StatusCode);
+                }
+
                 return response;
+            }
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
-                throw new MarketplaceAuthException("API Yetkilendirme Hatası! Lütfen API Key ve Şifrenizi kontrol ediniz.");
+            _logger.LogError("API Failure: {Method} {Url} ({StatusCode}) \nReq: {RequestBody} \nRes: {ResponseBody}",
+                method, requestUri, (int)response.StatusCode, requestBodyPreview, responseBodyPreview);
 
-            if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                throw new MarketplaceTransientException("Pazaryeri hız sınırına takıldık (Rate Limit).");
+            await HandleErrorAsync(response);
 
-            if ((int)response.StatusCode >= 500)
-                throw new MarketplaceTransientException($"Pazaryeri sunucu hatası: {response.StatusCode}");
+            return response;
+        }
 
-            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new MarketplaceFatalException($"API İsteği Başarısız: {response.StatusCode} - Detay: {errorBody}");
+        private async Task HandleErrorAsync(HttpResponseMessage response)
+        {
+            var statusCode = response.StatusCode;
+
+            if (statusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                throw new MarketplaceAuthException("Lütfen mağaza API anahtarlarınızın doğruluğunu kontrol ediniz.");
+
+            if (statusCode is HttpStatusCode.TooManyRequests)
+                throw new MarketplaceTransientException("Pazaryeri işlem limitine takıldık. Sistem kısa bir süre bekleyip işlemi otomatik olarak tekrar deneyecektir.");
+
+            if ((int)statusCode >= 500)
+                throw new MarketplaceTransientException($"Karşı pazaryeri sunucusunda geçici bir hata oluştu ({statusCode}). Sistem daha sonra tekrar deneyecektir.");
+
+            throw new MarketplaceFatalException($"İşlem pazaryeri tarafından reddedildi ({statusCode}).");
+        }
+
+        private async Task<string> ReadContentAsync(HttpContent? content, CancellationToken cancellationToken)
+        {
+            if (content is null) return "[Empty]";
+
+            try
+            {
+                string contentString = await content.ReadAsStringAsync(cancellationToken);
+                return Truncate(contentString);
+            }
+            catch (Exception ex)
+            {
+                return $"[Error Reading Body: {ex.Message}]";
+            }
+        }
+
+        private static string Truncate(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+
+            return value.Length <= MaxLogLength ? value : $"{value.Substring(0, MaxLogLength)}... [Truncated]";
         }
     }
 }

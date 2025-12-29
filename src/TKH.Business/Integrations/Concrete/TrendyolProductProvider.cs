@@ -65,7 +65,6 @@ namespace TKH.Business.Integrations.Concrete
                 else
                 {
                     currentPageIndex++;
-                    await Task.Delay(TrendyolDefaults.ApiRateLimitDelayMs, cancellationToken);
                 }
             }
         }

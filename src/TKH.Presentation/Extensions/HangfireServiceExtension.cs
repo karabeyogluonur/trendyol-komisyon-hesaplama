@@ -1,6 +1,7 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using TKH.Business.Abstract;
+using TKH.Business.Jobs.Filters;
 using TKH.Entities.Enums;
 
 namespace TKH.Presentation.Extensions
@@ -27,7 +28,10 @@ namespace TKH.Presentation.Extensions
                             SchemaName = "hangfire",
                             DistributedLockTimeout = TimeSpan.FromMinutes(1)
                         }
-                    );
+                    )
+                    .UseFilter(new MarketplaceJobFailureFilter(
+                        provider.GetRequiredService<IServiceScopeFactory>()
+                    ));
             });
 
             services.AddHangfireServer(options =>
@@ -37,7 +41,7 @@ namespace TKH.Presentation.Extensions
                     .Select(queueName => queueName.ToLowerInvariant())
                     .ToArray();
 
-                options.WorkerCount = System.Environment.ProcessorCount * 2;
+                options.WorkerCount = System.Environment.ProcessorCount;
             });
         }
 

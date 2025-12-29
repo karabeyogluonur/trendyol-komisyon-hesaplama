@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace TKH.Core.Extensions
 {
@@ -22,6 +24,10 @@ namespace TKH.Core.Extensions
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unhandled exception occurred during request {RequestPath} for User {User}",
+                    httpContext.Request.Path,
+                    httpContext.User?.Identity?.Name ?? "Anonymous");
+
                 httpContext.Response.Redirect("/Error/500");
             }
         }

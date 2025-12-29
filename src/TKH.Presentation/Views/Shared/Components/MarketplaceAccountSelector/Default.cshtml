@@ -116,8 +116,7 @@
                                 <div class="col-4">
                                     <a href="javascript:;" onclick="@(isLocked ? "" : $"switchAccount({account.Id})")"
                                         class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 h-100 @activeClass @opacityClass @cursorClass"
-                                        data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="@(isLocked? lockReason : account.StoreName)">
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="@(isLocked? lockReason : null)">
 
                                         <div class="symbol symbol-35px mb-2">
                                             <marketplace-logo type="@account.MarketplaceType" class="symbol-label p-1" />

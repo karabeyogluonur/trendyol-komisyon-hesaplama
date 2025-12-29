@@ -14,7 +14,8 @@ namespace TKH.Business.Abstract
         Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id);
         Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsAsync(int accountId);
         Task<IDataResult<IList<int>>> GetActiveConnectedAccountIdsAsync();
-        void MarkAsSyncing(int accountId);
-        void MarkAsIdle(int accountId, Exception? exception);
+        Task<bool> TryMarkAsSyncingAsync(int marketplaceAccountId);
+        Task MarkSyncCompletedAsync(int marketplaceAccountId);
+        Task MarkSyncFailedAsync(int marketplaceAccountId, Exception exception);
     }
 }

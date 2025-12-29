@@ -27,26 +27,16 @@ namespace TKH.Business.Concrete
             if (!activeAccountsResult.Success || activeAccountsResult.Data == null)
                 return;
 
-            foreach (int accountId in activeAccountsResult.Data)
-            {
-                string productSyncJobId = _backgroundJobClient.Enqueue<MarketplaceWorkerJob>(
-                    job => job.SyncProductsStep(accountId));
+            foreach (int marketplaceAccountId in activeAccountsResult.Data)
+                await ExecuteAccountSyncChainAsync(marketplaceAccountId, null);
+        }
 
-                string orderSyncJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                    productSyncJobId,
-                    job => job.SyncOrdersStep(accountId),
-                    JobContinuationOptions.OnlyOnSucceededState);
+        public void DispatchImmediateSingleAccountDataSync(int marketplaceAccountId)
+        {
+            string queueName = BackgroundJobQueue.Critical.ToString().ToLowerInvariant();
+            EnqueuedState enqueuedState = new EnqueuedState(queueName);
 
-                string claimSyncJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                    orderSyncJobId,
-                    job => job.SyncClaimsStep(accountId),
-                    JobContinuationOptions.OnlyOnSucceededState);
-
-                _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                    claimSyncJobId,
-                    job => job.SyncFinanceStep(accountId),
-                    JobContinuationOptions.OnlyOnSucceededState);
-            }
+            ExecuteAccountSyncChainAsync(marketplaceAccountId, enqueuedState).GetAwaiter().GetResult();
         }
 
         public async Task DispatchMarketplaceReferenceDataSyncAsync()
@@ -67,29 +57,46 @@ namespace TKH.Business.Concrete
             await Task.CompletedTask;
         }
 
-        public void DispatchImmediateSingleAccountDataSync(int marketplaceAccountId)
+        private async Task ExecuteAccountSyncChainAsync(int marketplaceAccountId, EnqueuedState? enqueuedState)
         {
-            string queueName = BackgroundJobQueue.Critical.ToString().ToLowerInvariant();
-            EnqueuedState enqueuedState = new EnqueuedState(queueName);
+            bool isLockAcquired = await _marketplaceAccountService.TryMarkAsSyncingAsync(marketplaceAccountId);
 
-            string productJobId = _backgroundJobClient.Create<MarketplaceWorkerJob>(
-                job => job.SyncProductsStep(marketplaceAccountId),
-                enqueuedState);
+            if (!isLockAcquired)
+                return;
 
-            string orderJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                productJobId,
-                job => job.SyncOrdersStep(marketplaceAccountId),
-                JobContinuationOptions.OnlyOnSucceededState);
+            try
+            {
+                string productSyncJobId;
 
-            string claimJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                orderJobId,
-                job => job.SyncClaimsStep(marketplaceAccountId),
-                JobContinuationOptions.OnlyOnSucceededState);
+                if (enqueuedState is not null)
+                    productSyncJobId = _backgroundJobClient.Create<MarketplaceWorkerJob>(job => job.SyncProductsStep(marketplaceAccountId), enqueuedState);
+                else
+                    productSyncJobId = _backgroundJobClient.Enqueue<MarketplaceWorkerJob>(job => job.SyncProductsStep(marketplaceAccountId));
 
-            _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                claimJobId,
-                job => job.SyncFinanceStep(marketplaceAccountId),
-                JobContinuationOptions.OnlyOnSucceededState);
+                string orderSyncJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
+                    productSyncJobId,
+                    job => job.SyncOrdersStep(marketplaceAccountId),
+                    JobContinuationOptions.OnlyOnSucceededState);
+
+                string claimSyncJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
+                    orderSyncJobId,
+                    job => job.SyncClaimsStep(marketplaceAccountId),
+                    JobContinuationOptions.OnlyOnSucceededState);
+
+                string financeSyncJobId = _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
+                    claimSyncJobId,
+                    job => job.SyncFinanceStep(marketplaceAccountId),
+                    JobContinuationOptions.OnlyOnSucceededState);
+
+                _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
+                    financeSyncJobId,
+                    job => job.FinalizeSyncStep(marketplaceAccountId),
+                    JobContinuationOptions.OnlyOnSucceededState);
+            }
+            catch (Exception ex)
+            {
+                await _marketplaceAccountService.MarkSyncFailedAsync(marketplaceAccountId, ex);
+            }
         }
     }
 }

@@ -16,9 +16,12 @@ services:
         Database=TKHDb;
         Username=tkh_user;
         Password=StrongPostgresPass123!
+      Serilog__WriteTo__0__Args__serverUrl: "http://tkh.seq:5341"
     depends_on:
       tkh.db:
         condition: service_healthy
+      tkh.seq:
+        condition: service_started
     restart: always
 
   tkh.db:
@@ -40,5 +43,19 @@ services:
       start_period: 10s
     restart: always
 
+  tkh.seq:
+    container_name: tkh_seq
+    image: datalust/seq:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=StrongSeqPass123!
+    ports:
+      - "8090:80"
+      - "5342:5341"
+    volumes:
+      - tkh_seq_data:/data
+    restart: always
+
 volumes:
   tkh_db_data:
+  tkh_seq_data:

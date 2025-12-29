@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Hangfire;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
-using TKH.Business.Jobs.Filters;
+using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;
 
 namespace TKH.Business.Jobs
@@ -32,55 +32,64 @@ namespace TKH.Business.Jobs
             _marketplaceReferenceSyncService = marketplaceReferenceSyncService;
         }
 
-        private async Task<MarketplaceAccountConnectionDetailsDto> GetConnectionDetailsOrThrow(int accountId)
+        private async Task<MarketplaceAccountConnectionDetailsDto> GetConnectionDetailsOrThrow(int marketplaceAccountId)
         {
-            var result = await _marketplaceAccountService.GetConnectionDetailsAsync(accountId);
+            IDataResult<MarketplaceAccountConnectionDetailsDto> marketplaceAccountConnectionDetailsResult = await _marketplaceAccountService.GetConnectionDetailsAsync(marketplaceAccountId);
 
-            if (!result.Success || result.Data == null)
-                throw new Exception($"Hesap bağlantı detayları alınamadı. AccountID: {accountId} - Hata: {result.Message}");
+            if (!marketplaceAccountConnectionDetailsResult.Success || marketplaceAccountConnectionDetailsResult.Data is null)
+                throw new Exception($"Hesap bağlantı detayları alınamadı. AccountID: {marketplaceAccountId} - Hata: {marketplaceAccountConnectionDetailsResult.Message}");
 
-            return result.Data;
+            return marketplaceAccountConnectionDetailsResult.Data;
         }
 
-        [MarketplaceJobState]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
+        [AutomaticRetry(Attempts = 0)]
         [DisplayName("1. Ürün Senkronizasyonu | Hesap: {0}")]
-        public async Task SyncProductsStep(int accountId)
+        public async Task SyncProductsStep(int marketplaceAccountId)
         {
-            var connectionDetails = await GetConnectionDetailsOrThrow(accountId);
-            await _productSyncService.SyncProductsFromMarketplaceAsync(connectionDetails);
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
+            await _productSyncService.SyncProductsFromMarketplaceAsync(marketplaceAccountConnectionDetailsDto);
         }
 
-        [MarketplaceJobState]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
+        [AutomaticRetry(Attempts = 0)]
         [DisplayName("2. Sipariş Senkronizasyonu | Hesap: {0}")]
-        public async Task SyncOrdersStep(int accountId)
+        public async Task SyncOrdersStep(int marketplaceAccountId)
         {
-            var connectionDetails = await GetConnectionDetailsOrThrow(accountId);
-            await _orderSyncService.SyncOrdersFromMarketplaceAsync(connectionDetails);
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
+            await _orderSyncService.SyncOrdersFromMarketplaceAsync(marketplaceAccountConnectionDetailsDto);
         }
 
-        [MarketplaceJobState]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
+        [AutomaticRetry(Attempts = 0)]
         [DisplayName("3. İade Senkronizasyonu | Hesap: {0}")]
-        public async Task SyncClaimsStep(int accountId)
+        public async Task SyncClaimsStep(int marketplaceAccountId)
         {
-            var connectionDetails = await GetConnectionDetailsOrThrow(accountId);
-            await _claimSyncService.SyncClaimsFromMarketplaceAsync(connectionDetails);
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
+            await _claimSyncService.SyncClaimsFromMarketplaceAsync(marketplaceAccountConnectionDetailsDto);
         }
 
-        [MarketplaceJobState]
+        [AutomaticRetry(Attempts = 0)]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         [DisplayName("4. Finans Senkronizasyonu | Hesap: {0}")]
-        public async Task SyncFinanceStep(int accountId)
+        public async Task SyncFinanceStep(int marketplaceAccountId)
         {
-            var connectionDetails = await GetConnectionDetailsOrThrow(accountId);
+            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
 
-            await _financeSyncService.SyncFinancialTransactionsFromMarketplaceAsync(connectionDetails);
-            await _financeSyncService.SyncShipmentTransactionsFromMarketplaceAsync(connectionDetails);
+            await _financeSyncService.SyncFinancialTransactionsFromMarketplaceAsync(marketplaceAccountConnectionDetailsDto);
+            await _financeSyncService.SyncShipmentTransactionsFromMarketplaceAsync(marketplaceAccountConnectionDetailsDto);
+        }
+
+        [AutomaticRetry(Attempts = 3)]
+        [DisableConcurrentExecution(timeoutInSeconds: 1800)]
+        [DisplayName("Senkronizasyon Bitiş | Hesap: {0}")]
+        public async Task FinalizeSyncStep(int marketplaceAccountId)
+        {
+            await _marketplaceAccountService.MarkSyncCompletedAsync(marketplaceAccountId);
         }
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
+        [AutomaticRetry(Attempts = 0)]
         [DisplayName("Referans Veri Güncelleme | Tip: {0}")]
         public async Task ExecuteReferenceSyncAsync(MarketplaceType marketplaceType)
         {
