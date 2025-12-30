@@ -1,6 +1,6 @@
 using Serilog.Context;
 
-namespace TKH.Presentation.Middlewares
+namespace TKH.Presentation.Infrastructure.Middlewares
 {
     public class LogContextMiddleware
     {

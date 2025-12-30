@@ -4,7 +4,7 @@ using TKH.Business.Abstract;
 using TKH.Business.Dtos.Product;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
-using TKH.Presentation.Attributes;
+using TKH.Presentation.Infrastructure.Filters;
 using TKH.Presentation.Models.Product;
 
 namespace TKH.Presentation.Controllers

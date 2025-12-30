@@ -4,10 +4,10 @@ using System.Reflection;
 using TKH.Business;
 using TKH.Core;
 using TKH.DataAccess;
-using TKH.Presentation.Services;
 using TKH.Core.Contexts;
+using TKH.Presentation.Infrastructure.Services;
 
-namespace TKH.Presentation.Extensions
+namespace TKH.Presentation.Configuration.Extensions
 {
     public static class ServiceCollectionExtensions
     {

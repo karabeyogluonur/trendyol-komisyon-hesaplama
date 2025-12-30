@@ -1,6 +1,6 @@
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Services
+namespace TKH.Presentation.Infrastructure.Services
 {
     public interface INotificationService
     {

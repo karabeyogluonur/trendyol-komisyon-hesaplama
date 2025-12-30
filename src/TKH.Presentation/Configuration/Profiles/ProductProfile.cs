@@ -2,7 +2,7 @@ using AutoMapper;
 using TKH.Business.Dtos.Product;
 using TKH.Presentation.Models.Product;
 
-namespace TKH.Presentation.Profiles
+namespace TKH.Presentation.Configuration.Profiles
 {
     public class ProductProfile : Profile
     {

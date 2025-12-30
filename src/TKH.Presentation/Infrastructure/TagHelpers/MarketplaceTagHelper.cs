@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using TKH.Entities.Enums;
-using TKH.Presentation.Extensions;
+using TKH.Presentation.Configuration.Extensions;
 
-namespace TKH.Presentation.TagHelpers
+namespace TKH.Presentation.Infrastructure.TagHelpers
 {
     [HtmlTargetElement("marketplace-logo")]
     public class MarketplaceLogoTagHelper : TagHelper

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace TKH.Core.Extensions
+namespace TKH.Presentation.Infrastructure.Middlewares
 {
     public class ExceptionMiddleware
     {

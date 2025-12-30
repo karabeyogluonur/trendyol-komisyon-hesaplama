@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Text.Json;
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Services
+namespace TKH.Presentation.Infrastructure.Services
 {
     public class NotificationService : INotificationService
     {

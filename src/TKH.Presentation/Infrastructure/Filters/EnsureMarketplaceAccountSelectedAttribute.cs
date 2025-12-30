@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using TKH.Core.Contexts;
-using TKH.Presentation.Services;
+using TKH.Presentation.Infrastructure.Services;
 
-namespace TKH.Presentation.Attributes
+namespace TKH.Presentation.Infrastructure.Filters
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class EnsureMarketplaceAccountSelectedAttribute : ActionFilterAttribute

@@ -4,7 +4,7 @@ using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Core.Contexts;
 using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;
-using TKH.Presentation.Services;
+using TKH.Presentation.Infrastructure.Services;
 
 namespace TKH.Presentation.Controllers
 {

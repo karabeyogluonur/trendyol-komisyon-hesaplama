@@ -1,6 +1,6 @@
 using TKH.Core.Contexts;
 
-namespace TKH.Presentation.Services
+namespace TKH.Presentation.Infrastructure.Services
 {
     public class WebWorkContext : IWorkContext
     {

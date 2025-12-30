@@ -6,7 +6,7 @@ using TKH.Core.Contexts;
 using TKH.Core.Utilities.Results;
 using TKH.Presentation.Models.MarketplaceAccount;
 
-namespace TKH.Presentation.ViewComponents
+namespace TKH.Presentation.Infrastructure.ViewComponents
 {
     public class MarketplaceAccountSelectorViewComponent : ViewComponent
     {

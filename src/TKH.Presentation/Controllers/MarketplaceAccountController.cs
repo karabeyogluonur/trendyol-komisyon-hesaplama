@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
 using TKH.Core.Utilities.Results;
+using TKH.Presentation.Infrastructure.Services;
 using TKH.Presentation.Models.MarketplaceAccount;
-using TKH.Presentation.Services;
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Presentation.Controllers

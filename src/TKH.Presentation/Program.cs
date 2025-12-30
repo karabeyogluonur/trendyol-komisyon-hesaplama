@@ -1,5 +1,5 @@
 using Serilog;
-using TKH.Presentation.Extensions;
+using TKH.Presentation.Configuration.Extensions;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()

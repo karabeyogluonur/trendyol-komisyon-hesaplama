@@ -1,6 +1,6 @@
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Extensions
+namespace TKH.Presentation.Configuration.Extensions
 {
     public static class MarketplaceExtensions
     {

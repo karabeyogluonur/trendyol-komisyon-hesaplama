@@ -1,11 +1,10 @@
 using Hangfire;
 using Serilog;
 using Serilog.Events;
-using TKH.Core.Extensions;
 using TKH.DataAccess.Persistence;
-using TKH.Presentation.Middlewares;
+using TKH.Presentation.Infrastructure.Middlewares;
 
-namespace TKH.Presentation.Extensions
+namespace TKH.Presentation.Configuration.Extensions
 {
     public static class MiddlewareRegistrationExtensions
     {

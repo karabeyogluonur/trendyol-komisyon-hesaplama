@@ -4,7 +4,7 @@ using TKH.Business.Abstract;
 using TKH.Business.Jobs.Filters;
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Extensions
+namespace TKH.Presentation.Configuration.Extensions
 {
     public static class HangfireServiceExtension
     {
