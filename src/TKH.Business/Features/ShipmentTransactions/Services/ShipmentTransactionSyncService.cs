@@ -29,18 +29,13 @@ namespace TKH.Business.Features.ShipmentTransactions.Services
             _mapper = mapper;
         }
 
-        public async Task SyncShipmentTransactionsFromMarketplaceAsync(
-            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
+        public async Task SyncShipmentTransactionsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
-            IMarketplaceFinanceProvider marketplaceFinanceProvider =
-                _marketplaceProviderFactory.GetProvider<IMarketplaceFinanceProvider>(
-                    marketplaceAccountConnectionDetailsDto.MarketplaceType);
+            IMarketplaceFinanceProvider marketplaceFinanceProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceFinanceProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
-            List<MarketplaceShipmentSyncResultDto> buffer =
-                new(ApplicationDefaults.FinanceBatchSize);
+            List<MarketplaceShipmentSyncResultDto> buffer =new(ApplicationDefaults.FinanceBatchSize);
 
-            await foreach (MarketplaceShipmentSyncResultDto dto
-                in marketplaceFinanceProvider.GetShipmentTransactionsStreamAsync(marketplaceAccountConnectionDetailsDto))
+            await foreach (MarketplaceShipmentSyncResultDto dto in marketplaceFinanceProvider.GetShipmentTransactionsStreamAsync(marketplaceAccountConnectionDetailsDto))
             {
                 buffer.Add(dto);
 

@@ -4,9 +4,9 @@ using TKH.Entities;
 
 namespace TKH.Business.Features.Categories.Mappings
 {
-    public class MarketplaceReferenceProfile : Profile
+    public class CategoryProfile : Profile
     {
-        public MarketplaceReferenceProfile()
+        public CategoryProfile()
         {
             CreateMap<MarketplaceCategoryDto, Category>()
                 .ForMember(category => category.MarketplaceType, option => option.Ignore())

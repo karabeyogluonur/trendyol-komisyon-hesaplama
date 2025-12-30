@@ -56,7 +56,7 @@ namespace TKH.Presentation.Configuration.Extensions
 
             RecurringJob.AddOrUpdate<IMarketplaceJobService>(
                 "weekly-reference-dispatcher",
-                service => service.DispatchMarketplaceReferenceDataSyncAsync(),
+                service => service.DispatchMarketplaceCategoryDataSyncAsync(),
                 "0 4 * * 0",
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
             );

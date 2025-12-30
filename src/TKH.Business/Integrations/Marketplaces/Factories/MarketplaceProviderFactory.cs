@@ -9,20 +9,20 @@ namespace TKH.Business.Integrations.Marketplaces.Factories
         private readonly IEnumerable<IMarketplaceOrderProvider> _marketplaceOrderProviders;
         private readonly IEnumerable<IMarketplaceClaimProvider> _marketplaceClaimProviders;
         private readonly IEnumerable<IMarketplaceFinanceProvider> _marketplaceFinanceProviders;
-        private readonly IEnumerable<IMarketplaceCategoryProvider> _marketplaceReferenceProviders;
+        private readonly IEnumerable<IMarketplaceCategoryProvider> _marketplaceCategoryProviders;
 
         public MarketplaceProviderFactory(
             IEnumerable<IMarketplaceProductProvider> marketplaceProductProviders,
             IEnumerable<IMarketplaceOrderProvider> marketplaceOrderProviders,
             IEnumerable<IMarketplaceClaimProvider> marketplaceClaimProviders,
             IEnumerable<IMarketplaceFinanceProvider> marketplaceFinanceProviders,
-            IEnumerable<IMarketplaceCategoryProvider> marketplaceReferenceProviders)
+            IEnumerable<IMarketplaceCategoryProvider> marketplaceCategoryProviders)
         {
             _marketplaceProductProviders = marketplaceProductProviders;
             _marketplaceOrderProviders = marketplaceOrderProviders;
             _marketplaceClaimProviders = marketplaceClaimProviders;
             _marketplaceFinanceProviders = marketplaceFinanceProviders;
-            _marketplaceReferenceProviders = marketplaceReferenceProviders;
+            _marketplaceCategoryProviders = marketplaceCategoryProviders;
         }
 
         public T GetProvider<T>(MarketplaceType type)
@@ -53,8 +53,8 @@ namespace TKH.Business.Integrations.Marketplaces.Factories
 
             if (typeof(T) == typeof(IMarketplaceCategoryProvider))
             {
-                IMarketplaceCategoryProvider? marketplaceReferenceProvider = _marketplaceReferenceProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceReferenceProvider ?? throw new NotSupportedException($"{type} için 'Reference Provider' implementasyonu bulunamadı."));
+                IMarketplaceCategoryProvider? marketplaceCategoryProviders = _marketplaceCategoryProviders.FirstOrDefault(x => x.MarketplaceType == type);
+                return (T)(marketplaceCategoryProviders ?? throw new NotSupportedException($"{type} için 'Category Provider' implementasyonu bulunamadı."));
             }
 
             throw new NotSupportedException($"Factory içinde '{typeof(T).Name}' tipi için bir tanımlama veya eşleştirme yapılmamış.");

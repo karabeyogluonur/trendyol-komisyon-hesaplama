@@ -39,7 +39,7 @@ namespace TKH.Business.Jobs.Services
             ExecuteAccountSyncChainAsync(marketplaceAccountId, enqueuedState).GetAwaiter().GetResult();
         }
 
-        public async Task DispatchMarketplaceReferenceDataSyncAsync()
+        public async Task DispatchMarketplaceCategoryDataSyncAsync()
         {
             MarketplaceType[] marketplaceTypes = Enum.GetValues<MarketplaceType>();
             int delayMinutes = 0;
