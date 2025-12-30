@@ -1,7 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using TKH.Business.Abstract;
-using TKH.Business.Dtos.Product;
+using TKH.Business.Features.Products.Dtos;
+using TKH.Business.Features.Products.Services;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
 using TKH.Presentation.Infrastructure.Filters;

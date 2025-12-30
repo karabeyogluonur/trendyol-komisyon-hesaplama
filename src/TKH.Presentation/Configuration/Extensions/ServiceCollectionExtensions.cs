@@ -6,6 +6,7 @@ using TKH.Core;
 using TKH.DataAccess;
 using TKH.Core.Contexts;
 using TKH.Presentation.Infrastructure.Services;
+using TKH.Integrations.Trendyol.Configuration;
 
 namespace TKH.Presentation.Configuration.Extensions
 {
@@ -16,9 +17,7 @@ namespace TKH.Presentation.Configuration.Extensions
             var mvcBuilder = services.AddControllersWithViews();
 
             if (environment.IsDevelopment())
-            {
                 mvcBuilder.AddRazorRuntimeCompilation();
-            }
         }
 
         public static void AddArchitectureLayers(this IServiceCollection services, IConfiguration configuration)
@@ -26,6 +25,7 @@ namespace TKH.Presentation.Configuration.Extensions
             services.AddCoreServices();
             services.AddDataAccessServices(configuration);
             services.AddBusinessServices();
+            services.AddTrendyolIntegrationServices();
         }
 
         public static void AddPresentationInfrastructure(this IServiceCollection services)

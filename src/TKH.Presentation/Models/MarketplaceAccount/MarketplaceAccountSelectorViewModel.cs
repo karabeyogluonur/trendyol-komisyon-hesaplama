@@ -1,5 +1,3 @@
-using TKH.Business.Dtos.MarketplaceAccount;
-
 namespace TKH.Presentation.Models.MarketplaceAccount
 {
     public class MarketplaceAccountSelectorViewModel

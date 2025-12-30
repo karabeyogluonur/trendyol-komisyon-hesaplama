@@ -3,7 +3,7 @@ using Hangfire.Client;
 using Hangfire.Common;
 using Hangfire.Server;
 using Microsoft.Extensions.DependencyInjection;
-using TKH.Business.Abstract;
+using TKH.Business.Features.MarketplaceAccounts.Services;
 
 namespace TKH.Business.Jobs.Filters
 {

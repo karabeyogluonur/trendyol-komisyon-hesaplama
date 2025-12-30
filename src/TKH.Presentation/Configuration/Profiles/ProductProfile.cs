@@ -1,5 +1,5 @@
 using AutoMapper;
-using TKH.Business.Dtos.Product;
+using TKH.Business.Features.Products.Dtos;
 using TKH.Presentation.Models.Product;
 
 namespace TKH.Presentation.Configuration.Profiles

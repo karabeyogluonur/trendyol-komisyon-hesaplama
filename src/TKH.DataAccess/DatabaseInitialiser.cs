@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TKH.DataAccess.Contexts;
 
-namespace TKH.DataAccess.Persistence
+namespace TKH.DataAccess
 {
     public class DatabaseInitialiser
     {

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using TKH.Business.Abstract;
-using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Business.Features.MarketplaceAccounts.Dtos;
+using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Core.Contexts;
 using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;

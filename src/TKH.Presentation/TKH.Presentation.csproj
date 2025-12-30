@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TKH.Business\TKH.Business.csproj" />
     <ProjectReference Include="..\TKH.Core\TKH.Core.csproj" />
+    <ProjectReference Include="..\TKH.Integrations.Trendyol\TKH.Integrations.Trendyol.csproj" />
   </ItemGroup>
 
   <ItemGroup>

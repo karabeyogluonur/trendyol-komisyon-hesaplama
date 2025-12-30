@@ -1,7 +1,7 @@
 using Hangfire;
 using Hangfire.PostgreSql;
-using TKH.Business.Abstract;
 using TKH.Business.Jobs.Filters;
+using TKH.Business.Jobs.Services;
 using TKH.Entities.Enums;
 
 namespace TKH.Presentation.Configuration.Extensions

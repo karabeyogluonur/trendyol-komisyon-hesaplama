@@ -1,5 +1,5 @@
 using AutoMapper;
-using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Presentation.Models.MarketplaceAccount;
 
 namespace TKH.Presentation.Configuration.Profiles

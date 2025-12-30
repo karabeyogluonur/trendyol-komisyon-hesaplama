@@ -1,7 +1,8 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using TKH.Business.Abstract;
-using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Business.Features.MarketplaceAccounts.Dtos;
+using TKH.Business.Features.MarketplaceAccounts.Services;
+using TKH.Business.Jobs.Services;
 using TKH.Core.Utilities.Results;
 using TKH.Presentation.Infrastructure.Services;
 using TKH.Presentation.Models.MarketplaceAccount;
