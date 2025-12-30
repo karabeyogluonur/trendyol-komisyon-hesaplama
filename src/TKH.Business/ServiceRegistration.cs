@@ -69,6 +69,7 @@ namespace TKH.Business
             services.AddScoped<IStorageService, LocalStorageService>();
             services.AddScoped<IMarketplaceJobService, MarketplaceJobService>();
             services.AddScoped<MarketplaceWorkerJob>();
+            services.AddScoped<IProductService, ProductService>();
 
             #endregion
 

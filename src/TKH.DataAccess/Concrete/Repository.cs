@@ -107,7 +107,7 @@ namespace TKH.DataAccess.Concrete
         public virtual IPagedList<TEntity> GetPagedList(Expression<Func<TEntity, bool>> predicate = null,
           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-          int pageIndex = 0,
+          int pageIndex = 1,
           int pageSize = 20,
           bool disableTracking = true,
           bool ignoreQueryFilters = false)
@@ -147,7 +147,7 @@ namespace TKH.DataAccess.Concrete
         public virtual Task<IPagedList<TEntity>> GetPagedListAsync(Expression<Func<TEntity, bool>> predicate = null,
           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-          int pageIndex = 0,
+          int pageIndex = 1,
           int pageSize = 20,
           bool disableTracking = true,
           CancellationToken cancellationToken =
@@ -190,7 +190,7 @@ namespace TKH.DataAccess.Concrete
           Expression<Func<TEntity, bool>> predicate = null,
           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-          int pageIndex = 0,
+          int pageIndex = 1,
           int pageSize = 20,
           bool disableTracking = true,
           bool ignoreQueryFilters = false)
@@ -232,7 +232,7 @@ namespace TKH.DataAccess.Concrete
           Expression<Func<TEntity, bool>> predicate = null,
           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-          int pageIndex = 0,
+          int pageIndex = 1,
           int pageSize = 20,
           bool disableTracking = true,
           CancellationToken cancellationToken =

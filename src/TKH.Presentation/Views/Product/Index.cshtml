@@ -1,0 +1,351 @@
+@model ProductListViewModel
+
+<div class="card mb-5">
+    <div class="card-body py-4">
+        <div id="kt_app_toolbar" class="app-toolbar">
+            <div class="d-flex flex-stack w-100 flex-wrap gap-4">
+
+                <div class="page-title d-flex flex-column justify-content-center gap-2">
+                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
+                        Ürün Yönetimi
+                    </h1>
+                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="text-gray-600">Ürün Yönetimi</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <form method="get" class="d-flex align-items-center gap-2 position-relative">
+                        <input type="hidden" name="PageIndex" value="1" />
+
+                        <div class="d-flex align-items-center position-relative my-1">
+                            <i class="ki-outline ki-magnifier fs-3 position-absolute ms-3"></i>
+                            <input type="text" name="Barcode" value="@Model.Filter.Barcode"
+                                class="form-control form-control-sm form-control-solid w-200px ps-10"
+                                placeholder="Barkod Ara..." />
+                        </div>
+
+                        <select name="PageSize" onchange="this.form.submit()"
+                            class="form-select form-select-sm form-select-solid w-80px" data-bs-toggle="tooltip"
+                            title="Sayfa başına kayıt">
+                            @foreach (int size in new[] { 10, 20, 50, 100 })
+                            {
+                                <!option value="@size" @(Model.Filter.PageSize == size ? "selected" : "")>@size</!option>
+                            }
+                        </select>
+
+                        <button type="submit" class="btn btn-sm btn-icon btn-light-primary">
+                            <i class="ki-outline ki-filter fs-2"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card card-flush">
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table align-middle table-row-dashed fs-6 gy-5">
+                <thead>
+                    <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+                        <th class="w-10px pe-2"></th>
+                        <th class="min-w-250px">Model / Ürün</th>
+                        <th class="min-w-100px">Varyant</th>
+                        <th class="min-w-100px">Fiyat Aralığı</th>
+                        <th class="min-w-100px">Toplam Stok</th>
+                    </tr>
+                </thead>
+                <tbody class="fw-semibold text-gray-600">
+                    @if (Model.Products != null && Model.Products.Items.Any())
+                    {
+                        var groups = Model.Products.Items.GroupBy(x => x.ModelCode).ToList();
+
+                        foreach (var group in groups)
+                        {
+                            string collapseId = "collapse_" + Guid.NewGuid().ToString("N");
+
+                            var firstItem = group.First();
+                            var totalStock = group.Sum(x => x.StockQuantity);
+                            var minPrice = group.Min(x => x.SellingPrice);
+                            var maxPrice = group.Max(x => x.SellingPrice);
+                            var priceDisplay = minPrice == maxPrice ? $"{minPrice:N2} ₺" : $"{minPrice:N2} ₺ - {maxPrice:N2} ₺";
+
+                            <tr data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false"
+                                class="cursor-pointer collapsible-row">
+
+                                <td>
+                                    <button type="button"
+                                        class="btn btn-sm btn-icon btn-light btn-active-light-primary toggle-btn w-25px h-25px">
+                                        <i class="ki-outline ki-plus fs-4 toggle-icon-show"></i>
+                                        <i class="ki-outline ki-minus fs-4 toggle-icon-hide d-none"></i>
+                                    </button>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="#" class="symbol symbol-65px me-4">
+                                            @if (!string.IsNullOrEmpty(firstItem.ImageUrl))
+                                            {
+                                                <span class="symbol-label"
+                                                    style="background-image:url(@firstItem.ImageUrl);"></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="symbol-label bg-light-primary text-primary fw-bold fs-2">
+                                                    @firstItem.Name.Substring(0, 1)
+                                                </span>
+                                            }
+                                        </a>
+
+                                        <div class="d-flex flex-column">
+                                            <span class="text-gray-800 text-hover-primary fs-7 fw-bold">
+                                                @group.Key
+                                            </span>
+                                            <div class="text-muted fs-7">Model Kodu</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge badge-light-primary fs-7 px-3 py-2">@group.Count() Adet</span>
+                                </td>
+
+                                <td>
+                                    <span class="text-gray-800 fw-bold fs-7">@priceDisplay</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div
+                                            class="w-10px h-10px rounded-circle me-2 bg-@(totalStock > 0 ? "success" : "danger")">
+                                        </div>
+                                        <span class="text-gray-800 fw-bold fs-7">@totalStock</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr id="@collapseId" class="collapse">
+                                <td colspan="5" class="p-0">
+                                    <div class="ps-20 pe-5 py-4 border-bottom border-gray-100 bg-opacity-5">
+
+                                        <table class="table table-sm align-middle fs-7 gy-3 mb-0">
+                                            <thead>
+                                                <tr class="text-start text-gray-400 fw-bold text-uppercase fs-8">
+                                                    <th class="min-w-250px">Varyant Detayı</th>
+                                                    <th class="min-w-100px">Barkod / SKU</th>
+                                                    <th class="min-w-100px">Fiyat</th>
+                                                    <th class="min-w-100px">Stok</th>
+                                                    <th class="text-end min-w-125px">Durum</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-gray-600 fw-semibold">
+                                                @foreach (var variant in group.OrderByDescending(vag => vag.Name))
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <a href="@variant.ExternalUrl" target="_blank"
+                                                                    class="symbol symbol-50px me-3">
+                                                                    @if (!string.IsNullOrEmpty(variant.ImageUrl))
+                                                                    {
+                                                                        <span class="symbol-label"
+                                                                            style="background-image:url(@variant.ImageUrl);"></span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span
+                                                                            class="symbol-label bg-white text-primary fw-bold border border-gray-300 fs-4">
+                                                                            @variant.Name.Substring(0, 1)
+                                                                        </span>
+                                                                    }
+                                                                </a>
+
+                                                                <div class="d-flex flex-column">
+                                                                    <a href="@variant.ExternalUrl" target="_blank"
+                                                                        class="text-gray-800 text-hover-primary fw-bold fs-6">@variant.Name</a>
+                                                                    <span class="text-muted fs-8">@variant.VariantSummary</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        <td>
+                                                            <div class="d-flex flex-column">
+                                                                <span class="text-dark fw-bold">@variant.Barcode</span>
+                                                                <span class="text-muted fs-9">@variant.Sku</span>
+                                                            </div>
+                                                        </td>
+
+                                                        <td>
+                                                            <span
+                                                                class="text-gray-800 fw-bold fs-6">@variant.SellingPrice.ToString("N2")
+                                                                ₺</span>
+                                                            @if (variant.ListPrice > variant.SellingPrice)
+                                                            {
+                                                                <span
+                                                                    class="text-gray-400 text-decoration-line-through fs-9 d-block">@variant.ListPrice.ToString("N2")</span>
+                                                            }
+                                                        </td>
+
+                                                        <td>
+                                                            <span
+                                                                class="badge badge-light-@variant.StockStatusClass px-3 py-2 fs-7">@variant.StockQuantity</span>
+                                                            @if (variant.IsLocked)
+                                                            {
+                                                                <i class="ki-outline ki-lock fs-5 text-warning ms-1"
+                                                                    title="Kilitli"></i>
+                                                            }
+                                                        </td>
+
+                                                        <td class="text-end">
+                                                            <div class="d-flex flex-column gap-2 align-items-end">
+                                                                @if (variant.IsApproved)
+                                                                {
+                                                                    <span
+                                                                        class="badge badge-light-success w-100px py-3 justify-content-center">Onaylı</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span
+                                                                        class="badge badge-light-warning w-100px py-3 justify-content-center">Onay
+                                                                        Bekliyor</span>
+                                                                }
+
+                                                                @if (variant.IsOnSale)
+                                                                {
+                                                                    <span
+                                                                        class="badge badge-light-primary w-100px py-3 justify-content-center">Satışta</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span
+                                                                        class="badge badge-light-danger w-100px py-3 justify-content-center">Satışa
+                                                                        Kapalı</span>
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-10">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="ki-outline ki-magnifier fs-3x text-gray-300 mb-4"></i>
+                                    <span class="text-gray-500 fw-semibold fs-5">Aradığınız kriterlere uygun kayıt
+                                        bulunamadı.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.Products != null && Model.Products.TotalPages > 1)
+        {
+            <div class="row pt-10">
+                <div class="col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start">
+                    <div class="dataTables_info text-gray-600 fs-7">
+                        Toplam <strong>@Model.Products.TotalCount</strong> kayıttan
+                        <strong>@((Model.Products.PageIndex - 1) * Model.Products.PageSize + 1)</strong> -
+                        <strong>@(Math.Min(Model.Products.PageIndex * Model.Products.PageSize,
+                                                    Model.Products.TotalCount))</strong> arası gösteriliyor.
+                    </div>
+                </div>
+
+                <div class="col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end">
+                    <div class="dataTables_paginate paging_simple_numbers">
+                        <ul class="pagination">
+
+                            <li
+                                class="paginate_button page-item previous @(Model.Products.HasPreviousPage ? "" : "disabled")">
+                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex - 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
+                                    class="page-link">
+                                    <i class="previous"></i>
+                                </a>
+                            </li>
+
+                            @for (int i = 1; i <= Model.Products.TotalPages; i++)
+                            {
+                                if (i == 1 || i == Model.Products.TotalPages || (i >= Model.Products.PageIndex - 2 && i <=
+                                Model.Products.PageIndex + 2))
+                                {
+                                    <li class="paginate_button page-item @(i == Model.Products.PageIndex ? "active" : "")">
+                                        <a href="@Url.Action("Index", new { PageIndex = i, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
+                                            class="page-link">@i</a>
+                                    </li>
+                                }
+                                else if (i == Model.Products.PageIndex - 3 || i == Model.Products.PageIndex + 3)
+                                {
+                                    <li class="paginate_button page-item disabled"><span class="page-link">...</span></li>
+                                }
+                            }
+
+                            <li class="paginate_button page-item next @(Model.Products.HasNextPage ? "" : "disabled")">
+                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex + 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
+                                    class="page-link">
+                                    <i class="next"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var collapseElements = document.querySelectorAll('.collapse');
+
+            collapseElements.forEach(function (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    var parentRow = document.querySelector('tr[data-bs-target="#' + this.id + '"]');
+
+                    if (parentRow) {
+                        var showIcon = parentRow.querySelector('.toggle-icon-show');
+                        var hideIcon = parentRow.querySelector('.toggle-icon-hide');
+                        var toggleBtn = parentRow.querySelector('.toggle-btn');
+
+                        if (showIcon) showIcon.classList.add('d-none');
+                        if (hideIcon) hideIcon.classList.remove('d-none');
+
+                        parentRow.classList.add('bg-light-primary');
+                        if (toggleBtn) toggleBtn.classList.add('active');
+                    }
+                });
+                collapseEl.addEventListener('hide.bs.collapse', function () {
+                    var parentRow = document.querySelector('tr[data-bs-target="#' + this.id + '"]');
+
+                    if (parentRow) {
+                        var showIcon = parentRow.querySelector('.toggle-icon-show');
+                        var hideIcon = parentRow.querySelector('.toggle-icon-hide');
+                        var toggleBtn = parentRow.querySelector('.toggle-btn');
+
+                        if (showIcon) showIcon.classList.remove('d-none');
+                        if (hideIcon) hideIcon.classList.add('d-none');
+                        parentRow.classList.remove('bg-light-primary');
+                        if (toggleBtn) toggleBtn.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+}
