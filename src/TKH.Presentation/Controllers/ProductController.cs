@@ -4,10 +4,12 @@ using TKH.Business.Abstract;
 using TKH.Business.Dtos.Product;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
+using TKH.Presentation.Attributes;
 using TKH.Presentation.Models.Product;
 
 namespace TKH.Presentation.Controllers
 {
+    [EnsureMarketplaceAccountSelected]
     public class ProductController : Controller
     {
         private readonly IProductService _productService;
