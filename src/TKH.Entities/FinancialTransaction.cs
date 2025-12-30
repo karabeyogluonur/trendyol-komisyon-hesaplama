@@ -4,7 +4,7 @@ using TKH.Entities.Enums;
 
 namespace TKH.Entities
 {
-    public class FinancialTransaction : BaseEntity, IEntity
+    public class FinancialTransaction : BaseEntity, IEntity, IHasMarketplaceAccount
     {
         public int MarketplaceAccountId { get; set; }
         public string ExternalTransactionId { get; set; } = string.Empty;

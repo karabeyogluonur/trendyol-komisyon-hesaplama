@@ -64,7 +64,8 @@ namespace TKH.Business.Concrete
 
                 IList<FinancialTransaction> existingFinancialTransactionList = await scopedFinancialTransactionRepository.GetAllAsync(
                     predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.ExternalTransactionId),
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 Dictionary<string, FinancialTransaction> existingTransactionMap = existingFinancialTransactionList
@@ -138,7 +139,8 @@ namespace TKH.Business.Concrete
 
                     IList<ShipmentTransaction> existingShipmentTransactionList = await scopedShipmentTransactionRepository.GetAllAsync(
                         predicate: shipment => shipment.MarketplaceAccountId == marketplaceAccountId && incomingParcelIdList.Contains(shipment.ExternalParcelId),
-                        disableTracking: true
+                        disableTracking: true,
+                        ignoreQueryFilters: true
                     );
 
                     HashSet<string> existingParcelIdSet = existingShipmentTransactionList

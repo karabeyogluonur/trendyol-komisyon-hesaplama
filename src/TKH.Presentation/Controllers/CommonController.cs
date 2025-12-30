@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.MarketplaceAccount;
+using TKH.Core.Contexts;
 using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;
 using TKH.Presentation.Services;
@@ -57,7 +58,7 @@ namespace TKH.Presentation.Controllers
 
             return RedirectToLocal(returnUrl);
         }
-        
+
         private IActionResult RedirectToLocal(string returnUrl)
         {
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))

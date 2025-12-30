@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using TKH.Business.Abstract;
 using TKH.Business.Dtos.Product;
+using TKH.Core.Contexts;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
@@ -26,7 +27,7 @@ namespace TKH.Business.Concrete
         }
         public async Task<IDataResult<IPagedList<ProductSummaryDto>>> GetPagedListAsync(ProductListFilterDto productListFilterDto)
         {
-            IQueryable<Product> query = _productRepository.GetAll(predicate: product => product.MarketplaceAccountId == _workContext.CurrentMarketplaceAccountId);
+            IQueryable<Product> query = _productRepository.GetAll();
 
             if (!string.IsNullOrEmpty(productListFilterDto.Barcode))
                 query = query.Where(p => p.Barcode.Contains(productListFilterDto.Barcode));

@@ -72,7 +72,8 @@ namespace TKH.Business.Concrete
                 IList<Product> relatedProductList = await scopedProductRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId &&
                                           allMarketplaceProductCodes.Contains(product.ExternalProductCode),
-                    disableTracking: true
+                    disableTracking: true,
+                    ignoreQueryFilters: true
                 );
 
                 Dictionary<string, int> codeToLocalIdMap = relatedProductList
@@ -82,7 +83,8 @@ namespace TKH.Business.Concrete
                 IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
                     predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.ExternalShipmentId),
                     include: source => source.Include(order => order.OrderItems),
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 List<Order> newOrdersToAdd = new List<Order>();

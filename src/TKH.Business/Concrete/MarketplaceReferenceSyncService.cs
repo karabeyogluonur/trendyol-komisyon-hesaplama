@@ -47,7 +47,8 @@ namespace TKH.Business.Concrete
 
                 IList<Category> existingCategoryEntities = await scopedCategoryRepository.GetAllAsync(
                     predicate: category => category.MarketplaceType == marketplaceType,
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 Dictionary<string, Category> existingCategoryEntityMap = existingCategoryEntities
@@ -92,7 +93,8 @@ namespace TKH.Business.Concrete
 
                 leafCategoryEntities = await readOnlyCategoryRepository.GetAllAsync(
                     predicate: category => category.MarketplaceType == marketplaceType && category.IsLeaf,
-                    disableTracking: true
+                    disableTracking: true,
+                    ignoreQueryFilters: true
                 );
             }
 
@@ -140,7 +142,8 @@ namespace TKH.Business.Concrete
                 IList<CategoryAttribute> existingCategoryAttributeEntities = await scopedCategoryAttributeRepository.GetAllAsync(
                     predicate: categoryAttribute => categoryIdsInCurrentBatch.Contains(categoryAttribute.CategoryId),
                     include: source => source.Include(categoryAttribute => categoryAttribute.Values),
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 Dictionary<string, CategoryAttribute> existingCategoryAttributeEntityMap = existingCategoryAttributeEntities

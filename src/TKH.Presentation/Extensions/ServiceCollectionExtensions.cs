@@ -2,11 +2,10 @@ using FluentValidation.AspNetCore;
 using FluentValidation;
 using System.Reflection;
 using TKH.Business;
-using TKH.Business.Abstract;
 using TKH.Core;
 using TKH.DataAccess;
 using TKH.Presentation.Services;
-using TKH.DataAccess.Persistence;
+using TKH.Core.Contexts;
 
 namespace TKH.Presentation.Extensions
 {

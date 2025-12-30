@@ -1,4 +1,4 @@
-namespace TKH.Business.Abstract
+namespace TKH.Core.Contexts
 {
     public interface IWorkContext
     {

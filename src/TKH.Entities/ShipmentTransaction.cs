@@ -3,7 +3,7 @@ using TKH.Entities.Common;
 
 namespace TKH.Entities
 {
-    public class ShipmentTransaction : BaseEntity, IEntity
+    public class ShipmentTransaction : BaseEntity, IEntity, IHasMarketplaceAccount
     {
         public int MarketplaceAccountId { get; set; }
         public string ExternalOrderNumber { get; set; } = string.Empty;

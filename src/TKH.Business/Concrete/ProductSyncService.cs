@@ -74,7 +74,8 @@ namespace TKH.Business.Concrete
                     predicate: category => incomingCategoryIdStringList.Contains(category.ExternalId),
                     include: source => source.Include(category => category.Attributes)
                                              .ThenInclude(categoryAttribute => categoryAttribute.Values),
-                    disableTracking: true
+                    disableTracking: true,
+                    ignoreQueryFilters: true
                 );
 
                 IList<Product> existingProductList = await scopedProductRepository.GetAllAsync(
@@ -82,7 +83,8 @@ namespace TKH.Business.Concrete
                     include: source => source.Include(product => product.Attributes)
                                              .Include(product => product.Prices)
                                              .Include(product => product.Expenses),
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 List<Product> newProductsToAdd = new List<Product>();

@@ -72,7 +72,8 @@ namespace TKH.Business.Concrete
                 IList<Product> relatedProductList = await scopedProductRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId &&
                                           allMarketplaceBarcodes.Contains(product.Barcode),
-                    disableTracking: true
+                    disableTracking: true,
+                    ignoreQueryFilters: true
                 );
 
                 Dictionary<string, int> barcodeToLocalIdMap = relatedProductList
@@ -84,7 +85,8 @@ namespace TKH.Business.Concrete
                     predicate: claim => claim.MarketplaceAccountId == marketplaceAccountId &&
                                         incomingExternalIdList.Contains(claim.ExternalId),
                     include: source => source.Include(claim => claim.ClaimItems),
-                    disableTracking: false
+                    disableTracking: false,
+                    ignoreQueryFilters: true
                 );
 
                 List<Claim> newClaimsToAdd = new List<Claim>();

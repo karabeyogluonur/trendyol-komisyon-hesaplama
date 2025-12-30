@@ -4,7 +4,7 @@ using TKH.Entities.Enums;
 
 namespace TKH.Entities
 {
-    public class Product : BaseEntity, IEntity
+    public class Product : BaseEntity, IEntity, IHasMarketplaceAccount
     {
         public string ExternalId { get; set; } = string.Empty;
         public string ExternalProductCode { get; set; } = string.Empty;
