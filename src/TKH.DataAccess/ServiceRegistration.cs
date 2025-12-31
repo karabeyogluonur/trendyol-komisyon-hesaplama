@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using TKH.Core.DataAccess;
 using TKH.DataAccess.Concrete;
 using TKH.DataAccess.Contexts;
-using TKH.DataAccess.Persistence;
 
 namespace TKH.DataAccess
 {

@@ -1,7 +1,7 @@
 using Hangfire;
 using Serilog;
 using Serilog.Events;
-using TKH.DataAccess.Persistence;
+using TKH.DataAccess;
 using TKH.Presentation.Infrastructure.Middlewares;
 
 namespace TKH.Presentation.Configuration.Extensions
