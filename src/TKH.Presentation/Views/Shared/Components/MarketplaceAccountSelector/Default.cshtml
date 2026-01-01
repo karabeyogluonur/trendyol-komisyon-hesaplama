@@ -114,7 +114,8 @@
                                 }
 
                                 <div class="col-4">
-                                    <a href="javascript:;" onclick="@(isLocked ? "" : $"switchAccount({account.Id})")"
+                                    <a href="javascript:;"
+                                        onclick="@((isLocked || isCurrent) ? "" : $"switchAccount({account.Id})")"
                                         class="d-flex flex-column flex-center text-center text-gray-800 text-hover-primary rounded py-4 px-3 h-100 @activeClass @opacityClass @cursorClass"
                                         data-bs-toggle="tooltip" data-bs-placement="top" title="@(isLocked? lockReason : null)">
 

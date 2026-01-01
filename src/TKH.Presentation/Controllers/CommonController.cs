@@ -16,18 +16,23 @@ namespace TKH.Presentation.Controllers
 
         public CommonController(
             IWorkContext workContext,
+            INotificationService notificationService,
             IMarketplaceAccountService marketplaceAccountService)
         {
             _workContext = workContext;
+            _notificationService = notificationService;
             _marketplaceAccountService = marketplaceAccountService;
         }
 
         [HttpPost]
         public async Task<IActionResult> SetCurrentMarketplaceAccount(int accountId, string returnUrl)
         {
+            if (_workContext.CurrentMarketplaceAccountId == accountId)
+                return RedirectToLocal(returnUrl);
+
             IDataResult<MarketplaceAccountDetailsDto> marketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(accountId);
 
-            if (!marketplaceAccountResult.Success || marketplaceAccountResult.Data == null)
+            if (!marketplaceAccountResult.Success || marketplaceAccountResult.Data is null)
             {
                 _notificationService.Error("Seçilen mağaza sistemde bulunamadı.");
                 return RedirectToLocal(returnUrl);

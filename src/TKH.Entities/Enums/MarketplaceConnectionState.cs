@@ -7,7 +7,7 @@ namespace TKH.Entities.Enums
         [Display(Name = "Tanımsız")]
         None = 0,
 
-        [Display(Name = "Bağlantı Başarılı", Description = "Her şey yolunda.")]
+        [Display(Name = "Bağlantı Başarılı")]
         Connected = 1,
 
         [Display(Name = "Kurulum Bekliyor")]
