@@ -4,7 +4,7 @@ using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Core.Contexts;
 using TKH.Core.Utilities.Results;
-using TKH.Presentation.Models.MarketplaceAccount;
+using TKH.Presentation.Features.MarketplaceAccounts.Models;
 
 namespace TKH.Presentation.Infrastructure.ViewComponents
 {

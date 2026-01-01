@@ -1,15 +1,13 @@
 using Serilog;
 using TKH.Presentation.Configuration.Extensions;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
+Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
 try
 {
     Log.Information("Application is starting...");
 
-    var builder = WebApplication.CreateBuilder(args);
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
@@ -19,6 +17,7 @@ try
     builder.Services.AddCustomMvc(builder.Environment);
     builder.Services.AddArchitectureLayers(builder.Configuration);
     builder.Services.AddPresentationInfrastructure();
+    builder.Services.AddOrchestratorInfrastructure();
     builder.Services.AddHangfireServices(builder.Configuration);
     builder.Services.AddCustomValidation();
     builder.Services.AddCustomMapping();

@@ -1,0 +1,99 @@
+using AutoMapper;
+using TKH.Business.Features.MarketplaceAccounts.Dtos;
+using TKH.Business.Features.MarketplaceAccounts.Services;
+using TKH.Business.Jobs.Services;
+using TKH.Core.Utilities.Results;
+using TKH.Presentation.Features.MarketplaceAccounts.Models;
+using IResult = TKH.Core.Utilities.Results.IResult;
+
+namespace TKH.Presentation.Features.MarketplaceAccounts.Services
+{
+    public class MarketplaceAccountOrchestrator : IMarketplaceAccountOrchestrator
+    {
+        private readonly IMarketplaceAccountService _marketplaceAccountService;
+        private readonly IMarketplaceJobService _marketplaceJobService;
+        private readonly IMapper _mapper;
+
+        public MarketplaceAccountOrchestrator(
+            IMarketplaceAccountService marketplaceAccountService,
+            IMarketplaceJobService marketplaceJobService,
+            IMapper mapper)
+        {
+            _marketplaceAccountService = marketplaceAccountService;
+            _marketplaceJobService = marketplaceJobService;
+            _mapper = mapper;
+        }
+
+        public async Task<IDataResult<List<MarketplaceAccountListViewModel>>> PrepareMarketplaceAccountListViewModelAsync()
+        {
+            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountSummaryDtoResult = await _marketplaceAccountService.GetAllAsync();
+
+            if (!marketplaceAccountSummaryDtoResult.Success)
+                return new ErrorDataResult<List<MarketplaceAccountListViewModel>>(marketplaceAccountSummaryDtoResult.Message);
+
+            return new SuccessDataResult<List<MarketplaceAccountListViewModel>>(_mapper.Map<List<MarketplaceAccountListViewModel>>(marketplaceAccountSummaryDtoResult.Data));
+        }
+
+        public MarketplaceAccountAddViewModel PrepareMarketplaceAccountAddViewModel()
+        {
+            return new MarketplaceAccountAddViewModel();
+        }
+
+        public async Task<IResult> CreateMarketplaceAccountAsync(MarketplaceAccountAddViewModel marketplaceAccountAddViewModel)
+        {
+            MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(marketplaceAccountAddViewModel);
+            IDataResult<int> addMarketplaceAccountResult = await _marketplaceAccountService.AddAsync(marketplaceAccountAddDto);
+
+            if (!addMarketplaceAccountResult.Success)
+                return new ErrorResult(addMarketplaceAccountResult.Message);
+
+            _marketplaceJobService.DispatchImmediateSingleAccountDataSync(addMarketplaceAccountResult.Data);
+
+            return new SuccessResult(addMarketplaceAccountResult.Message);
+        }
+
+        public async Task<IDataResult<MarketplaceAccountUpdateViewModel>> PrepareMarketplaceAccountUpdateViewModelAsync(int marketplaceAccountId)
+        {
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountId);
+
+            if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data == null)
+                return new ErrorDataResult<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Message);
+
+            return new SuccessDataResult<MarketplaceAccountUpdateViewModel>(
+                _mapper.Map<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Data));
+        }
+
+        public async Task<IResult> UpdateMarketplaceAccountAsync(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
+        {
+            MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
+            IResult updateMarketplaceAccountResult = await _marketplaceAccountService.UpdateAsync(marketplaceAccountUpdateDto);
+
+            if (!updateMarketplaceAccountResult.Success)
+            {
+                await ReloadStatusFieldsAsync(marketplaceAccountUpdateViewModel);
+                return new ErrorResult(updateMarketplaceAccountResult.Message);
+            }
+
+            _marketplaceJobService.DispatchImmediateSingleAccountDataSync(marketplaceAccountUpdateViewModel.Id);
+
+            return new SuccessResult(updateMarketplaceAccountResult.Message);
+        }
+
+        public async Task<IResult> DeleteMarketplaceAccountAsync(int marketplaceAccountId)
+        {
+            return await _marketplaceAccountService.DeleteAsync(marketplaceAccountId);
+        }
+
+        private async Task ReloadStatusFieldsAsync(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
+        {
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountUpdateViewModel.Id);
+
+            if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data is null)
+                return;
+
+            marketplaceAccountUpdateViewModel.ConnectionState = getMarketplaceAccountResult.Data.ConnectionState;
+            marketplaceAccountUpdateViewModel.SyncState = getMarketplaceAccountResult.Data.SyncState;
+            marketplaceAccountUpdateViewModel.LastErrorMessage = getMarketplaceAccountResult.Data.LastErrorMessage;
+        }
+    }
+}

@@ -1,6 +1,6 @@
 using TKH.Core.Common.Constants;
 
-namespace TKH.Presentation.Models.Product
+namespace TKH.Presentation.Features.Products.Models
 {
     public class ProductListFilterViewModel
     {

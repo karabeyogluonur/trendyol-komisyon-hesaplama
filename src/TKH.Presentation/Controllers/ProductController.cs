@@ -1,40 +1,30 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using TKH.Business.Features.Products.Dtos;
-using TKH.Business.Features.Products.Services;
-using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
+using TKH.Presentation.Features.Products.Models;
+using TKH.Presentation.Features.Products.Services;
 using TKH.Presentation.Infrastructure.Filters;
-using TKH.Presentation.Models.Product;
 
 namespace TKH.Presentation.Controllers
 {
     [EnsureMarketplaceAccountSelected]
-    public class ProductController : Controller
+    public class ProductController : BaseController
     {
-        private readonly IProductService _productService;
-        private readonly IMapper _mapper;
+        private readonly IProductOrchestrator _productOrchestrator;
 
-        public ProductController(IProductService productService, IMapper mapper)
+        public ProductController(IProductOrchestrator productOrchestrator)
         {
-            _productService = productService;
-            _mapper = mapper;
+            _productOrchestrator = productOrchestrator;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index(ProductListFilterViewModel productListFilterViewModel)
         {
-            ProductListFilterDto productListFilterDto = _mapper.Map<ProductListFilterDto>(productListFilterViewModel);
+            IDataResult<ProductListViewModel> prepareProductListViewModelResult = await _productOrchestrator.PrepareProductListViewModelAsync(productListFilterViewModel);
 
-            IDataResult<IPagedList<ProductSummaryDto>> productPagedListResult = await _productService.GetPagedListAsync(productListFilterDto);
+            if (!prepareProductListViewModelResult.Success)
+                return View(new ProductListViewModel { Filter = productListFilterViewModel });
 
-            ProductListViewModel productListViewModel = new ProductListViewModel
-            {
-                Products = _mapper.Map<IPagedList<ProductListItemViewModel>>(productPagedListResult.Data),
-                Filter = productListFilterViewModel,
-            };
-
-            return View(productListViewModel);
+            return View(prepareProductListViewModelResult.Data);
         }
     }
 }

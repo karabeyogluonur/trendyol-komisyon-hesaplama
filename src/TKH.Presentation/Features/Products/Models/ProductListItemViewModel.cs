@@ -1,4 +1,4 @@
-namespace TKH.Presentation.Models.Product
+namespace TKH.Presentation.Features.Products.Models
 {
     public record ProductListItemViewModel
     {

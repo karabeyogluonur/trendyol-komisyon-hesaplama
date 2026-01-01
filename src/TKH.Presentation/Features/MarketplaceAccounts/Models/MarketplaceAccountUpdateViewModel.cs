@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Models.MarketplaceAccount
+namespace TKH.Presentation.Features.MarketplaceAccounts.Models
 {
-    public class MarketplaceAccountAddViewModel
+    public class MarketplaceAccountUpdateViewModel
     {
+        public int Id { get; set; }
+
         [Display(Name = "Pazaryeri")]
         public MarketplaceType MarketplaceType { get; set; }
 
@@ -19,5 +21,12 @@ namespace TKH.Presentation.Models.MarketplaceAccount
 
         [Display(Name = "Satıcı ID (Merchant / Supplier ID)")]
         public string MerchantId { get; set; } = string.Empty;
+
+        [Display(Name = "Durum")]
+        public bool IsActive { get; set; }
+
+        public MarketplaceConnectionState ConnectionState { get; set; }
+        public MarketplaceSyncState SyncState { get; set; }
+        public string? LastErrorMessage { get; set; }
     }
 }

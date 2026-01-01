@@ -8,7 +8,7 @@ using TKH.Presentation.Infrastructure.Services;
 
 namespace TKH.Presentation.Controllers
 {
-    public class CommonController : Controller
+    public class CommonController : BaseController
     {
         private readonly IWorkContext _workContext;
         private readonly INotificationService _notificationService;
@@ -16,11 +16,9 @@ namespace TKH.Presentation.Controllers
 
         public CommonController(
             IWorkContext workContext,
-            INotificationService notificationService,
             IMarketplaceAccountService marketplaceAccountService)
         {
             _workContext = workContext;
-            _notificationService = notificationService;
             _marketplaceAccountService = marketplaceAccountService;
         }
 
@@ -62,9 +60,7 @@ namespace TKH.Presentation.Controllers
         private IActionResult RedirectToLocal(string returnUrl)
         {
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
                 return Redirect(returnUrl);
-            }
 
             return RedirectToAction("Index", "Home");
         }

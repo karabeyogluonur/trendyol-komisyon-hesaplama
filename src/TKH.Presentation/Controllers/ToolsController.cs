@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace TKH.Presentation.Controllers
 {
-    public class ToolsController : Controller
+    public class ToolsController : BaseController
     {
         [HttpGet]
         public async Task<IActionResult> ProductProfitCalculator()

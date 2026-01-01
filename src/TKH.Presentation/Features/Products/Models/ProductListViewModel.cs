@@ -1,7 +1,6 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
 using TKH.Core.Utilities.Paging;
 
-namespace TKH.Presentation.Models.Product
+namespace TKH.Presentation.Features.Products.Models
 {
     public class ProductListViewModel
     {

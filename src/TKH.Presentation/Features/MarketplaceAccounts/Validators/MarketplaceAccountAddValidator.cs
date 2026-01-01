@@ -1,7 +1,7 @@
 using FluentValidation;
-using TKH.Presentation.Models.MarketplaceAccount;
+using TKH.Presentation.Features.MarketplaceAccounts.Models;
 
-namespace TKH.Presentation.Validators.MarketplaceAccount
+namespace TKH.Presentation.Features.MarketplaceAccounts.Validators
 {
     public class MarketplaceAccountAddValidator : AbstractValidator<MarketplaceAccountAddViewModel>
     {

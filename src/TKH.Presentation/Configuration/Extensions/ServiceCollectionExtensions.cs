@@ -7,6 +7,8 @@ using TKH.DataAccess;
 using TKH.Core.Contexts;
 using TKH.Presentation.Infrastructure.Services;
 using TKH.Integrations.Trendyol.Configuration;
+using TKH.Presentation.Features.MarketplaceAccounts.Services;
+using TKH.Presentation.Features.Products.Services;
 
 namespace TKH.Presentation.Configuration.Extensions
 {
@@ -33,6 +35,12 @@ namespace TKH.Presentation.Configuration.Extensions
             services.AddScoped<INotificationService, NotificationService>();
             services.AddHttpContextAccessor();
             services.AddScoped<IWorkContext, WebWorkContext>();
+        }
+
+        public static void AddOrchestratorInfrastructure(this IServiceCollection services)
+        {
+            services.AddScoped<IMarketplaceAccountOrchestrator, MarketplaceAccountOrchestrator>();
+            services.AddScoped<IProductOrchestrator, ProductOrchestrator>();
         }
 
         public static void AddCustomValidation(this IServiceCollection services)

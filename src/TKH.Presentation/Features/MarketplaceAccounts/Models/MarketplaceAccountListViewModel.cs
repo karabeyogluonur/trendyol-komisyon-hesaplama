@@ -1,6 +1,6 @@
 using TKH.Entities.Enums;
 
-namespace TKH.Presentation.Models.MarketplaceAccount
+namespace TKH.Presentation.Features.MarketplaceAccounts.Models
 {
     public class MarketplaceAccountListViewModel
     {

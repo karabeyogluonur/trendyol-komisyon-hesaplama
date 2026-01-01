@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace TKH.Presentation.Controllers
 {
-    public class ErrorController : Controller
+    public class ErrorController : BaseController
     {
         [Route("Error/500")]
         public IActionResult General()

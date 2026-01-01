@@ -1,53 +1,37 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using TKH.Business.Features.MarketplaceAccounts.Dtos;
-using TKH.Business.Features.MarketplaceAccounts.Services;
-using TKH.Business.Jobs.Services;
 using TKH.Core.Utilities.Results;
-using TKH.Presentation.Infrastructure.Services;
-using TKH.Presentation.Models.MarketplaceAccount;
+using TKH.Presentation.Features.MarketplaceAccounts.Models;
+using TKH.Presentation.Features.MarketplaceAccounts.Services;
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Presentation.Controllers
 {
-    public class MarketplaceAccountController : Controller
+    public class MarketplaceAccountController : BaseController
     {
-        private readonly IMarketplaceAccountService _marketplaceAccountService;
-        private readonly IMarketplaceJobService _marketplaceJobService;
-        private readonly IMapper _mapper;
-        private readonly INotificationService _notificationService;
+        private readonly IMarketplaceAccountOrchestrator _marketplaceAccountOrchestrator;
 
-        public MarketplaceAccountController(
-            IMarketplaceAccountService marketplaceAccountService,
-            IMarketplaceJobService marketplaceJobService,
-            IMapper mapper,
-            INotificationService notificationService)
+        public MarketplaceAccountController(IMarketplaceAccountOrchestrator marketplaceAccountOrchestrator)
         {
-            _marketplaceAccountService = marketplaceAccountService;
-            _marketplaceJobService = marketplaceJobService;
-            _mapper = mapper;
-            _notificationService = notificationService;
+            _marketplaceAccountOrchestrator = marketplaceAccountOrchestrator;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountListResult = await _marketplaceAccountService.GetAllAsync();
+            IDataResult<List<MarketplaceAccountListViewModel>> prepareMarketplaceAccountListViewModelResult = await _marketplaceAccountOrchestrator.PrepareMarketplaceAccountListViewModelAsync();
 
-            if (marketplaceAccountListResult.Success)
-            {
-                List<MarketplaceAccountListViewModel> marketplaceAccountListViewModels = _mapper.Map<List<MarketplaceAccountListViewModel>>(marketplaceAccountListResult.Data);
-                return View(marketplaceAccountListViewModels);
-            }
+            if (!prepareMarketplaceAccountListViewModelResult.Success)
+                return View(new List<MarketplaceAccountListViewModel>());
 
-            _notificationService.Error(marketplaceAccountListResult.Message, "Listeleme Hatası.");
-            return View(new List<MarketplaceAccountListViewModel>());
+            return View(prepareMarketplaceAccountListViewModelResult.Data);
         }
 
         [HttpGet]
         public IActionResult Add()
         {
-            return View(new MarketplaceAccountAddViewModel());
+            MarketplaceAccountAddViewModel marketplaceAccountAddViewModel = _marketplaceAccountOrchestrator.PrepareMarketplaceAccountAddViewModel();
+
+            return View(marketplaceAccountAddViewModel);
         }
 
         [HttpPost]
@@ -55,41 +39,27 @@ namespace TKH.Presentation.Controllers
         public async Task<IActionResult> Add(MarketplaceAccountAddViewModel marketplaceAccountAddViewModel)
         {
             if (!ModelState.IsValid)
-            {
-                _notificationService.Warning("Lütfen zorunlu alanları kontrol ediniz.");
                 return View(marketplaceAccountAddViewModel);
-            }
 
-            MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(marketplaceAccountAddViewModel);
+            IResult createMarketplaceAccountResult = await _marketplaceAccountOrchestrator.CreateMarketplaceAccountAsync(marketplaceAccountAddViewModel);
 
-            IDataResult<int> marketplaceAccountAddResult = await _marketplaceAccountService.AddAsync(marketplaceAccountAddDto);
-
-            if (marketplaceAccountAddResult.Success)
-            {
-                _marketplaceJobService.DispatchImmediateSingleAccountDataSync(marketplaceAccountAddResult.Data);
-
-                _notificationService.Success(marketplaceAccountAddResult.Message);
-                return RedirectToAction("Index");
-            }
-
-            _notificationService.Error(marketplaceAccountAddResult.Message);
-            ModelState.AddModelError("", marketplaceAccountAddResult.Message);
-            return View(marketplaceAccountAddViewModel);
+            return await HandleResultAsync(createMarketplaceAccountResult,
+                () => Task.FromResult<IActionResult>(
+                    RedirectToAction(nameof(Index))),
+                () => Task.FromResult<IActionResult>(
+                    View(marketplaceAccountAddViewModel)));
         }
 
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            IDataResult<MarketplaceAccountDetailsDto> result = await _marketplaceAccountService.GetByIdAsync(id);
+            IDataResult<MarketplaceAccountUpdateViewModel> prepareMarketplaceAccountUpdateViewModelResult =
+                await _marketplaceAccountOrchestrator.PrepareMarketplaceAccountUpdateViewModelAsync(id);
 
-            if (!result.Success)
-            {
-                _notificationService.Error(result.Message);
-                return RedirectToAction("Index");
-            }
+            if (!prepareMarketplaceAccountUpdateViewModelResult.Success)
+                return RedirectToAction(nameof(Index));
 
-            MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel = _mapper.Map<MarketplaceAccountUpdateViewModel>(result.Data);
-            return View(marketplaceAccountUpdateViewModel);
+            return View(prepareMarketplaceAccountUpdateViewModelResult.Data);
         }
 
         [HttpPost]
@@ -98,55 +68,37 @@ namespace TKH.Presentation.Controllers
         {
             if (!ModelState.IsValid)
             {
-                _notificationService.Warning("Lütfen girdiğiniz bilgileri kontrol ediniz.");
-                await ReloadStatusFields(marketplaceAccountUpdateViewModel);
+                await _marketplaceAccountOrchestrator.PrepareMarketplaceAccountUpdateViewModelAsync(marketplaceAccountUpdateViewModel.Id);
+
                 return View(marketplaceAccountUpdateViewModel);
             }
 
-            MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
+            IResult updateMarketplaceAccountResult =
+                await _marketplaceAccountOrchestrator.UpdateMarketplaceAccountAsync(
+                    marketplaceAccountUpdateViewModel);
 
-            IResult marketplaceAccountUpdateResult = await _marketplaceAccountService.UpdateAsync(marketplaceAccountUpdateDto);
+            return await HandleResultAsync(updateMarketplaceAccountResult,
+                () => Task.FromResult<IActionResult>(
+                    RedirectToAction(nameof(Index))),
+                async () =>
+                {
+                    await _marketplaceAccountOrchestrator.PrepareMarketplaceAccountUpdateViewModelAsync(marketplaceAccountUpdateViewModel.Id);
 
-            if (marketplaceAccountUpdateResult.Success)
-            {
-                _marketplaceJobService.DispatchImmediateSingleAccountDataSync(marketplaceAccountUpdateViewModel.Id);
-
-                _notificationService.Success(marketplaceAccountUpdateResult.Message);
-                return RedirectToAction("Index");
-            }
-
-            _notificationService.Error(marketplaceAccountUpdateResult.Message);
-            ModelState.AddModelError("", marketplaceAccountUpdateResult.Message);
-
-            await ReloadStatusFields(marketplaceAccountUpdateViewModel);
-
-            return View(marketplaceAccountUpdateViewModel);
-        }
-
-        private async Task ReloadStatusFields(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
-        {
-            IDataResult<MarketplaceAccountDetailsDto> marketplaceAccountDetailsResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountUpdateViewModel.Id);
-
-            if (marketplaceAccountDetailsResult.Success && marketplaceAccountDetailsResult.Data != null)
-            {
-                marketplaceAccountUpdateViewModel.ConnectionState = marketplaceAccountDetailsResult.Data.ConnectionState;
-                marketplaceAccountUpdateViewModel.SyncState = marketplaceAccountDetailsResult.Data.SyncState;
-                marketplaceAccountUpdateViewModel.LastErrorMessage = marketplaceAccountDetailsResult.Data.LastErrorMessage;
-            }
+                    return View(marketplaceAccountUpdateViewModel);
+                });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            IResult marketplaceAccountDeleteResult = await _marketplaceAccountService.DeleteAsync(id);
+            IResult deleteMarketplaceAccountResult = await _marketplaceAccountOrchestrator.DeleteMarketplaceAccountAsync(id);
 
-            if (marketplaceAccountDeleteResult.Success)
-                _notificationService.Success(marketplaceAccountDeleteResult.Message);
-            else
-                _notificationService.Error(marketplaceAccountDeleteResult.Message);
-
-            return RedirectToAction("Index");
+            return await HandleResultAsync(deleteMarketplaceAccountResult,
+                () => Task.FromResult<IActionResult>(
+                    RedirectToAction(nameof(Index))),
+                () => Task.FromResult<IActionResult>(
+                    RedirectToAction(nameof(Index))));
         }
     }
 }
