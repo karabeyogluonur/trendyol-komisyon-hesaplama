@@ -1,4 +1,6 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Features.Products.Dtos;
 using TKH.Business.Features.Products.Services;
 using TKH.Core.Utilities.Paging;
@@ -24,7 +26,20 @@ namespace TKH.Presentation.Features.Products.Services
 
             IDataResult<IPagedList<ProductSummaryDto>> productPagedListResult = await _productService.GetPagedListAsync(productListFilterDto);
 
-            if (!productPagedListResult.Success) return new ErrorDataResult<ProductListViewModel>(productPagedListResult.Message);
+            if (!productPagedListResult.Success)
+                return new ErrorDataResult<ProductListViewModel>(productPagedListResult.Message);
+
+            IDataResult<List<CategoryLookupDto>> usedCategoriesResult = await _productService.GetUsedCategoriesAsync();
+
+            if (!usedCategoriesResult.Success)
+                return new ErrorDataResult<ProductListViewModel>(usedCategoriesResult.Message);
+
+            productListFilterViewModel.Categories = usedCategoriesResult.Data.Select(category => new SelectListItem
+            {
+                Value = category.Id.ToString(),
+                Text = category.Name,
+                Selected = productListFilterViewModel.CategoryId.HasValue && productListFilterViewModel.CategoryId.Value == category.Id
+            }).ToList();
 
             ProductListViewModel productListViewModel = new ProductListViewModel
             {

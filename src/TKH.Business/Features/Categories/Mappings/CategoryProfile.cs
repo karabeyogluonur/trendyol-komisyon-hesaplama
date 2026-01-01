@@ -1,4 +1,5 @@
 using AutoMapper;
+using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Entities;
 
@@ -24,6 +25,9 @@ namespace TKH.Business.Features.Categories.Mappings
                 .ForMember(attributeValue => attributeValue.CategoryAttributeId, option => option.Ignore())
                 .ForMember(attributeValue => attributeValue.Attribute, option => option.Ignore())
                 .ForMember(attributeValue => attributeValue.Id, option => option.Ignore());
+
+
+            CreateMap<Category, CategoryLookupDto>();
         }
     }
 }

@@ -29,28 +29,80 @@
                         <div class="d-flex align-items-center position-relative my-1">
                             <i class="ki-outline ki-magnifier fs-3 position-absolute ms-3"></i>
                             <input type="text" name="Barcode" value="@Model.Filter.Barcode"
-                                class="form-control form-control-sm form-control-solid w-200px ps-10"
-                                placeholder="Barkod Ara..." />
+                                   class="form-control form-control-sm form-control-solid w-200px ps-10"
+                                   placeholder="Barkod Ara..." />
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-light-primary" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+                            <i class="ki-outline ki-filter fs-2"></i>
+                            Filtrele
+                        </button>
+
+                        <div class="menu menu-sub menu-sub-dropdown w-300px w-md-325px" data-kt-menu="true">
+                            <div class="px-7 py-5">
+                                <div class="fs-5 text-gray-900 fw-bold">Filtre Seçenekleri</div>
+                            </div>
+                            <div class="separator border-gray-200"></div>
+
+                            <div class="px-7 py-5">
+                                <div class="mb-5">
+                                    <label class="form-label fw-semibold">Kategori</label>
+                                    <select name="CategoryId" class="form-select form-select-solid form-select-sm" data-placeholder="Kategori Seçiniz">
+                                                    <!option value="" @(!Model.Filter.CategoryId.HasValue ? "selected" : "")>Tümü</!option>
+                                                    @if (Model.Filter.Categories != null)
+                                                    {
+                                                        foreach (var item in Model.Filter.Categories)
+                                                        {
+                                                            <!option value="@item.Value" @(item.Selected ? "selected" : "")>@item.Text</!option>
+                                                        }
+                                                    }
+                                    </select>
+                                </div>
+
+                                <div class="mb-5">
+                                    <label class="form-label fw-semibold">Stok Durumu</label>
+                                    <select name="HasStock" class="form-select form-select-solid form-select-sm">
+                                        <!option value="" @(!Model.Filter.HasStock.HasValue ? "selected" : "")>Tümü</!option>
+                                        <!option value="true" @(Model.Filter.HasStock == true ? "selected" : "")>Stokta Var</!option>
+                                        <!option value="false" @(Model.Filter.HasStock == false ? "selected" : "")>Stok Yok</!option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-5">
+                                    <label class="form-label fw-semibold">Satış Durumu</label>
+                                    <select name="IsOnSale" class="form-select form-select-solid form-select-sm">
+                                        <!option value="" @(!Model.Filter.IsOnSale.HasValue ? "selected" : "")>Tümü</!option>
+                                        <!option value="true" @(Model.Filter.IsOnSale == true ? "selected" : "")>Satışta</!option>
+                                        <!option value="false" @(Model.Filter.IsOnSale == false ? "selected" : "")>Satışa Kapalı</!option>
+                                    </select>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light btn-active-light-primary me-2">
+                                        Temizle
+                                    </a>
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        Uygula
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <select name="PageSize" onchange="this.form.submit()"
-                            class="form-select form-select-sm form-select-solid w-80px" data-bs-toggle="tooltip"
-                            title="Sayfa başına kayıt">
+                                class="form-select form-select-sm form-select-solid w-80px" data-bs-toggle="tooltip"
+                                title="Sayfa başına kayıt">
                             @foreach (int size in new[] { 10, 20, 50, 100 })
                             {
                                 <!option value="@size" @(Model.Filter.PageSize == size ? "selected" : "")>@size</!option>
                             }
                         </select>
-
-                        <button type="submit" class="btn btn-sm btn-icon btn-light-primary">
-                            <i class="ki-outline ki-filter fs-2"></i>
-                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <div class="card card-flush">
     <div class="card-body pt-0">
         <div class="table-responsive">
@@ -59,6 +111,7 @@
                     <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
                         <th class="w-10px pe-2"></th>
                         <th class="min-w-250px">Model / Ürün</th>
+                        <th class="min-w-250px">Kategori</th>
                         <th class="min-w-100px">Varyant</th>
                         <th class="min-w-100px">Fiyat Aralığı</th>
                         <th class="min-w-100px">Toplam Stok</th>
@@ -84,7 +137,7 @@
 
                                 <td>
                                     <button type="button"
-                                        class="btn btn-sm btn-icon btn-light btn-active-light-primary toggle-btn w-25px h-25px">
+                                            class="btn btn-sm btn-icon btn-light btn-active-light-primary toggle-btn w-25px h-25px">
                                         <i class="ki-outline ki-plus fs-4 toggle-icon-show"></i>
                                         <i class="ki-outline ki-minus fs-4 toggle-icon-hide d-none"></i>
                                     </button>
@@ -96,7 +149,7 @@
                                             @if (!string.IsNullOrEmpty(firstItem.ImageUrl))
                                             {
                                                 <span class="symbol-label"
-                                                    style="background-image:url(@firstItem.ImageUrl);"></span>
+                                                      style="background-image:url(@firstItem.ImageUrl);"></span>
                                             }
                                             else
                                             {
@@ -116,6 +169,10 @@
                                 </td>
 
                                 <td>
+                                    <span class="fs-7">@group.FirstOrDefault().CategoryName</span>
+                                </td>
+
+                                <td>
                                     <span class="badge badge-light-primary fs-7 px-3 py-2">@group.Count() Adet</span>
                                 </td>
 
@@ -125,8 +182,7 @@
 
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div
-                                            class="w-10px h-10px rounded-circle me-2 bg-@(totalStock > 0 ? "success" : "danger")">
+                                        <div class="w-10px h-10px rounded-circle me-2 bg-@(totalStock > 0 ? "success" : "danger")">
                                         </div>
                                         <span class="text-gray-800 fw-bold fs-7">@totalStock</span>
                                     </div>
@@ -154,16 +210,15 @@
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 <a href="@variant.ExternalUrl" target="_blank"
-                                                                    class="symbol symbol-50px me-3">
+                                                                   class="symbol symbol-50px me-3">
                                                                     @if (!string.IsNullOrEmpty(variant.ImageUrl))
                                                                     {
                                                                         <span class="symbol-label"
-                                                                            style="background-image:url(@variant.ImageUrl);"></span>
+                                                                              style="background-image:url(@variant.ImageUrl);"></span>
                                                                     }
                                                                     else
                                                                     {
-                                                                        <span
-                                                                            class="symbol-label bg-white text-primary fw-bold border border-gray-300 fs-4">
+                                                                        <span class="symbol-label bg-white text-primary fw-bold border border-gray-300 fs-4">
                                                                             @variant.Name.Substring(0, 1)
                                                                         </span>
                                                                     }
@@ -171,7 +226,7 @@
 
                                                                 <div class="d-flex flex-column">
                                                                     <a href="@variant.ExternalUrl" target="_blank"
-                                                                        class="text-gray-800 text-hover-primary fw-bold fs-6">@variant.Name</a>
+                                                                       class="text-gray-800 text-hover-primary fw-bold fs-7">@variant.Name</a>
                                                                     <span class="text-muted fs-8">@variant.VariantSummary</span>
                                                                 </div>
                                                             </div>
@@ -185,23 +240,22 @@
                                                         </td>
 
                                                         <td>
-                                                            <span
-                                                                class="text-gray-800 fw-bold fs-6">@variant.SellingPrice.ToString("N2")
-                                                                ₺</span>
+                                                            <span class="text-gray-800 fw-bold fs-6">
+                                                                @variant.SellingPrice.ToString("N2")
+                                                                ₺
+                                                            </span>
                                                             @if (variant.ListPrice > variant.SellingPrice)
                                                             {
-                                                                <span
-                                                                    class="text-gray-400 text-decoration-line-through fs-9 d-block">@variant.ListPrice.ToString("N2")</span>
+                                                                <span class="text-gray-400 text-decoration-line-through fs-9 d-block">@variant.ListPrice.ToString("N2")</span>
                                                             }
                                                         </td>
 
                                                         <td>
-                                                            <span
-                                                                class="badge badge-light-@variant.StockStatusClass px-3 py-2 fs-7">@variant.StockQuantity</span>
+                                                            <span class="badge badge-light-@variant.StockStatusClass px-3 py-2 fs-7">@variant.StockQuantity</span>
                                                             @if (variant.IsLocked)
                                                             {
                                                                 <i class="ki-outline ki-lock fs-5 text-warning ms-1"
-                                                                    title="Kilitli"></i>
+                                                                   title="Kilitli"></i>
                                                             }
                                                         </td>
 
@@ -209,26 +263,26 @@
                                                             <div class="d-flex flex-column gap-2 align-items-end">
                                                                 @if (variant.IsApproved)
                                                                 {
-                                                                    <span
-                                                                        class="badge badge-light-success w-100px py-3 justify-content-center">Onaylı</span>
+                                                                    <span class="badge badge-light-success w-100px py-3 justify-content-center">Onaylı</span>
                                                                 }
                                                                 else
                                                                 {
-                                                                    <span
-                                                                        class="badge badge-light-warning w-100px py-3 justify-content-center">Onay
-                                                                        Bekliyor</span>
+                                                                    <span class="badge badge-light-warning w-100px py-3 justify-content-center">
+                                                                        Onay
+                                                                        Bekliyor
+                                                                    </span>
                                                                 }
 
                                                                 @if (variant.IsOnSale)
                                                                 {
-                                                                    <span
-                                                                        class="badge badge-light-primary w-100px py-3 justify-content-center">Satışta</span>
+                                                                    <span class="badge badge-light-primary w-100px py-3 justify-content-center">Satışta</span>
                                                                 }
                                                                 else
                                                                 {
-                                                                    <span
-                                                                        class="badge badge-light-danger w-100px py-3 justify-content-center">Satışa
-                                                                        Kapalı</span>
+                                                                    <span class="badge badge-light-danger w-100px py-3 justify-content-center">
+                                                                        Satışa
+                                                                        Kapalı
+                                                                    </span>
                                                                 }
                                                             </div>
                                                         </td>
@@ -247,8 +301,10 @@
                             <td colspan="5" class="text-center py-10">
                                 <div class="d-flex flex-column align-items-center">
                                     <i class="ki-outline ki-magnifier fs-3x text-gray-300 mb-4"></i>
-                                    <span class="text-gray-500 fw-semibold fs-5">Aradığınız kriterlere uygun kayıt
-                                        bulunamadı.</span>
+                                    <span class="text-gray-500 fw-semibold fs-5">
+                                        Aradığınız kriterlere uygun kayıt
+                                        bulunamadı.
+                                    </span>
                                 </div>
                             </td>
                         </tr>
@@ -264,8 +320,10 @@
                     <div class="dataTables_info text-gray-600 fs-7">
                         Toplam <strong>@Model.Products.TotalCount</strong> kayıttan
                         <strong>@((Model.Products.PageIndex - 1) * Model.Products.PageSize + 1)</strong> -
-                        <strong>@(Math.Min(Model.Products.PageIndex * Model.Products.PageSize,
-                                                    Model.Products.TotalCount))</strong> arası gösteriliyor.
+                        <strong>
+                            @(Math.Min(Model.Products.PageIndex * Model.Products.PageSize,
+                                Model.Products.TotalCount))
+                        </strong> arası gösteriliyor.
                     </div>
                 </div>
 
@@ -273,10 +331,9 @@
                     <div class="dataTables_paginate paging_simple_numbers">
                         <ul class="pagination">
 
-                            <li
-                                class="paginate_button page-item previous @(Model.Products.HasPreviousPage ? "" : "disabled")">
-                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex - 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
-                                    class="page-link">
+                            <li class="paginate_button page-item previous @(Model.Products.HasPreviousPage ? "" : "disabled")">
+                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex - 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode, CategoryId = Model.Filter.CategoryId, HasStock = Model.Filter.HasStock, IsOnSale = Model.Filter.IsOnSale })"
+                                   class="page-link">
                                     <i class="previous"></i>
                                 </a>
                             </li>
@@ -287,8 +344,8 @@
                                 Model.Products.PageIndex + 2))
                                 {
                                     <li class="paginate_button page-item @(i == Model.Products.PageIndex ? "active" : "")">
-                                        <a href="@Url.Action("Index", new { PageIndex = i, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
-                                            class="page-link">@i</a>
+                                        <a href="@Url.Action("Index", new { PageIndex = i, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode, CategoryId = Model.Filter.CategoryId, HasStock = Model.Filter.HasStock, IsOnSale = Model.Filter.IsOnSale })"
+                                           class="page-link">@i</a>
                                     </li>
                                 }
                                 else if (i == Model.Products.PageIndex - 3 || i == Model.Products.PageIndex + 3)
@@ -298,8 +355,8 @@
                             }
 
                             <li class="paginate_button page-item next @(Model.Products.HasNextPage ? "" : "disabled")">
-                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex + 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode })"
-                                    class="page-link">
+                                <a href="@Url.Action("Index", new { PageIndex = Model.Products.PageIndex + 1, PageSize = Model.Products.PageSize, Barcode = Model.Filter.Barcode, CategoryId = Model.Filter.CategoryId, HasStock = Model.Filter.HasStock, IsOnSale = Model.Filter.IsOnSale })"
+                                   class="page-link">
                                     <i class="next"></i>
                                 </a>
                             </li>
@@ -313,6 +370,7 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
             var collapseElements = document.querySelectorAll('.collapse');
 
             collapseElements.forEach(function (collapseEl) {

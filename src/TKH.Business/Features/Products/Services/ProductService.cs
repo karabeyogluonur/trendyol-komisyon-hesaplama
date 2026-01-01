@@ -1,5 +1,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Features.Products.Dtos;
 using TKH.Core.Contexts;
 using TKH.Core.DataAccess;
@@ -7,6 +8,8 @@ using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
 using TKH.DataAccess.Extensions;
 using TKH.Entities;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace TKH.Business.Features.Products.Services
 {
@@ -15,26 +18,48 @@ namespace TKH.Business.Features.Products.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<Product> _productRepository;
         private readonly IMapper _mapper;
-        private readonly IWorkContext _workContext;
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, IWorkContext workContext)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _productRepository = _unitOfWork.GetRepository<Product>();
             _mapper = mapper;
-            _workContext = workContext;
         }
         public async Task<IDataResult<IPagedList<ProductSummaryDto>>> GetPagedListAsync(ProductListFilterDto productListFilterDto)
         {
             IQueryable<Product> query = _productRepository.GetAll();
 
             if (!string.IsNullOrEmpty(productListFilterDto.Barcode))
-                query = query.Where(p => p.Barcode.Contains(productListFilterDto.Barcode));
+                query = query.Where(product => product.Barcode.Contains(productListFilterDto.Barcode));
+
+            if (productListFilterDto.CategoryId.HasValue || productListFilterDto.CategoryId > 0)
+                query = query.Where(product => product.CategoryId == productListFilterDto.CategoryId);
+
+            if (productListFilterDto.HasStock.HasValue)
+                query = query.Where(product => product.StockQuantity > 0);
+
+            if (productListFilterDto.IsOnSale.HasValue)
+                query = query.Where(product => product.IsOnSale == productListFilterDto.IsOnSale);
 
             IQueryable<ProductSummaryDto> productSummaryDtos = query.ProjectTo<ProductSummaryDto>(_mapper.ConfigurationProvider);
 
             IPagedList<ProductSummaryDto> pagedProductSummaryDto = await productSummaryDtos.ToPagedListAsync(productListFilterDto.PageIndex, productListFilterDto.PageSize);
 
             return new SuccessDataResult<IPagedList<ProductSummaryDto>>(pagedProductSummaryDto);
+        }
+
+        public async Task<IDataResult<List<CategoryLookupDto>>> GetUsedCategoriesAsync()
+        {
+            IQueryable<Product> query = _productRepository.GetAll();
+
+            IQueryable<CategoryLookupDto> categoryLookupDtos = query
+                .Where(product => product.CategoryId != null)
+                .Select(product => product.Category)
+                .Distinct()
+                .ProjectTo<CategoryLookupDto>(_mapper.ConfigurationProvider);
+
+            List<CategoryLookupDto> categories = await categoryLookupDtos.ToListAsync();
+
+            return new SuccessDataResult<List<CategoryLookupDto>>(categories);
         }
     }
 }
