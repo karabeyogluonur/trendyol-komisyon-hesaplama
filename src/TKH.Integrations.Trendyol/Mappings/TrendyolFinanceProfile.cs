@@ -16,7 +16,8 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Credit - src.Debt))
                 .ForMember(dest => dest.MarketplaceAccountId, opt => opt.Ignore())
-                .ForMember(dest => dest.TransactionType, opt => opt.Ignore());
+                .ForMember(dest => dest.TransactionType, opt => opt.Ignore())
+                .ForMember(dest => dest.CommissionRate, opt => opt.MapFrom(src => src.CommissionRate));
 
 
 

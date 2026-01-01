@@ -15,6 +15,7 @@ namespace TKH.Entities
         public decimal Amount { get; set; }
         public string? Description { get; set; }
         public string? Title { get; set; }
+        public decimal? CommissionRate { get; set; }
         public ShipmentTransactionSyncStatus ShipmentTransactionSyncStatus { get; set; } = ShipmentTransactionSyncStatus.Pending;
         public virtual MarketplaceAccount MarketplaceAccount { get; set; }
     }

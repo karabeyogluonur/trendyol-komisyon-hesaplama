@@ -13,6 +13,7 @@ namespace TKH.Business.Integrations.Marketplaces.Dtos
         public decimal Amount { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
+        public decimal? CommissionRate { get; set; }
         public DateTime TransactionDate { get; set; }
     }
 }
