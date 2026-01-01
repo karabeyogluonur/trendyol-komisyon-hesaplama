@@ -9,6 +9,7 @@ using TKH.Presentation.Infrastructure.Services;
 using TKH.Integrations.Trendyol.Configuration;
 using TKH.Presentation.Features.MarketplaceAccounts.Services;
 using TKH.Presentation.Features.Products.Services;
+using TKH.Presentation.Infrastructure.Filters;
 
 namespace TKH.Presentation.Configuration.Extensions
 {
@@ -16,7 +17,10 @@ namespace TKH.Presentation.Configuration.Extensions
     {
         public static void AddCustomMvc(this IServiceCollection services, IWebHostEnvironment environment)
         {
-            var mvcBuilder = services.AddControllersWithViews();
+            var mvcBuilder = services.AddControllersWithViews(options =>
+            {
+                options.Filters.Add<ValidateActiveMarketplaceAccountFilter>();
+            });
 
             if (environment.IsDevelopment())
                 mvcBuilder.AddRazorRuntimeCompilation();
