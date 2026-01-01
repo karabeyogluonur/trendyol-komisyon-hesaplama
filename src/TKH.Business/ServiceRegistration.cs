@@ -5,6 +5,7 @@ using TKH.Business.Features.Claims.Services;
 using TKH.Business.Features.FinancialTransactions.Services;
 using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Features.Orders.Services;
+using TKH.Business.Features.ProductExpenses.Services;
 using TKH.Business.Features.Products.Services;
 using TKH.Business.Features.ShipmentTransactions.Services;
 using TKH.Business.Infrastructure.Storage.Services;
@@ -35,6 +36,7 @@ namespace TKH.Business
             services.AddScoped<IProductSyncService, ProductSyncService>();
             services.AddScoped<IOrderSyncService, OrderSyncService>();
             services.AddScoped<IClaimSyncService, ClaimSyncService>();
+            services.AddScoped<IProductExpenseSyncService, ProductExpenseSyncService>();
             services.AddScoped<IFinancialTransactionSyncService, FinancialTransactionSyncService>();
             services.AddScoped<IShipmentTransactionSyncService, ShipmentTransactionSyncService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();

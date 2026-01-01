@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using TKH.Business.Jobs.Filters;
 using TKH.Business.Jobs.Services;
+using TKH.Business.Jobs.Workers;
 using TKH.Entities.Enums;
 
 namespace TKH.Presentation.Configuration.Extensions
@@ -41,7 +42,7 @@ namespace TKH.Presentation.Configuration.Extensions
                     .Select(queueName => queueName.ToLowerInvariant())
                     .ToArray();
 
-                options.WorkerCount = System.Environment.ProcessorCount;
+                options.WorkerCount = Environment.ProcessorCount;
             });
         }
 
@@ -58,6 +59,13 @@ namespace TKH.Presentation.Configuration.Extensions
                 "weekly-reference-dispatcher",
                 service => service.DispatchMarketplaceCategoryDataSyncAsync(),
                 "0 4 * * 0",
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
+            );
+
+            RecurringJob.AddOrUpdate<InternalCalculationWorkerJob>(
+                "product-shipping-cost-analysis",
+                service => service.ExecuteProductShippingCostAnalysisAsync(),
+                Cron.Daily(4, 0),
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
             );
         }
