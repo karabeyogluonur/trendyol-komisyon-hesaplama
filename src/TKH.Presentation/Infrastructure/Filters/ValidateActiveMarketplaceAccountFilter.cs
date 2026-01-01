@@ -46,10 +46,16 @@ namespace TKH.Presentation.Infrastructure.Filters
             MarketplaceAccountDetailsDto marketplaceAccountDetailsDto = getMarketplaceAccountResult.Data;
 
             if (marketplaceAccountDetailsDto.SyncState is MarketplaceSyncState.Syncing)
+            {
                 await ResetSelectionAndRedirectAsync(context, $"'{marketplaceAccountDetailsDto.StoreName}' mağazası güncelleme işlemine girdiği için kısa bir süre beklemeniz gerekmektedir.");
+                return;
+            }
 
             if (marketplaceAccountDetailsDto.ConnectionState is not MarketplaceConnectionState.Connected)
+            {
                 await ResetSelectionAndRedirectAsync(context, $"'{marketplaceAccountDetailsDto.StoreName}' mağazasındaki bağlantı sorunu nedeniyle seçiminiz kaldırıldı.");
+                return;
+            }
 
             await next();
         }
