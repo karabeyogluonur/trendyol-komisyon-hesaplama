@@ -12,8 +12,8 @@ using TKH.DataAccess.Contexts;
 namespace TKH.DataAccess.Migrations
 {
     [DbContext(typeof(TKHDbContext))]
-    [Migration("20251227175434_ClaimEntity")]
-    partial class ClaimEntity
+    [Migration("20260103175655_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -324,6 +324,9 @@ namespace TKH.DataAccess.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal?>("CommissionRate")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -389,8 +392,23 @@ namespace TKH.DataAccess.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<int>("ConnectionState")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastErrorDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("LastSyncStartTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("MarketplaceType")
                         .HasColumnType("integer");
@@ -404,6 +422,9 @@ namespace TKH.DataAccess.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SyncState")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -753,6 +774,32 @@ namespace TKH.DataAccess.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductPrices", (string)null);
+                });
+
+            modelBuilder.Entity("TKH.Entities.Setting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Settings", (string)null);
                 });
 
             modelBuilder.Entity("TKH.Entities.ShipmentTransaction", b =>

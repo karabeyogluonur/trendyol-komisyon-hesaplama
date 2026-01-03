@@ -32,7 +32,7 @@ namespace TKH.Business.Features.Categories.Services
             IMarketplaceCategoryProvider marketplaceCategoryProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceCategoryProvider>(marketplaceType);
             List<MarketplaceCategoryDto> incomingMarketplaceCategoryDtos = await marketplaceCategoryProvider.GetCategoryTreeAsync();
 
-            if (incomingMarketplaceCategoryDtos is null || incomingMarketplaceCategoryDtos.Count == 0) return;
+            if (incomingMarketplaceCategoryDtos is null || incomingMarketplaceCategoryDtos.Count is 0) return;
 
             List<MarketplaceCategoryDto> distinctIncomingMarketplaceCategoryDtos = incomingMarketplaceCategoryDtos
                 .DistinctBy(marketplaceCategoryDto => marketplaceCategoryDto.ExternalId)
@@ -49,8 +49,7 @@ namespace TKH.Business.Features.Categories.Services
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, Category> existingCategoryEntityMap = existingCategoryEntities
-                    .ToDictionary(categoryEntity => categoryEntity.ExternalId, categoryEntity => categoryEntity);
+                Dictionary<string, Category> existingCategoryEntityMap = existingCategoryEntities.ToDictionary(categoryEntity => categoryEntity.ExternalId, categoryEntity => categoryEntity);
 
                 List<Category> newCategoryEntitiesToAdd = new List<Category>();
 

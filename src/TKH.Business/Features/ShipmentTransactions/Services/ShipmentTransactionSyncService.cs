@@ -33,7 +33,7 @@ namespace TKH.Business.Features.ShipmentTransactions.Services
         {
             IMarketplaceFinanceProvider marketplaceFinanceProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceFinanceProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
-            List<MarketplaceShipmentSyncResultDto> buffer =new(ApplicationDefaults.FinanceBatchSize);
+            List<MarketplaceShipmentSyncResultDto> buffer = new(ApplicationDefaults.FinanceBatchSize);
 
             await foreach (MarketplaceShipmentSyncResultDto dto in marketplaceFinanceProvider.GetShipmentTransactionsStreamAsync(marketplaceAccountConnectionDetailsDto))
             {
@@ -50,42 +50,29 @@ namespace TKH.Business.Features.ShipmentTransactions.Services
                 await ProcessShipmentTransactionBatchAsync(buffer, marketplaceAccountConnectionDetailsDto.Id);
         }
 
-        private async Task ProcessShipmentTransactionBatchAsync(
-            List<MarketplaceShipmentSyncResultDto> dtoList,
-            int marketplaceAccountId)
+        private async Task ProcessShipmentTransactionBatchAsync(List<MarketplaceShipmentSyncResultDto> marketplaceShipmentSyncResultDtos, int marketplaceAccountId)
         {
             using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
-                IUnitOfWork uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                IRepository<ShipmentTransaction> repository =
-                    uow.GetRepository<ShipmentTransaction>();
-                IFinancialTransactionService financialTransactionService =
-                    scope.ServiceProvider.GetRequiredService<IFinancialTransactionService>();
+                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<ShipmentTransaction> shipmentTransactionRepository = unitOfWork.GetRepository<ShipmentTransaction>();
+                IFinancialTransactionService financialTransactionService = scope.ServiceProvider.GetRequiredService<IFinancialTransactionService>();
 
-                List<MarketplaceShipmentTransactionDto> validShipments =
-                    dtoList
-                        .Where(x => x.ResultStatus == ShipmentTransactionSyncStatus.Synced && x.Shipments.Any())
-                        .SelectMany(x => x.Shipments)
+                List<MarketplaceShipmentTransactionDto> validShipments = marketplaceShipmentSyncResultDtos
+                        .Where(shipmentTransaction => shipmentTransaction.ResultStatus == ShipmentTransactionSyncStatus.Synced && shipmentTransaction.Shipments.Any())
+                        .SelectMany(shipmentTransaction => shipmentTransaction.Shipments)
                         .ToList();
 
                 if (validShipments.Count > 0)
                 {
-                    List<string> incomingParcelIds =
-                        validShipments
-                            .Select(x => x.ExternalParcelId)
-                            .Where(x => !string.IsNullOrEmpty(x))
-                            .ToList();
+                    List<string> incomingParcelIds = validShipments.Select(shipmentTransaction => shipmentTransaction.ExternalParcelId).Where(shipmentTransaction => !string.IsNullOrEmpty(shipmentTransaction)).ToList();
 
-                    IList<ShipmentTransaction> existingList =
-                        await repository.GetAllAsync(
-                            predicate: x =>
-                                x.MarketplaceAccountId == marketplaceAccountId &&
-                                incomingParcelIds.Contains(x.ExternalParcelId),
+                    IList<ShipmentTransaction> existingList = await shipmentTransactionRepository.GetAllAsync(
+                            predicate: shipmentTransaction => shipmentTransaction.MarketplaceAccountId == marketplaceAccountId && incomingParcelIds.Contains(shipmentTransaction.ExternalParcelId),
                             disableTracking: true,
                             ignoreQueryFilters: true);
 
-                    HashSet<string> existingSet =
-                        existingList.Select(x => x.ExternalParcelId).ToHashSet();
+                    HashSet<string> existingSet = existingList.Select(shipmentTransaction => shipmentTransaction.ExternalParcelId).ToHashSet();
 
                     List<ShipmentTransaction> newItems = new();
 
@@ -100,23 +87,19 @@ namespace TKH.Business.Features.ShipmentTransactions.Services
                     }
 
                     if (newItems.Count > 0)
-                        await repository.InsertAsync(newItems);
+                        await shipmentTransactionRepository.InsertAsync(newItems);
                 }
 
-                List<ShipmentSyncStatusUpdateDto> statusUpdates =
-                    dtoList
-                        .Select(x => new ShipmentSyncStatusUpdateDto
-                        {
-                            ExternalTransactionId = x.ExternalTransactionId,
-                            NewStatus = x.ResultStatus
-                        })
-                        .ToList();
+                List<ShipmentSyncStatusUpdateDto> statusUpdates = marketplaceShipmentSyncResultDtos.Select(shipmentTransaction => new ShipmentSyncStatusUpdateDto
+                {
+                    ExternalTransactionId = shipmentTransaction.ExternalTransactionId,
+                    NewStatus = shipmentTransaction.ResultStatus
+                }).ToList();
 
                 if (statusUpdates.Count > 0)
-                    await financialTransactionService
-                        .BulkUpdateShipmentSyncStatusAsync(marketplaceAccountId, statusUpdates);
+                    await financialTransactionService.BulkUpdateShipmentSyncStatusAsync(marketplaceAccountId, statusUpdates);
 
-                await uow.SaveChangesAsync();
+                await unitOfWork.SaveChangesAsync();
             }
         }
     }

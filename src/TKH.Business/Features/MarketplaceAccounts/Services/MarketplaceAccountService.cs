@@ -196,12 +196,9 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
                            marketplaceAccount.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
 
             if (isStuck)
-            {
                 _logger.LogWarning("Zombie lock detected for Account {AccountId}. Breaking lock and restarting sync.", marketplaceAccountId);
-            }
 
-            bool isAvailable = marketplaceAccount.SyncState == MarketplaceSyncState.Idle ||
-                               marketplaceAccount.SyncState == MarketplaceSyncState.Queued;
+            bool isAvailable = marketplaceAccount.SyncState == MarketplaceSyncState.Idle || marketplaceAccount.SyncState == MarketplaceSyncState.Queued;
 
             if (!isAvailable && !isStuck)
                 return false;
@@ -209,11 +206,8 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             marketplaceAccount.SyncState = MarketplaceSyncState.Syncing;
             marketplaceAccount.LastSyncStartTime = DateTime.UtcNow;
 
-            if (marketplaceAccount.ConnectionState == MarketplaceConnectionState.AuthError ||
-                marketplaceAccount.ConnectionState == MarketplaceConnectionState.SystemError)
-            {
+            if (marketplaceAccount.ConnectionState == MarketplaceConnectionState.AuthError || marketplaceAccount.ConnectionState == MarketplaceConnectionState.SystemError)
                 marketplaceAccount.ConnectionState = MarketplaceConnectionState.Initializing;
-            }
 
             await _unitOfWork.SaveChangesAsync();
 

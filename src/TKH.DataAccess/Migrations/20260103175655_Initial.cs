@@ -41,11 +41,30 @@ namespace TKH.DataAccess.Migrations
                     ApiKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     ApiSecretKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     MerchantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    ConnectionState = table.Column<int>(type: "integer", nullable: false),
+                    LastErrorMessage = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    LastErrorDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    SyncState = table.Column<int>(type: "integer", nullable: false),
+                    LastSyncStartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MarketplaceAccounts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Settings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Value = table.Column<string>(type: "text", maxLength: 2147483647, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Settings", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -71,6 +90,41 @@ namespace TKH.DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Claims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MarketplaceAccountId = table.Column<int>(type: "integer", nullable: false),
+                    ExternalId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ExternalOrderNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ExternalShipmentPackageId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ClaimDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdateDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CustomerFirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CustomerLastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CargoTrackingNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CargoProviderName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CargoSenderNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CargoTrackingLink = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    RejectedExternalPackageId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RejectedCargoTrackingNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RejectedCargoProviderName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RejectedCargoTrackingLink = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Claims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Claims_MarketplaceAccounts_MarketplaceAccountId",
+                        column: x => x.MarketplaceAccountId,
+                        principalTable: "MarketplaceAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FinancialTransactions",
                 columns: table => new
                 {
@@ -85,6 +139,7 @@ namespace TKH.DataAccess.Migrations
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Title = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    CommissionRate = table.Column<decimal>(type: "numeric", nullable: true),
                     ShipmentTransactionSyncStatus = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -217,6 +272,47 @@ namespace TKH.DataAccess.Migrations
                         principalTable: "CategoryAttributes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClaimItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ClaimId = table.Column<int>(type: "integer", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: true),
+                    ExternalId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ExternalOrderLineItemId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    VatRate = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CustomerNote = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    ReasonType = table.Column<int>(type: "integer", nullable: false),
+                    ReasonName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ReasonCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    IsResolved = table.Column<bool>(type: "boolean", nullable: false),
+                    IsAutoAccepted = table.Column<bool>(type: "boolean", nullable: false),
+                    IsAcceptedBySeller = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClaimItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClaimItems_Claims_ClaimId",
+                        column: x => x.ClaimId,
+                        principalTable: "Claims",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ClaimItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -355,6 +451,51 @@ namespace TKH.DataAccess.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClaimItems_ClaimId",
+                table: "ClaimItems",
+                column: "ClaimId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClaimItems_ExternalId",
+                table: "ClaimItems",
+                column: "ExternalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClaimItems_ProductId",
+                table: "ClaimItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClaimItems_Status",
+                table: "ClaimItems",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Claims_ClaimDate",
+                table: "Claims",
+                column: "ClaimDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Claims_ExternalId",
+                table: "Claims",
+                column: "ExternalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Claims_ExternalOrderNumber",
+                table: "Claims",
+                column: "ExternalOrderNumber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Claims_LastUpdateDateTime",
+                table: "Claims",
+                column: "LastUpdateDateTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Claims_MarketplaceAccountId",
+                table: "Claims",
+                column: "MarketplaceAccountId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FinancialTransactions_ExternalOrderNumber",
                 table: "FinancialTransactions",
                 column: "ExternalOrderNumber");
@@ -460,6 +601,12 @@ namespace TKH.DataAccess.Migrations
                 column: "Sku");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Settings_Name",
+                table: "Settings",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ShipmentTransactions_MarketplaceAccountId",
                 table: "ShipmentTransactions",
                 column: "MarketplaceAccountId");
@@ -468,6 +615,9 @@ namespace TKH.DataAccess.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ClaimItems");
+
             migrationBuilder.DropTable(
                 name: "FinancialTransactions");
 
@@ -484,7 +634,13 @@ namespace TKH.DataAccess.Migrations
                 name: "ProductPrices");
 
             migrationBuilder.DropTable(
+                name: "Settings");
+
+            migrationBuilder.DropTable(
                 name: "ShipmentTransactions");
+
+            migrationBuilder.DropTable(
+                name: "Claims");
 
             migrationBuilder.DropTable(
                 name: "Orders");

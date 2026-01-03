@@ -25,8 +25,13 @@ namespace TKH.Web.Features.MarketplaceAccounts.Models
         [Display(Name = "Durum")]
         public bool IsActive { get; set; }
 
+        [Display(Name = "Bağlantı Durumu")]
         public MarketplaceConnectionState ConnectionState { get; set; }
+
+        [Display(Name = "Senkronizasyon")]
         public MarketplaceSyncState SyncState { get; set; }
+
+        [Display(Name = "Son Hata Mesajı")]
         public string? LastErrorMessage { get; set; }
     }
 }

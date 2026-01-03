@@ -43,7 +43,7 @@ namespace TKH.Business.Features.Settings.Services
 
                 var settingEntity = allSettings.FirstOrDefault(setting => setting.Name.Equals(key, StringComparison.InvariantCultureIgnoreCase));
 
-                if (settingEntity != null)
+                if (settingEntity is not null)
                 {
                     object? convertedValue = CommonHelper.To(settingEntity.Value, prop.PropertyType);
                     prop.SetValue(settings, convertedValue);

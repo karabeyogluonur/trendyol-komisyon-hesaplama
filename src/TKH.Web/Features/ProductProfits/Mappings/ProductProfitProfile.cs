@@ -8,7 +8,7 @@ namespace TKH.Web.Features.ProductProfits.Mappings
     {
         public ProductProfitProfile()
         {
-            CreateMap<ProductProfitSummaryDto, ProductProfitItemViewModel>();
+            CreateMap<ProductProfitSummaryDto, ProductProfitListItemViewModel>();
             CreateMap<ProductProfitListFilterViewModel, ProductProfitListFilterDto>();
         }
     }

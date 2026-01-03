@@ -28,7 +28,7 @@ namespace TKH.Business.Features.Products.Services
             IQueryable<Product> query = _productRepository.GetAll();
 
             if (!string.IsNullOrEmpty(productListFilterDto.Barcode))
-                query = query.Where(product => product.Barcode.Contains(productListFilterDto.Barcode));
+                query = query.Where(product => product.Barcode == productListFilterDto.Barcode);
 
             if (productListFilterDto.CategoryId.HasValue || productListFilterDto.CategoryId > 0)
                 query = query.Where(product => product.CategoryId == productListFilterDto.CategoryId);
@@ -66,7 +66,7 @@ namespace TKH.Business.Features.Products.Services
             IQueryable<Product> query = _productRepository.GetAll();
 
             if (!string.IsNullOrEmpty(productProfitListFilterDto.Barcode))
-                query = query.Where(product => product.Barcode.Contains(productProfitListFilterDto.Barcode));
+                query = query.Where(product => product.Barcode == productProfitListFilterDto.Barcode);
 
             if (productProfitListFilterDto.CategoryId.HasValue || productProfitListFilterDto.CategoryId > 0)
                 query = query.Where(product => product.CategoryId == productProfitListFilterDto.CategoryId);

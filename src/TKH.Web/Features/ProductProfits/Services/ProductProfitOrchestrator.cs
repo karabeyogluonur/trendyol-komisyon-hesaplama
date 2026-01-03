@@ -67,7 +67,7 @@ namespace TKH.Web.Features.ProductProfits.Services
 
             ProductProfitListViewModel productProfitListViewModel = new ProductProfitListViewModel
             {
-                Products = _mapper.Map<IPagedList<ProductProfitItemViewModel>>(productPagedListResult.Data),
+                Products = _mapper.Map<IPagedList<ProductProfitListItemViewModel>>(productPagedListResult.Data),
                 Filter = productProfitListFilterViewModel,
                 MarketplaceType = getMarketplaceAccountResult.Data.MarketplaceType,
                 MarketplaceDefaults = _mapper.Map<MarketplaceDefaultsViewModel>(marketplaceDefaultsProvider.GetDefaults()),
