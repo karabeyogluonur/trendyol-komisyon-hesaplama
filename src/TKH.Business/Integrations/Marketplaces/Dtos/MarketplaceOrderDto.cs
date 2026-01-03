@@ -29,7 +29,7 @@ namespace TKH.Business.Integrations.Marketplaces.Dtos
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal VatRate { get; set; }
-        public decimal CommissionRate { get; set; }
+        public decimal? CommissionRate { get; set; }
         public decimal PlatformCoveredDiscount { get; set; }
         public decimal SellerCoveredDiscount { get; set; }
         public OrderItemStatus OrderItemStatus { get; set; }
