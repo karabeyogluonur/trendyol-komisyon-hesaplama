@@ -16,7 +16,6 @@ namespace TKH.Entities
         public decimal CommissionRate { get; set; }
         public decimal PlatformCoveredDiscount { get; set; }
         public decimal SellerCoveredDiscount { get; set; }
-
         public OrderItemStatus OrderItemStatus { get; set; }
         public virtual Order Order { get; set; }
         public virtual Product? Product { get; set; }

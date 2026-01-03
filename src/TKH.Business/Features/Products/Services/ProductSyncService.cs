@@ -8,6 +8,7 @@ using TKH.Business.Integrations.Marketplaces.Factories;
 using TKH.Core.Common.Constants;
 using TKH.Core.DataAccess;
 using TKH.Entities;
+using TKH.Entities.Enums;
 
 namespace TKH.Business.Features.Products.Services
 {
@@ -26,6 +27,8 @@ namespace TKH.Business.Features.Products.Services
             _marketplaceProviderFactory = marketplaceProviderFactory;
             _mapper = mapper;
         }
+
+        #region Sync Products From Marketplace
 
         public async Task SyncProductsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
@@ -256,5 +259,94 @@ namespace TKH.Business.Features.Products.Services
                 }
             }
         }
+
+        #endregion
+
+
+        public async Task CalculateAndSyncCommissionRatesAsync()
+        {
+            List<(int ProductId, decimal LatestCommissionRate)> calculatedCommissions = new List<(int ProductId, decimal LatestCommissionRate)>();
+
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            {
+                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
+                IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
+
+                DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
+
+                IList<Order> orders = await orderRepository.GetAllAsync(
+                    predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                if (!orders.Any()) return;
+
+                List<int> orderIds = orders.Select(order => order.Id).ToList();
+
+                IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
+                    predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                var analysisData = orderItems
+                    .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
+                    .GroupBy(x => x.Item.ProductId!.Value)
+                    .Select(group => new
+                    {
+                        ProductId = group.Key,
+                        LatestCommissionRate = group.OrderByDescending(x => x.Order.OrderDate).Select(x => x.Item.CommissionRate).FirstOrDefault()
+                    })
+                    .ToList();
+
+                foreach (var item in analysisData)
+                    calculatedCommissions.Add((item.ProductId, item.LatestCommissionRate));
+            }
+
+            if (calculatedCommissions.Count > 0)
+                await ProcessCommissionUpdateBatchAsync(calculatedCommissions);
+        }
+
+        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync)
+        {
+            for (int i = 0; i < commissionsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
+            {
+                List<(int ProductId, decimal LatestCommissionRate)> batch = commissionsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+
+                List<int> batchProductIds = batch.Select(item => item.ProductId).ToList();
+
+                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                {
+                    IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
+
+                    IList<Product> products = await productRepository.GetAllAsync(
+                        predicate: product => batchProductIds.Contains(product.Id),
+                        disableTracking: false,
+                        ignoreQueryFilters: true
+                    );
+
+                    bool isBatchModified = false;
+
+                    foreach (var (productId, latestRate) in batch)
+                    {
+                        Product? product = products.FirstOrDefault(product => product.Id == productId);
+
+                        if (product is null || product.CommissionRate == latestRate)
+                            continue;
+
+                        product.CommissionRate = latestRate;
+                        product.LastUpdateDateTime = DateTime.UtcNow;
+                        isBatchModified = true;
+                    }
+
+                    if (isBatchModified)
+                        await unitOfWork.SaveChangesAsync();
+                }
+            }
+        }
+
     }
 }

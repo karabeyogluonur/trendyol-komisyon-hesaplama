@@ -68,6 +68,13 @@ namespace TKH.Presentation.Configuration.Extensions
                 Cron.Daily(4, 0),
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
             );
+
+            RecurringJob.AddOrUpdate<InternalCalculationWorkerJob>(
+                "product-commission-rate-analysis",
+                service => service.ExecuteProductCommissionSyncAsync(),
+                Cron.Daily(4, 0),
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
+            );
         }
     }
 }
