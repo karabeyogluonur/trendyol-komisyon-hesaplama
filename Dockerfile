@@ -5,7 +5,7 @@ COPY . .
 
 RUN dotnet restore "TKH.sln"
 
-WORKDIR /src/src/TKH.Presentation
+WORKDIR /src/src/TKH.Web
 
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
@@ -26,4 +26,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["dotnet", "TKH.Presentation.dll"]
+ENTRYPOINT ["dotnet", "TKH.Web.dll"]

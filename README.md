@@ -63,7 +63,7 @@ trendyol-komisyon-hesaplama/
 │   ├── TKH.Core/           # Evrensel nesneler, arayüzler, sabitler (Bağımsız Katman)
 │   ├── TKH.DataAccess/     # Veritabanı erişimi, EF Core Context, Migrations
 │   ├── TKH.Business/       # İş mantığı, Servisler, DTO'lar, Validasyonlar, API Entegrasyonları
-│   └── TKH.Presentation/   # UI, Controllerlar, Viewlar, Program.cs (Web Katmanı)
+│   └── TKH.Web/   # UI, Controllerlar, Viewlar, Program.cs (Web Katmanı)
 ├── docker-compose.yml      # Docker orkestrasyon dosyası (App, Db, Seq)
 ├── Dockerfile              # Web uygulaması için Docker imaj tanımı
 └── .gitignore
@@ -72,7 +72,7 @@ trendyol-komisyon-hesaplama/
 #### 📁 Önemli Klasörler
 - **TKH.Business/Integrations:** Trendyol API ile haberleşen Provider ve Service sınıflarını barındırır.
 - **TKH.Business/Concrete/FinanceSyncService.cs:** Finansal verilerin çekilmesi ve işlenmesinden sorumlu ana servis.
-- **TKH.Presentation/Controllers:** Kullanıcı isteklerini karşılayan MVC controller yapıları.
+- **TKH.Web/Controllers:** Kullanıcı isteklerini karşılayan MVC controller yapıları.
 
 ## 🚀 Kurulum
 
@@ -98,7 +98,7 @@ Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları izleyi
     ```
 
 3.  **Yapılandırma Dosyasını Düzenleyin**
-    `src/TKH.Presentation/appsettings.json` (veya `Development.json`) dosyasındaki veritabanı ve loglama bağlantı bilgilerini kontrol edin.
+    `src/TKH.Web/appsettings.json` (veya `Development.json`) dosyasındaki veritabanı ve loglama bağlantı bilgilerini kontrol edin.
 
 ## 🏃 Çalıştırma
 
@@ -120,7 +120,7 @@ Komut sonrası aşağıdaki servisler ayağa kalkacaktır:
 ### Seçenek 2: Local Ortamda Çalıştırma
 
 ```bash
-cd src/TKH.Presentation
+cd src/TKH.Web
 dotnet run
 ```
 

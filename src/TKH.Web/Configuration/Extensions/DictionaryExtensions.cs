@@ -1,0 +1,33 @@
+namespace TKH.Web.Configuration.Extensions
+{
+    public static class DictionaryExtensions
+    {
+        public static string GetJsDecimal(this Dictionary<string, object> dictionary, string key, decimal defaultValue = 0)
+        {
+            if (dictionary != null && dictionary.TryGetValue(key, out object value))
+            {
+                try
+                {
+                    decimal decimalValue = Convert.ToDecimal(value);
+                    return decimalValue.ToJsFormat();
+                }
+                catch { }
+            }
+            return defaultValue.ToJsFormat();
+        }
+
+        public static string GetJsPercentage(this Dictionary<string, object> dictionary, string key, decimal defaultValue = 0)
+        {
+            if (dictionary != null && dictionary.TryGetValue(key, out object value))
+            {
+                try
+                {
+                    decimal decimalValue = Convert.ToDecimal(value);
+                    return decimalValue.ToPercentageRate();
+                }
+                catch { }
+            }
+            return defaultValue.ToPercentageRate();
+        }
+    }
+}

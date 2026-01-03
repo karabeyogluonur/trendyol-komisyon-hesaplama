@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TKH.Presentation", "src\TKH.Presentation\TKH.Presentation.csproj", "{B7345E2D-8B67-4A7B-9505-0714B02415AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TKH.Web", "src\TKH.Web\TKH.Web.csproj", "{B7345E2D-8B67-4A7B-9505-0714B02415AB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TKH.Business", "src\TKH.Business\TKH.Business.csproj", "{C98C1B55-45C8-4F13-91AC-6AA9D6E15678}"
 EndProject

@@ -10,7 +10,7 @@ namespace TKH.DataAccess.Contexts
         public TKHDbContext CreateDbContext(string[] args)
         {
 
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "../TKH.Presentation");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "../TKH.Web");
 
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(path)
