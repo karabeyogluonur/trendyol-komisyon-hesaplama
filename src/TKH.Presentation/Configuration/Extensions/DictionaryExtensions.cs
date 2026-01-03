@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace TKH.Presentation.Configuration.Extensions
 {
     public static class DictionaryExtensions
@@ -11,14 +9,25 @@ namespace TKH.Presentation.Configuration.Extensions
                 try
                 {
                     decimal decimalValue = Convert.ToDecimal(value);
-                    return decimalValue.ToString("F2", CultureInfo.InvariantCulture);
+                    return decimalValue.ToJsFormat();
                 }
-                catch
-                {
-
-                }
+                catch { }
             }
-            return defaultValue.ToString("F2", CultureInfo.InvariantCulture);
+            return defaultValue.ToJsFormat();
+        }
+
+        public static string GetJsPercentage(this Dictionary<string, object> dictionary, string key, decimal defaultValue = 0)
+        {
+            if (dictionary != null && dictionary.TryGetValue(key, out object value))
+            {
+                try
+                {
+                    decimal decimalValue = Convert.ToDecimal(value);
+                    return decimalValue.ToPercentageRate();
+                }
+                catch { }
+            }
+            return defaultValue.ToPercentageRate();
         }
     }
 }

@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using TKH.Business.Execution;
 using TKH.Business.Executors;
+using TKH.Business.Extensions;
 using TKH.Business.Features.Categories.Services;
 using TKH.Business.Features.Claims.Services;
 using TKH.Business.Features.FinancialTransactions.Services;
@@ -9,6 +10,7 @@ using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Features.Orders.Services;
 using TKH.Business.Features.ProductExpenses.Services;
 using TKH.Business.Features.Products.Services;
+using TKH.Business.Features.Settings.Services;
 using TKH.Business.Features.ShipmentTransactions.Services;
 using TKH.Business.Infrastructure.Storage.Services;
 using TKH.Business.Integrations.Marketplaces.Factories;
@@ -28,29 +30,45 @@ namespace TKH.Business
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddSingleton<IMarketplaceRateLimiter, MarketplaceRateLimiter>();
+            services.AddScoped<IStorageService, LocalStorageService>();
 
             #endregion
 
-            #region Business Logic Services (Features)
+            #region Settings & Configuration
+
+            services.AddScoped<ISettingService, SettingService>();
+            services.AddDatabaseSettings();
+
+            #endregion
+
+            #region Domain Services
 
             services.AddScoped<IMarketplaceAccountService, MarketplaceAccountService>();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
+
+            #endregion
+
+            #region Integration & Synchronization Services
+
             services.AddScoped<IProductSyncService, ProductSyncService>();
             services.AddScoped<IOrderSyncService, OrderSyncService>();
             services.AddScoped<IClaimSyncService, ClaimSyncService>();
             services.AddScoped<IProductExpenseSyncService, ProductExpenseSyncService>();
             services.AddScoped<IFinancialTransactionSyncService, FinancialTransactionSyncService>();
             services.AddScoped<IShipmentTransactionSyncService, ShipmentTransactionSyncService>();
-            services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
             services.AddScoped<ICategorySyncService, CategorySyncService>();
-            services.AddScoped<IIntegrationExecutor, IntegrationExecutor>();
-
 
             #endregion
 
-            #region Shared Infrastructure Services
+            #region Execution & Orchestration
 
-            services.AddScoped<IStorageService, LocalStorageService>();
+            services.AddScoped<IIntegrationExecutor, IntegrationExecutor>();
+
+            #endregion
+
+            #region Background Jobs & Workers
+
             services.AddScoped<IMarketplaceJobService, MarketplaceJobService>();
             services.AddScoped<MarketplaceWorkerJob>();
 

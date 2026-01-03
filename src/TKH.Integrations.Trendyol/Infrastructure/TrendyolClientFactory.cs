@@ -4,10 +4,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Refit;
 using TKH.Business.Integrations.Providers.Trendyol;
+using TKH.Integrations.Trendyol.Settings;
 
 namespace TKH.Integrations.Trendyol.Infrastructure
 {
-    public class TrendyolClientFactory(IHttpClientFactory httpClientFactory)
+    public class TrendyolClientFactory(IHttpClientFactory httpClientFactory, TrendyolSettings trendyolSettings)
     {
         private readonly RefitSettings _refitSettings = new RefitSettings
         {
@@ -23,14 +24,16 @@ namespace TKH.Integrations.Trendyol.Infrastructure
         public T CreateClient<T>(long sellerIdentifier, string apiKey, string apiSecret) where T : class
         {
             HttpClient httpClient = httpClientFactory.CreateClient(TrendyolDefaults.HttpClientName);
-            httpClient.BaseAddress = new Uri(TrendyolDefaults.BaseUrl);
+
+            httpClient.BaseAddress = new Uri(trendyolSettings.BaseUrl);
 
             string authenticationCredentials = $"{apiKey}:{apiSecret}";
             byte[] authenticationBytes = Encoding.UTF8.GetBytes(authenticationCredentials);
             string encodedAuthenticationHeader = Convert.ToBase64String(authenticationBytes);
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedAuthenticationHeader);
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{sellerIdentifier} - {TrendyolDefaults.UserAgentSuffix}");
+
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{sellerIdentifier} - {trendyolSettings.UserAgent}");
 
             return RestService.For<T>(httpClient, _refitSettings);
         }
@@ -38,8 +41,10 @@ namespace TKH.Integrations.Trendyol.Infrastructure
         public T CreatePublicClient<T>() where T : class
         {
             HttpClient httpClient = httpClientFactory.CreateClient(TrendyolDefaults.HttpClientName);
-            httpClient.BaseAddress = new Uri(TrendyolDefaults.BaseUrl);
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"Public - {TrendyolDefaults.UserAgentSuffix}");
+
+            httpClient.BaseAddress = new Uri(trendyolSettings.BaseUrl);
+
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"Public - {trendyolSettings.UserAgent}");
 
             return RestService.For<T>(httpClient, _refitSettings);
         }

@@ -49,9 +49,9 @@ namespace TKH.Presentation.Configuration.Extensions
         public static void RegisterRecurringJobs(this WebApplication app)
         {
             RecurringJob.AddOrUpdate<IMarketplaceJobService>(
-                "hourly-routine-dispatcher",
+                "daily-routine-dispatcher",
                 service => service.DispatchScheduledAllAccountsDataSyncAsync(),
-                Cron.Hourly,
+                Cron.Daily,
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
             );
 

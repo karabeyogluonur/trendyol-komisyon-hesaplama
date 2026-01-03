@@ -1,11 +1,11 @@
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
-using TKH.Business.Integrations.Providers.Trendyol;
 using TKH.Entities.Enums;
+using TKH.Integrations.Trendyol.Settings;
 
 namespace TKH.Integrations.Trendyol.Providers
 {
-    public class TrendyolDefaultsProvider : IMarketplaceDefaultsProvider
+    public class TrendyolDefaultsProvider(TrendyolSettings trendyolSettings) : IMarketplaceDefaultsProvider
     {
         public MarketplaceType MarketplaceType => MarketplaceType.Trendyol;
 
@@ -13,10 +13,15 @@ namespace TKH.Integrations.Trendyol.Providers
         {
             return new MarketplaceDefaultsDto
             {
-                ServiceFee = TrendyolDefaults.FixedServiceFeeAmount,
+                ServiceFee = trendyolSettings.ServiceFeeAmount,
+                ServiceFeeVatRate = trendyolSettings.ServiceFeeVatRate,
+
                 Metadata = new Dictionary<string, object>
                 {
-                    { "SameDayServiceFee", TrendyolDefaults.FixedSameDayServiceFeeAmount },
+                    { "SameDayServiceFee", trendyolSettings.SameDayServiceFeeAmount },
+                    { "ExportServiceFeeRate", trendyolSettings.ExportServiceFeeRate },
+                    { "ProductCommissionVatRate", trendyolSettings.ProductCommissionVatRate },
+                    { "ExportServiceFeeVatRate", trendyolSettings.ExportServiceFeeVatRate }
                 }
             };
         }

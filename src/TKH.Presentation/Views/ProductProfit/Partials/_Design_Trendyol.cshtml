@@ -137,17 +137,19 @@
     const CONFIG = {
         RATES: {
             WITHHOLDING: @Model.WithholdingRate.ToPercentageRate(),
-            EXPORT_FEE_RATE: @Model.ExportServiceFeeRate.ToPercentageRate(),
-            VAT_SERVICE: @Model.ServiceFeeVatRate.ToPercentageRate(),
-            VAT_COMMISSION: @Model.CommissionVatRate.ToPercentageRate(),
             VAT_SHIPPING: @Model.ShippingVatRate.ToPercentageRate(),
-            VAT_EXPORT: @Model.ExportServiceFeeVatRate.ToPercentageRate()
+            VAT_SERVICE: @Model.MarketplaceDefaults.ServiceFeeVatRate.ToPercentageRate(),
+            EXPORT_FEE_RATE: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeRate"),
+            VAT_COMMISSION: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ProductCommissionVatRate"),
+            VAT_EXPORT: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeVatRate")
         },
         FEES: {
             SAME_DAY_SERVICE: @Model.MarketplaceDefaults.Metadata.GetJsDecimal("SameDayServiceFee")
         }
     };
-    console.log(CONFIG);
+
+    console.log("Profit Calculator Config (Cleaned):", CONFIG);
+
     const Calculator = {
         utils: {
             toDecimal: (val) => {
@@ -221,10 +223,13 @@
 
             const withholdingBase = Calculator.utils.calculateBase(i.sp, i.productVatRate);
             const withholding = withholdingBase * CONFIG.RATES.WITHHOLDING;
+
             const serviceFeeTotal = isSameDay ? CONFIG.FEES.SAME_DAY_SERVICE : i.serviceFee;
             const serviceFeeVat = Calculator.utils.calculateVat(serviceFeeTotal, CONFIG.RATES.VAT_SERVICE);
+
             const commTotal = i.sp * (i.cr / 100);
             const commVat = Calculator.utils.calculateVat(commTotal, CONFIG.RATES.VAT_COMMISSION);
+
             const shippingVat = Calculator.utils.calculateVat(i.sc, CONFIG.RATES.VAT_SHIPPING);
 
             let exportTotal = 0, exportVat = 0;

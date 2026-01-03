@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TKH.DataAccess.Contexts;
@@ -11,9 +12,11 @@ using TKH.DataAccess.Contexts;
 namespace TKH.DataAccess.Migrations
 {
     [DbContext(typeof(TKHDbContext))]
-    partial class TKHDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103115616_SettingEntity")]
+    partial class SettingEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

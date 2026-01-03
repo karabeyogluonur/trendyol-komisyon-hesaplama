@@ -21,7 +21,14 @@ namespace TKH.DataAccess.Contexts
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
         public DbSet<ProductExpense> ProductExpenses { get; set; }
         public DbSet<ProductPrice> ProductPrices { get; set; }
+        public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
         public DbSet<ShipmentTransaction> ShipmentTransactions { get; set; }
+        public DbSet<Claim> Claims { get; set; }
+        public DbSet<ClaimItem> ClaimItems { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Setting> Settings { get; set; }
+
 
         public TKHDbContext(DbContextOptions<TKHDbContext> options) : base(options)
         {

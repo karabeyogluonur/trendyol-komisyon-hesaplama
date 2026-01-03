@@ -42,7 +42,7 @@ namespace TKH.Integrations.Trendyol.Configuration
             services.AddScoped<IMarketplaceClaimProvider, TrendyolClaimProvider>();
             services.AddScoped<IMarketplaceCategoryProvider, TrendyolCategoryProvider>();
             services.AddScoped<IMarketplaceDefaultsProvider, TrendyolDefaultsProvider>();
-            services.AddSingleton<TrendyolClientFactory>();
+            services.AddScoped<TrendyolClientFactory>();
             services.AddScoped<TrendyolErrorPolicy>();
 
 

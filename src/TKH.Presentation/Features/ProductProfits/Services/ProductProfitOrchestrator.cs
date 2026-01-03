@@ -7,11 +7,10 @@ using TKH.Business.Features.Products.Dtos;
 using TKH.Business.Features.Products.Services;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Factories;
-using TKH.Core.Common.Constants;
+using TKH.Core.Common.Settings;
 using TKH.Core.Contexts;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
-using TKH.Entities;
 using TKH.Presentation.Features.Common.Models;
 using TKH.Presentation.Features.ProductProfits.Models;
 using TKH.Presentation.Features.Products.Models;
@@ -25,14 +24,16 @@ namespace TKH.Presentation.Features.ProductProfits.Services
         private readonly IWorkContext _workContext;
         private readonly IMarketplaceAccountService _marketplaceAccountService;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
+        private readonly TaxSettings _taxSettings;
 
-        public ProductProfitOrchestrator(IProductService productService, IMapper mapper, IWorkContext workContext, IMarketplaceAccountService marketplaceAccountService, MarketplaceProviderFactory marketplaceProviderFactory)
+        public ProductProfitOrchestrator(IProductService productService, IMapper mapper, IWorkContext workContext, IMarketplaceAccountService marketplaceAccountService, MarketplaceProviderFactory marketplaceProviderFactory, TaxSettings taxSettings)
         {
             _productService = productService;
             _workContext = workContext;
             _mapper = mapper;
             _marketplaceAccountService = marketplaceAccountService;
             _marketplaceProviderFactory = marketplaceProviderFactory;
+            _taxSettings = taxSettings;
         }
 
         public async Task<IDataResult<ProductProfitListViewModel>> PrepareProductProfitListViewModelAsync(ProductProfitListFilterViewModel productProfitListFilterViewModel)
@@ -70,13 +71,8 @@ namespace TKH.Presentation.Features.ProductProfits.Services
                 Filter = productProfitListFilterViewModel,
                 MarketplaceType = getMarketplaceAccountResult.Data.MarketplaceType,
                 MarketplaceDefaults = _mapper.Map<MarketplaceDefaultsViewModel>(marketplaceDefaultsProvider.GetDefaults()),
-                WithholdingRate = FinancialConstants.WithholdingRate,
-                ExportServiceFeeRate = FinancialConstants.ExportFeeRate,
-                SameDayServiceFee = FinancialConstants.SameDayServiceFee,
-                ServiceFeeVatRate = 20.0m,
-                CommissionVatRate = 20.0m,
-                ShippingVatRate = 20.0m,
-                ExportServiceFeeVatRate = 20.0m
+                WithholdingRate = _taxSettings.WithholdingRate,
+                ShippingVatRate = _taxSettings.ShippingVatRate
             };
 
             return new SuccessDataResult<ProductProfitListViewModel>(productProfitListViewModel);

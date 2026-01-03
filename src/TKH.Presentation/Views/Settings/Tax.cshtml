@@ -1,0 +1,108 @@
+@model TaxSettingsViewModel
+
+<div class="card mb-5">
+    <div class="card-body py-4">
+        <div id="kt_app_toolbar" class="app-toolbar">
+            <div class="d-flex flex-stack w-100">
+                <div class="page-title d-flex flex-column justify-content-center gap-2">
+                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
+                        Vergi Ayarları
+                    </h1>
+                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="text-gray-600">Ayarlar</span>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                        </li>
+                        <li class="breadcrumb-item text-gray-800 fw-semibold">
+                            Vergi Ayarları
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div
+    class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-5">
+    <i class="ki-outline ki-information-5 fs-2hx text-primary me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
+    <div class="d-flex flex-column pe-0 pe-sm-10">
+        <h5 class="mb-1 fs-6 text-primary">Önemli Bilgilendirme</h5>
+        <span class="fs-7 text-gray-600">
+            Burada yapacağınız değişiklikler, sistemdeki <strong>net kar hesaplamalarını</strong> doğrudan
+            etkileyecektir.
+            Değişiklik yaptıktan sonra hesaplamaların güncellenmesi için ilgili raporları yenilemeniz
+            gerekebilir.
+        </span>
+    </div>
+</div>
+
+<form asp-controller="Settings" asp-action="Tax" method="post" id="kt_tax_settings_form">
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    @Html.AntiForgeryToken()
+
+    <div class="card card-flush">
+        <div class="card-body pt-5">
+
+            <div class="row mb-5">
+                <div class="col-md-6 fv-row">
+                    <label asp-for="WithholdingRate" class="required form-label fs-7 fw-semibold"></label>
+                    <div class="input-group input-group-sm">
+                        <input asp-for="WithholdingRate" class="form-control" type="number" step="0.01" min="0"
+                            max="100" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="text-muted fs-8 mt-1">Pazaryeri hakedişlerinden kesilen gelir vergisi stopaj oranı.
+                    </div>
+                    <span asp-validation-for="WithholdingRate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 fv-row">
+                    <label asp-for="ShippingVatRate" class="required form-label fs-7 fw-semibold"></label>
+                    <div class="input-group input-group-sm">
+                        <input asp-for="ShippingVatRate" class="form-control" type="number" step="0.01" min="0"
+                            max="100" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="text-muted fs-8 mt-1">Kargo faturalarına uygulanan KDV oranı (Genellikle %20).</div>
+                    <span asp-validation-for="ShippingVatRate" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-end py-6 px-9">
+            <a href="/" class="btn btn-sm btn-light me-3">Vazgeç</a>
+
+            <button type="submit" class="btn btn-sm btn-primary" id="kt_btn_submit">
+                <span class="indicator-label">Ayarları Kaydet</span>
+                <span class="indicator-progress">
+                    Lütfen bekleyin...
+                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                </span>
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#kt_tax_settings_form").submit(function () {
+                if ($(this).valid()) {
+                    var btn = $("#kt_btn_submit");
+                    btn.attr("data-kt-indicator", "on");
+                    btn.prop("disabled", true);
+                }
+            });
+        });
+    </script>
+}

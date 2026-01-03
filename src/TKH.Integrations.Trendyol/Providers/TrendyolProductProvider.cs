@@ -2,9 +2,7 @@ using AutoMapper;
 using System.Runtime.CompilerServices;
 using TKH.Business.Integrations.Providers.Trendyol;
 using TKH.Business.Integrations.Providers.Trendyol.Models;
-using Refit;
 using TKH.Entities.Enums;
-using TKH.Core.Common.Constants;
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Integrations.Trendyol.Infrastructure;
 using TKH.Integrations.Trendyol.HttpClients;
@@ -12,6 +10,7 @@ using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Executors;
 using TKH.Integrations.Trendyol.Policies;
+using TKH.Integrations.Trendyol.Settings;
 
 namespace TKH.Integrations.Trendyol.Providers
 {
@@ -20,17 +19,20 @@ namespace TKH.Integrations.Trendyol.Providers
         private readonly TrendyolClientFactory _trendyolClientFactory;
         private readonly IIntegrationExecutor _integrationExecutor;
         private readonly TrendyolErrorPolicy _trendyolErrorPolicy;
+        private readonly TrendyolSettings _trendyolSettings;
         private readonly IMapper _mapper;
 
         public TrendyolProductProvider(
             TrendyolClientFactory trendyolClientFactory,
             IIntegrationExecutor integrationExecutor,
             TrendyolErrorPolicy trendyolErrorPolicy,
+            TrendyolSettings trendyolSettings,
             IMapper mapper)
         {
             _trendyolClientFactory = trendyolClientFactory;
             _trendyolErrorPolicy = trendyolErrorPolicy;
             _integrationExecutor = integrationExecutor;
+            _trendyolSettings = trendyolSettings;
             _mapper = mapper;
         }
 
@@ -83,9 +85,9 @@ namespace TKH.Integrations.Trendyol.Providers
             MarketplaceProductExpenseDto trendyolServiceFeeExpenseDto = new MarketplaceProductExpenseDto
             {
                 Type = ProductExpenseType.MarketplaceServiceFee,
-                Amount = TrendyolDefaults.FixedServiceFeeAmount,
-                VatRate = FinancialConstants.StandardServiceVatRate,
-                IsVatIncluded = TrendyolDefaults.IsFixedServiceFeeVatIncluded
+                Amount = _trendyolSettings.ServiceFeeAmount,
+                VatRate = _trendyolSettings.ServiceFeeVatRate,
+                IsVatIncluded = true
             };
 
             marketplaceProductDto.Expenses.Add(trendyolServiceFeeExpenseDto);

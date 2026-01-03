@@ -11,6 +11,7 @@ using TKH.Presentation.Features.MarketplaceAccounts.Services;
 using TKH.Presentation.Features.Products.Services;
 using TKH.Presentation.Infrastructure.Filters;
 using TKH.Presentation.Features.ProductProfits.Services;
+using TKH.Presentation.Features.Settings.Services;
 
 namespace TKH.Presentation.Configuration.Extensions
 {
@@ -47,6 +48,7 @@ namespace TKH.Presentation.Configuration.Extensions
             services.AddScoped<IMarketplaceAccountOrchestrator, MarketplaceAccountOrchestrator>();
             services.AddScoped<IProductOrchestrator, ProductOrchestrator>();
             services.AddScoped<IProductProfitOrchestrator, ProductProfitOrchestrator>();
+            services.AddScoped<ISettingsOrchestrator, SettingsOrchestrator>();
         }
 
         public static void AddCustomValidation(this IServiceCollection services)
