@@ -31,7 +31,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToOrderStatus()))
                 .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.OrderDate.ToDateTime()))
                 .ForMember(dest => dest.CargoTrackingNumber, opt => opt.MapFrom(src => src.CargoTrackingNumber.HasValue ? src.CargoTrackingNumber.Value.ToString() : string.Empty))
-                .ForMember(dest => dest.CargoProviderName, opt => opt.MapFrom(src => src.CargoProviderName))
+                .ForMember(dest => dest.CargoProviderName, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.CargoProviderName) ? "" : src.CargoProviderName))
                 .ForMember(dest => dest.Deci, opt => opt.MapFrom(src => src.CargoDeci))
                 .ForMember(dest => dest.IsShipmentPaidBySeller, opt => opt.MapFrom(src => src.WhoPays.HasValue && (int)src.WhoPays.Value == 1))
                 .ForMember(dest => dest.IsMicroExport, opt => opt.MapFrom(src => src.Micro))

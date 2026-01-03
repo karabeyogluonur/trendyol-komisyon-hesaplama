@@ -10,17 +10,27 @@ using TKH.Integrations.Trendyol.Infrastructure;
 using TKH.Integrations.Trendyol.HttpClients;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
+using TKH.Business.Executors;
+using TKH.Integrations.Trendyol.Policies;
 
 namespace TKH.Integrations.Trendyol.Providers
 {
     public class TrendyolProductProvider : IMarketplaceProductProvider
     {
         private readonly TrendyolClientFactory _trendyolClientFactory;
+        private readonly IIntegrationExecutor _integrationExecutor;
+        private readonly TrendyolErrorPolicy _trendyolErrorPolicy;
         private readonly IMapper _mapper;
 
-        public TrendyolProductProvider(TrendyolClientFactory trendyolClientFactory, IMapper mapper)
+        public TrendyolProductProvider(
+            TrendyolClientFactory trendyolClientFactory,
+            IIntegrationExecutor integrationExecutor,
+            TrendyolErrorPolicy trendyolErrorPolicy,
+            IMapper mapper)
         {
             _trendyolClientFactory = trendyolClientFactory;
+            _trendyolErrorPolicy = trendyolErrorPolicy;
+            _integrationExecutor = integrationExecutor;
             _mapper = mapper;
         }
 
@@ -49,26 +59,22 @@ namespace TKH.Integrations.Trendyol.Providers
                     Size = TrendyolDefaults.ProductPageSize,
                 };
 
-                IApiResponse<TrendyolProductResponse> apiResponse = await trendyolProductApi.GetProductsAsync(
-                    sellerIdentifier,
-                    trendyolFilterGetProducts);
+                TrendyolProductResponse apiResponse = await _integrationExecutor.ExecuteRefitAsync(() => trendyolProductApi.GetProductsAsync(sellerIdentifier, trendyolFilterGetProducts), _trendyolErrorPolicy);
 
-                if (!apiResponse.IsSuccessStatusCode || apiResponse.Content?.Content is null || apiResponse.Content.Content.Count == 0)
+                if (apiResponse.Content is null || apiResponse.Content.Count is 0)
                     yield break;
 
-                foreach (TrendyolProductContent productItem in apiResponse.Content.Content)
+                foreach (TrendyolProductContent productItem in apiResponse.Content)
                 {
                     MarketplaceProductDto marketplaceProductDto = _mapper.Map<MarketplaceProductDto>(productItem);
                     EnrichProductWithExpenses(marketplaceProductDto);
                     yield return marketplaceProductDto;
                 }
 
-                if (apiResponse.Content.Content.Count < TrendyolDefaults.ProductPageSize)
+                if (apiResponse.Content.Count < TrendyolDefaults.ProductPageSize)
                     hasMoreProductsToFetch = false;
                 else
-                {
                     currentPageIndex++;
-                }
             }
         }
 

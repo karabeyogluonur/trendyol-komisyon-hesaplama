@@ -6,16 +6,21 @@ namespace TKH.Integrations.Trendyol.Enums
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TrendyolOrderStatus
     {
+        Unknown = 0,
+
+        Awaiting,
         Created,
         Picking,
-        Picked,
+        Invoiced,
         Shipped,
+        AtCollectionPoint,
+        UnPacked,
         Delivered,
+        UnDelivered,
         Cancelled,
-        Returned,
-        Returning,
-        Awaiting
+        Returned
     }
+
 
 }
 

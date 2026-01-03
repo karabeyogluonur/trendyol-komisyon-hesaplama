@@ -12,6 +12,8 @@ using TKH.Business.Integrations.Providers.Trendyol.Models;
 using TKH.Integrations.Trendyol.Extensions;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Integrations.Marketplaces.Abstract;
+using TKH.Business.Executors;
+using TKH.Integrations.Trendyol.Policies;
 
 namespace TKH.Integrations.Trendyol.Providers
 {
@@ -19,15 +21,21 @@ namespace TKH.Integrations.Trendyol.Providers
     {
         private readonly TrendyolClientFactory _trendyolClientFactory;
         private readonly IFinancialTransactionService _financialTransactionService;
+        private readonly IIntegrationExecutor _integrationExecutor;
+        private readonly TrendyolErrorPolicy _trendyolErrorPolicy;
         private readonly IMapper _mapper;
 
         public TrendyolFinanceProvider(
             TrendyolClientFactory trendyolClientFactory,
             IFinancialTransactionService financialTransactionService,
+            IIntegrationExecutor integrationExecutor,
+            TrendyolErrorPolicy trendyolErrorPolicy,
             IMapper mapper)
         {
             _financialTransactionService = financialTransactionService;
             _trendyolClientFactory = trendyolClientFactory;
+            _trendyolErrorPolicy = trendyolErrorPolicy;
+            _integrationExecutor = integrationExecutor;
             _mapper = mapper;
         }
 
@@ -98,17 +106,15 @@ namespace TKH.Integrations.Trendyol.Providers
                         TransactionType = settlementTransactionType
                     };
 
-                    IApiResponse<TrendyolFinancialResponse> apiResponse = await trendyolFinanceApi.GetSettlementsAsync(sellerIdentifier, trendyolSettlementSearchRequest);
+                    TrendyolFinancialResponse apiResponse = await _integrationExecutor.ExecuteRefitAsync(() => trendyolFinanceApi.GetSettlementsAsync(sellerIdentifier, trendyolSettlementSearchRequest), _trendyolErrorPolicy);
 
-                    if (!apiResponse.IsSuccessStatusCode ||
-                        apiResponse.Content?.Content == null ||
-                        apiResponse.Content.Content.Count == 0)
+                    if (apiResponse.Content is null || apiResponse.Content.Count is 0)
                     {
                         hasMoreTransactionsToFetch = false;
                         continue;
                     }
 
-                    foreach (TrendyolFinancialContent trendyolFinancialContent in apiResponse.Content.Content)
+                    foreach (TrendyolFinancialContent trendyolFinancialContent in apiResponse.Content)
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
@@ -118,12 +124,10 @@ namespace TKH.Integrations.Trendyol.Providers
                         yield return marketplaceFinancialTransactionDto;
                     }
 
-                    if (apiResponse.Content.Content.Count < TrendyolDefaults.FinancePageSize)
+                    if (apiResponse.Content.Count < TrendyolDefaults.FinancePageSize)
                         hasMoreTransactionsToFetch = false;
                     else
-                    {
                         currentPageIndex++;
-                    }
                 }
             }
         }
@@ -153,17 +157,15 @@ namespace TKH.Integrations.Trendyol.Providers
                         TransactionType = otherFinancialTransactionType
                     };
 
-                    IApiResponse<TrendyolFinancialResponse> apiResponse = await trendyolFinanceApi.GetOtherFinancialsAsync(sellerIdentifier, trendyolOtherFinancialSearchRequest);
+                    TrendyolFinancialResponse apiResponse = await _integrationExecutor.ExecuteRefitAsync(() => trendyolFinanceApi.GetOtherFinancialsAsync(sellerIdentifier, trendyolOtherFinancialSearchRequest), _trendyolErrorPolicy);
 
-                    if (!apiResponse.IsSuccessStatusCode ||
-                        apiResponse.Content?.Content == null ||
-                        apiResponse.Content.Content.Count == 0)
+                    if (apiResponse.Content is null || apiResponse.Content.Count is 0)
                     {
                         hasMoreTransactionsToFetch = false;
                         continue;
                     }
 
-                    foreach (TrendyolFinancialContent trendyolFinancialContent in apiResponse.Content.Content)
+                    foreach (TrendyolFinancialContent trendyolFinancialContent in apiResponse.Content)
                     {
                         MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto = _mapper.Map<MarketplaceFinancialTransactionDto>(trendyolFinancialContent);
                         marketplaceFinancialTransactionDto.MarketplaceAccountId = marketplaceAccountId;
@@ -176,12 +178,10 @@ namespace TKH.Integrations.Trendyol.Providers
                         yield return marketplaceFinancialTransactionDto;
                     }
 
-                    if (apiResponse.Content.Content.Count < TrendyolDefaults.FinancePageSize)
+                    if (apiResponse.Content.Count < TrendyolDefaults.FinancePageSize)
                         hasMoreTransactionsToFetch = false;
                     else
-                    {
                         currentPageIndex++;
-                    }
                 }
             }
         }
@@ -214,14 +214,12 @@ namespace TKH.Integrations.Trendyol.Providers
                     ResultStatus = ShipmentTransactionSyncStatus.Failed
                 };
 
-                IApiResponse<TrendyolCargoInvoiceResponse> trendyolCargoInvoiceResponse = await trendyolFinanceService.GetCargoInvoiceAsync(sellerIdentifier, pendingTransactionId);
+                TrendyolCargoInvoiceResponse trendyolCargoInvoiceResponse = await _integrationExecutor.ExecuteRefitAsync(() => trendyolFinanceService.GetCargoInvoiceAsync(sellerIdentifier, pendingTransactionId), _trendyolErrorPolicy);
 
-                if (trendyolCargoInvoiceResponse.IsSuccessStatusCode)
+                if (trendyolCargoInvoiceResponse.Content is not null)
                 {
                     marketplaceShipmentSyncResultDto.ResultStatus = ShipmentTransactionSyncStatus.Synced;
-
-                    if (trendyolCargoInvoiceResponse.Content?.Content != null && trendyolCargoInvoiceResponse.Content.Content.Count > 0)
-                        marketplaceShipmentSyncResultDto.Shipments = _mapper.Map<List<MarketplaceShipmentTransactionDto>>(trendyolCargoInvoiceResponse.Content.Content);
+                    marketplaceShipmentSyncResultDto.Shipments = _mapper.Map<List<MarketplaceShipmentTransactionDto>>(trendyolCargoInvoiceResponse.Content);
                 }
 
                 yield return marketplaceShipmentSyncResultDto;

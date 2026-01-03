@@ -249,7 +249,7 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             marketplaceAccount.LastErrorMessage = exception.Message;
             marketplaceAccount.LastErrorDate = DateTime.UtcNow;
 
-            if (exception is MarketplaceAuthException)
+            if (exception is IntegrationAuthException)
                 marketplaceAccount.ConnectionState = MarketplaceConnectionState.AuthError;
             else
                 marketplaceAccount.ConnectionState = MarketplaceConnectionState.SystemError;

@@ -1,5 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using TKH.Business.Execution;
+using TKH.Business.Executors;
 using TKH.Business.Features.Categories.Services;
 using TKH.Business.Features.Claims.Services;
 using TKH.Business.Features.FinancialTransactions.Services;
@@ -41,6 +43,8 @@ namespace TKH.Business
             services.AddScoped<IShipmentTransactionSyncService, ShipmentTransactionSyncService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
             services.AddScoped<ICategorySyncService, CategorySyncService>();
+            services.AddScoped<IIntegrationExecutor, IntegrationExecutor>();
+
 
             #endregion
 

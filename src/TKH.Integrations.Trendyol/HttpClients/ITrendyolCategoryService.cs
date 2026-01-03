@@ -3,7 +3,7 @@ using TKH.Business.Integrations.Providers.Trendyol.Models;
 
 namespace TKH.Integrations.Trendyol.HttpClients
 {
-    public interface ITrendyolReferenceService
+    public interface ITrendyolCategoryService
     {
         [Get("/integration/product/product-categories")]
         Task<IApiResponse<TrendyolCategoryResponse>> GetCategoriesAsync();

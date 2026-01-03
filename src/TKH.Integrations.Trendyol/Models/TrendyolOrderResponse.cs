@@ -129,7 +129,7 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Models
         public decimal VatRate { get; set; }
 
         [JsonPropertyName("commission")]
-        public decimal Commission { get; set; }
+        public decimal? Commission { get; set; }
 
         [JsonPropertyName("lineTyDiscount")]
         public decimal LineTyDiscount { get; set; }

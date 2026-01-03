@@ -9,19 +9,27 @@ using TKH.Integrations.Trendyol.HttpClients;
 using TKH.Entities.Enums;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
+using TKH.Business.Executors;
+using TKH.Integrations.Trendyol.Policies;
 
 namespace TKH.Integrations.Trendyol.Providers
 {
     public class TrendyolClaimProvider : IMarketplaceClaimProvider
     {
         private readonly TrendyolClientFactory _trendyolClientFactory;
+        private readonly IIntegrationExecutor _integrationExecutor;
+        private readonly TrendyolErrorPolicy _trendyolErrorPolicy;
         private readonly IMapper _mapper;
 
         public TrendyolClaimProvider(
             TrendyolClientFactory trendyolClientFactory,
+            IIntegrationExecutor integrationExecutor,
+            TrendyolErrorPolicy trendyolErrorPolicy,
             IMapper mapper)
         {
             _trendyolClientFactory = trendyolClientFactory;
+            _trendyolErrorPolicy = trendyolErrorPolicy;
+            _integrationExecutor = integrationExecutor;
             _mapper = mapper;
         }
 
@@ -65,15 +73,15 @@ namespace TKH.Integrations.Trendyol.Providers
                         EndDate = endDateTimestamp,
                     };
 
-                    IApiResponse<TrendyolClaimResponse> response = await trendyolClaimApi.GetClaimsAsync(sellerIdentifier, request);
+                    TrendyolClaimResponse response = await _integrationExecutor.ExecuteRefitAsync(() => trendyolClaimApi.GetClaimsAsync(sellerIdentifier, request), _trendyolErrorPolicy);
 
-                    if (!response.IsSuccessStatusCode || response.Content?.Content == null || response.Content.Content.Count == 0)
+                    if (response.Content is null || response.Content.Count is 0)
                     {
                         hasMoreClaimsToFetch = false;
                         continue;
                     }
 
-                    foreach (TrendyolClaimContent claimContent in response.Content.Content)
+                    foreach (TrendyolClaimContent claimContent in response.Content)
                     {
                         MarketplaceClaimDto marketplaceClaimDto = _mapper.Map<MarketplaceClaimDto>(claimContent);
                         marketplaceClaimDto.MarketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
@@ -81,12 +89,10 @@ namespace TKH.Integrations.Trendyol.Providers
                         yield return marketplaceClaimDto;
                     }
 
-                    if (response.Content.Content.Count < TrendyolDefaults.ClaimPageSize)
+                    if (response.Content.Count < TrendyolDefaults.ClaimPageSize)
                         hasMoreClaimsToFetch = false;
                     else
-                    {
                         currentPageIndex++;
-                    }
                 }
                 currentWindowStartDate = currentWindowEndDate;
             }

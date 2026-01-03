@@ -11,11 +11,17 @@ namespace TKH.Integrations.Trendyol.Extensions
         {
             TrendyolOrderStatus.Created => OrderStatus.Created,
             TrendyolOrderStatus.Awaiting => OrderStatus.Awaiting,
-            TrendyolOrderStatus.Picking or TrendyolOrderStatus.Picked => OrderStatus.Preparing,
+            TrendyolOrderStatus.Picking => OrderStatus.Preparing,
+            TrendyolOrderStatus.UnPacked => OrderStatus.Preparing,
+            TrendyolOrderStatus.Invoiced => OrderStatus.Invoiced,
             TrendyolOrderStatus.Shipped => OrderStatus.Shipped,
+            TrendyolOrderStatus.AtCollectionPoint => OrderStatus.Shipped,
             TrendyolOrderStatus.Delivered => OrderStatus.Delivered,
+            TrendyolOrderStatus.UnDelivered => OrderStatus.Undelivered,
+            TrendyolOrderStatus.Returned => OrderStatus.Returned,
             TrendyolOrderStatus.Cancelled => OrderStatus.Cancelled,
-            TrendyolOrderStatus.Returned or TrendyolOrderStatus.Returning => OrderStatus.Returned,
+            TrendyolOrderStatus.Unknown => OrderStatus.Unknown,
+
             _ => OrderStatus.Unknown
         };
 
