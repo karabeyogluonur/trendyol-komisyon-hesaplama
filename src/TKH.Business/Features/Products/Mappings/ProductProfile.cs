@@ -10,6 +10,26 @@ namespace TKH.Business.Features.Products.Mappings
     {
         public ProductProfile()
         {
+
+            CreateMap<Product, ProductProfitSummaryDto>().ForMember(dest => dest.SalesPrice, opt => opt.MapFrom(src =>
+                    src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.SalePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).FirstOrDefault()))
+
+                .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src =>
+                    src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.PurchasePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).FirstOrDefault()))
+
+                .ForMember(dest => dest.ShippingCost, opt => opt.MapFrom(src =>
+                    src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null).Select(productExpense => productExpense.Amount)
+                    .FirstOrDefault()))
+
+                .ForMember(dest => dest.ServiceFee, opt => opt.MapFrom(src =>
+                    src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.MarketplaceServiceFee && productExpense.EndDate == null)
+                                .Select(productExpense => productExpense.Amount)
+                                .FirstOrDefault()));
+
+
+
+
+
             CreateMap<MarketplaceProductDto, Product>()
                 .ForMember(dest => dest.LastUpdateDateTime, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())

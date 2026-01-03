@@ -31,9 +31,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ShippingCostAnalysisLookbackDays);
 
                 IList<Order> orders = await orderRepository.GetAllAsync(
-                    predicate: order => order.OrderDate >= analysisStartDate &&
-                                   (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered) &&
-                                   !order.IsMicroExport,
+                    predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered) && !order.IsMicroExport,
                     disableTracking: true,
                     ignoreQueryFilters: true
                 );

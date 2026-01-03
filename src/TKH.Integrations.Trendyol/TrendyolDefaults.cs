@@ -2,7 +2,8 @@ namespace TKH.Business.Integrations.Providers.Trendyol
 {
     internal static class TrendyolDefaults
     {
-        public const decimal FixedServiceFeeAmount = 12.47m;
+        public const decimal FixedServiceFeeAmount = 10.19m;
+        public const decimal FixedSameDayServiceFeeAmount = 6.59m;
         public const bool IsFixedServiceFeeVatIncluded = true;
 
 
@@ -21,7 +22,6 @@ namespace TKH.Business.Integrations.Providers.Trendyol
         public const int QueueLimit = 1000;
         public static readonly TimeSpan ReplenishmentPeriod = TimeSpan.FromMilliseconds(1000);
         public const int TokensPerPeriod = 1;
-
 
         public const int OrderSyncLookbackMonths = -2;
         public const int OrderSyncDateWindowDays = 14;

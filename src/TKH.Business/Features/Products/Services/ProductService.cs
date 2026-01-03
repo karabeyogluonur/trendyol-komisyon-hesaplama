@@ -2,7 +2,6 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Features.Products.Dtos;
-using TKH.Core.Contexts;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
@@ -60,6 +59,29 @@ namespace TKH.Business.Features.Products.Services
             List<CategoryLookupDto> categories = await categoryLookupDtos.ToListAsync();
 
             return new SuccessDataResult<List<CategoryLookupDto>>(categories);
+        }
+
+        public async Task<IDataResult<IPagedList<ProductProfitSummaryDto>>> GetPagedProductProfitListAsync(ProductProfitListFilterDto productProfitListFilterDto)
+        {
+            IQueryable<Product> query = _productRepository.GetAll();
+
+            if (!string.IsNullOrEmpty(productProfitListFilterDto.Barcode))
+                query = query.Where(product => product.Barcode.Contains(productProfitListFilterDto.Barcode));
+
+            if (productProfitListFilterDto.CategoryId.HasValue || productProfitListFilterDto.CategoryId > 0)
+                query = query.Where(product => product.CategoryId == productProfitListFilterDto.CategoryId);
+
+            if (productProfitListFilterDto.HasStock.HasValue)
+                query = query.Where(product => product.StockQuantity > 0);
+
+            if (productProfitListFilterDto.IsOnSale.HasValue)
+                query = query.Where(product => product.IsOnSale == productProfitListFilterDto.IsOnSale);
+
+            IQueryable<ProductProfitSummaryDto> productProfitSummaryDtos = query.ProjectTo<ProductProfitSummaryDto>(_mapper.ConfigurationProvider);
+
+            IPagedList<ProductProfitSummaryDto> pagedProductProfitSummaryDto = await productProfitSummaryDtos.OrderBy(product => product.ModelCode).ToPagedListAsync(productProfitListFilterDto.PageIndex, productProfitListFilterDto.PageSize);
+
+            return new SuccessDataResult<IPagedList<ProductProfitSummaryDto>>(pagedProductProfitSummaryDto);
         }
     }
 }

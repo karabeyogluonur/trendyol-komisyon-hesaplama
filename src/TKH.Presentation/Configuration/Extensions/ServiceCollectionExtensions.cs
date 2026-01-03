@@ -10,6 +10,7 @@ using TKH.Integrations.Trendyol.Configuration;
 using TKH.Presentation.Features.MarketplaceAccounts.Services;
 using TKH.Presentation.Features.Products.Services;
 using TKH.Presentation.Infrastructure.Filters;
+using TKH.Presentation.Features.ProductProfits.Services;
 
 namespace TKH.Presentation.Configuration.Extensions
 {
@@ -45,6 +46,7 @@ namespace TKH.Presentation.Configuration.Extensions
         {
             services.AddScoped<IMarketplaceAccountOrchestrator, MarketplaceAccountOrchestrator>();
             services.AddScoped<IProductOrchestrator, ProductOrchestrator>();
+            services.AddScoped<IProductProfitOrchestrator, ProductProfitOrchestrator>();
         }
 
         public static void AddCustomValidation(this IServiceCollection services)

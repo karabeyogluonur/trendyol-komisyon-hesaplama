@@ -1,63 +1,51 @@
 using TKH.Business.Integrations.Marketplaces.Abstract;
+using TKH.Business.Integrations.Marketplaces.Common;
 using TKH.Entities.Enums;
 
 namespace TKH.Business.Integrations.Marketplaces.Factories
 {
     public class MarketplaceProviderFactory
     {
-        private readonly IEnumerable<IMarketplaceProductProvider> _marketplaceProductProviders;
-        private readonly IEnumerable<IMarketplaceOrderProvider> _marketplaceOrderProviders;
-        private readonly IEnumerable<IMarketplaceClaimProvider> _marketplaceClaimProviders;
-        private readonly IEnumerable<IMarketplaceFinanceProvider> _marketplaceFinanceProviders;
-        private readonly IEnumerable<IMarketplaceCategoryProvider> _marketplaceCategoryProviders;
+        private readonly Dictionary<Type, Func<MarketplaceType, object>> _providerStrategies;
 
         public MarketplaceProviderFactory(
-            IEnumerable<IMarketplaceProductProvider> marketplaceProductProviders,
-            IEnumerable<IMarketplaceOrderProvider> marketplaceOrderProviders,
-            IEnumerable<IMarketplaceClaimProvider> marketplaceClaimProviders,
-            IEnumerable<IMarketplaceFinanceProvider> marketplaceFinanceProviders,
-            IEnumerable<IMarketplaceCategoryProvider> marketplaceCategoryProviders)
+            IEnumerable<IMarketplaceProductProvider> productProviders,
+            IEnumerable<IMarketplaceOrderProvider> orderProviders,
+            IEnumerable<IMarketplaceClaimProvider> claimProviders,
+            IEnumerable<IMarketplaceFinanceProvider> financeProviders,
+            IEnumerable<IMarketplaceCategoryProvider> categoryProviders,
+            IEnumerable<IMarketplaceDefaultsProvider> defaultsProviders)
         {
-            _marketplaceProductProviders = marketplaceProductProviders;
-            _marketplaceOrderProviders = marketplaceOrderProviders;
-            _marketplaceClaimProviders = marketplaceClaimProviders;
-            _marketplaceFinanceProviders = marketplaceFinanceProviders;
-            _marketplaceCategoryProviders = marketplaceCategoryProviders;
+            _providerStrategies = new Dictionary<Type, Func<MarketplaceType, object>>
+            {
+                { typeof(IMarketplaceProductProvider), marketplaceType => FindProvider(productProviders, marketplaceType) },
+                { typeof(IMarketplaceOrderProvider), marketplaceType => FindProvider(orderProviders, marketplaceType) },
+                { typeof(IMarketplaceClaimProvider), marketplaceType => FindProvider(claimProviders, marketplaceType) },
+                { typeof(IMarketplaceFinanceProvider), marketplaceType => FindProvider(financeProviders, marketplaceType) },
+                { typeof(IMarketplaceCategoryProvider), marketplaceType => FindProvider(categoryProviders, marketplaceType) },
+                { typeof(IMarketplaceDefaultsProvider), marketplaceType => FindProvider(defaultsProviders, marketplaceType) }
+            };
         }
 
-        public T GetProvider<T>(MarketplaceType type)
+        public T GetProvider<T>(MarketplaceType marketplaceType) where T : class
         {
-            if (typeof(T) == typeof(IMarketplaceProductProvider))
+            if (_providerStrategies.TryGetValue(typeof(T), out var strategy))
             {
-                IMarketplaceProductProvider? marketplaceProductProvider = _marketplaceProductProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceProductProvider ?? throw new NotSupportedException($"{type} için 'Product Provider' implementasyonu bulunamadı."));
+                Object provider = strategy(marketplaceType);
+                return (T)provider;
             }
 
-            if (typeof(T) == typeof(IMarketplaceOrderProvider))
-            {
-                IMarketplaceOrderProvider? marketplaceOrderProvider = _marketplaceOrderProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceOrderProvider ?? throw new NotSupportedException($"{type} için 'Order Provider' implementasyonu bulunamadı."));
-            }
+            throw new NotSupportedException($"Factory hatası: '{typeof(T).Name}' tipi için bir strateji tanımlanmamış.");
+        }
 
-            if (typeof(T) == typeof(IMarketplaceClaimProvider))
-            {
-                IMarketplaceClaimProvider? marketplaceClaimProvider = _marketplaceClaimProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceClaimProvider ?? throw new NotSupportedException($"{type} için 'Claim Provider' implementasyonu bulunamadı."));
-            }
+        private static TProvider FindProvider<TProvider>(IEnumerable<TProvider> providers, MarketplaceType marketplaceType) where TProvider : IMarketplaceProviderBase
+        {
+            TProvider provider = providers.FirstOrDefault(provider => provider.MarketplaceType == marketplaceType);
 
-            if (typeof(T) == typeof(IMarketplaceFinanceProvider))
-            {
-                IMarketplaceFinanceProvider? marketplaceFinanceProvider = _marketplaceFinanceProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceFinanceProvider ?? throw new NotSupportedException($"{type} için 'Finance Provider' implementasyonu bulunamadı."));
-            }
+            if (provider is null)
+                throw new InvalidOperationException($"'{typeof(TProvider).Name}' için '{marketplaceType}' pazar yeri implementasyonu bulunamadı.");
 
-            if (typeof(T) == typeof(IMarketplaceCategoryProvider))
-            {
-                IMarketplaceCategoryProvider? marketplaceCategoryProviders = _marketplaceCategoryProviders.FirstOrDefault(x => x.MarketplaceType == type);
-                return (T)(marketplaceCategoryProviders ?? throw new NotSupportedException($"{type} için 'Category Provider' implementasyonu bulunamadı."));
-            }
-
-            throw new NotSupportedException($"Factory içinde '{typeof(T).Name}' tipi için bir tanımlama veya eşleştirme yapılmamış.");
+            return provider;
         }
     }
 }
