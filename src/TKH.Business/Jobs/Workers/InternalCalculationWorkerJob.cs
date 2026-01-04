@@ -8,12 +8,10 @@ namespace TKH.Business.Jobs.Workers
     public class InternalCalculationWorkerJob
     {
         private readonly IProductExpenseSyncService _productExpenseSyncService;
-        private readonly IProductSyncService _productSyncService;
 
-        public InternalCalculationWorkerJob(IProductExpenseSyncService productExpenseSyncService, IProductSyncService productSyncService)
+        public InternalCalculationWorkerJob(IProductExpenseSyncService productExpenseSyncService)
         {
             _productExpenseSyncService = productExpenseSyncService;
-            _productSyncService = productSyncService;
         }
 
         [DisableConcurrentExecution(timeoutInSeconds: 3600)]
@@ -28,7 +26,7 @@ namespace TKH.Business.Jobs.Workers
         [DisplayName("Ürün Komisyon Oranı Senkronizasyonu")]
         public async Task ExecuteProductCommissionSyncAsync()
         {
-            await _productSyncService.CalculateAndSyncCommissionRatesAsync();
+            await _productExpenseSyncService.CalculateAndSyncCommissionRatesAsync();
         }
     }
 }

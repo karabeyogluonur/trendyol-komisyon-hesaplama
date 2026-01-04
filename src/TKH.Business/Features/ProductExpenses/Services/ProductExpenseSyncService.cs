@@ -158,5 +158,110 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 }
             }
         }
+
+        public async Task CalculateAndSyncCommissionRatesAsync()
+        {
+            List<(int ProductId, decimal LatestCommissionRate)> calculatedCommissions = new List<(int ProductId, decimal LatestCommissionRate)>();
+
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            {
+                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
+                IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
+
+                DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
+
+                IList<Order> orders = await orderRepository.GetAllAsync(
+                    predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                if (!orders.Any()) return;
+
+                List<int> orderIds = orders.Select(order => order.Id).ToList();
+
+                IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
+                    predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                var analysisData = orderItems
+                    .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
+                    .GroupBy(order => order.Item.ProductId!.Value)
+                    .Select(group => new
+                    {
+                        ProductId = group.Key,
+                        LatestCommissionRate = group.OrderByDescending(ordergroup => ordergroup.Order.OrderDate)
+                                                    .Select(order => order.Item.CommissionRate)
+                                                    .FirstOrDefault()
+                    })
+                    .ToList();
+
+                foreach (var item in analysisData)
+                    calculatedCommissions.Add((item.ProductId, item.LatestCommissionRate));
+            }
+
+            if (calculatedCommissions.Count > 0)
+                await ProcessCommissionUpdateBatchAsync(calculatedCommissions);
+        }
+
+        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync)
+        {
+            for (int i = 0; i < commissionsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
+            {
+                var batch = commissionsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+                var batchProductIds = batch.Select(item => item.ProductId).ToList();
+
+                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                {
+                    IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    TaxSettings taxSettings = scope.ServiceProvider.GetRequiredService<TaxSettings>();
+
+                    IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
+
+                    IList<Product> products = await productRepository.GetAllAsync(
+                        predicate: product => batchProductIds.Contains(product.Id),
+                        include: source => source.Include(product => product.Expenses.Where(productexpense => productexpense.GenerationType == GenerationType.Automated)),
+                        disableTracking: false,
+                        ignoreQueryFilters: true
+                    );
+
+                    foreach (var (productId, latestRate) in batch)
+                    {
+                        Product? product = products.FirstOrDefault(product => product.Id == productId);
+
+                        if (product is null) continue;
+
+                        if (product.Expenses is null) product.Expenses = new List<ProductExpense>();
+
+                        ProductExpense? activeExpense = product.Expenses.FirstOrDefault(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate is null);
+
+                        if (activeExpense is not null && activeExpense.Amount == latestRate)
+                            continue;
+
+                        if (activeExpense is not null)
+                            activeExpense.EndDate = DateTime.UtcNow;
+
+                        product.Expenses.Add(new ProductExpense
+                        {
+                            ProductId = product.Id,
+                            Type = ProductExpenseType.CommissionRate,
+                            GenerationType = GenerationType.Automated,
+                            Amount = latestRate,
+                            IsVatIncluded = true,
+                            VatRate = taxSettings.ComissionVatRate,
+                            StartDate = DateTime.UtcNow,
+                            EndDate = null
+                        });
+                    }
+
+                    await unitOfWork.SaveChangesAsync();
+                }
+            }
+        }
+
+
     }
 }
