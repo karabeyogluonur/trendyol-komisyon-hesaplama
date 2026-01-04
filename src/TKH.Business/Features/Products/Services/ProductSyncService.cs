@@ -136,15 +136,14 @@ namespace TKH.Business.Features.Products.Services
 
         private void SyncProductPrices(Product product, List<MarketplaceProductPriceDto> incomingPrices)
         {
-            if (incomingPrices is null || incomingPrices.Count == 0) return;
+            if (incomingPrices is null || incomingPrices.Count is 0) return;
 
-            if (product.Prices == null)
+            if (product.Prices is null)
                 product.Prices = new List<ProductPrice>();
 
             foreach (MarketplaceProductPriceDto incomingPriceDto in incomingPrices)
             {
-                ProductPrice? activeProductPrice = product.Prices
-                    .FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null);
+                ProductPrice? activeProductPrice = product.Prices.FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null && productPrice.GenerationType == GenerationType.Automated);
 
                 if (activeProductPrice is not null)
                 {
@@ -159,6 +158,7 @@ namespace TKH.Business.Features.Products.Services
                         Amount = incomingPriceDto.Amount,
                         IsVatIncluded = incomingPriceDto.IsVatIncluded,
                         StartDate = DateTime.UtcNow,
+                        GenerationType = GenerationType.Automated,
                         EndDate = null
                     });
                 }
@@ -168,6 +168,7 @@ namespace TKH.Business.Features.Products.Services
                     {
                         Type = incomingPriceDto.Type,
                         Amount = incomingPriceDto.Amount,
+                        GenerationType = GenerationType.Automated,
                         IsVatIncluded = incomingPriceDto.IsVatIncluded,
                         StartDate = DateTime.UtcNow,
                         EndDate = null

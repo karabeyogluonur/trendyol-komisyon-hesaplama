@@ -9,12 +9,31 @@ namespace TKH.DataAccess.Configurations
         public void Configure(EntityTypeBuilder<ProductPrice> builder)
         {
             builder.ToTable("ProductPrices");
-            builder.Property(productPrice => productPrice.Amount).HasPrecision(18, 2);
+
+            builder.HasKey(productPrice => productPrice.Id);
+
+            builder.Property(productPrice => productPrice.Amount).HasPrecision(18, 2).IsRequired();
+
+            builder.Property(productPrice => productPrice.IsVatIncluded).HasDefaultValue(true).IsRequired();
+
+            builder.Property(productPrice => productPrice.Type).IsRequired();
+
+            builder.Property(productPrice => productPrice.GenerationType).IsRequired();
+
+            builder.Property(productPrice => productPrice.StartDate).IsRequired();
+
+            builder.Property(productPrice => productPrice.EndDate).IsRequired(false);
 
             builder.HasOne(productPrice => productPrice.Product)
-                   .WithMany(product => product.Prices)
-                   .HasForeignKey(productPrice => productPrice.ProductId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(product => product.Prices)
+                .HasForeignKey(productPrice => productPrice.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(productPrice => new { productPrice.ProductId, productPrice.Type, productPrice.GenerationType })
+                .HasDatabaseName("IX_ProductPrices_Filter");
+
+            builder.HasIndex(productPrice => productPrice.EndDate)
+                .HasDatabaseName("IX_ProductPrices_ActiveRecords");
         }
     }
 }
