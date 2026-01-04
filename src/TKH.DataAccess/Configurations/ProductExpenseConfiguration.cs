@@ -27,7 +27,7 @@ namespace TKH.DataAccess.Configurations
             builder.Property(productExpense => productExpense.EndDate).IsRequired(false);
 
             builder.HasOne(productExpense => productExpense.Product)
-                .WithMany()
+                .WithMany(product => product.Expenses)
                 .HasForeignKey(productExpense => productExpense.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
