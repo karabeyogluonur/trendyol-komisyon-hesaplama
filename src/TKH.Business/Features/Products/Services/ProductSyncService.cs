@@ -6,6 +6,7 @@ using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Integrations.Marketplaces.Factories;
 using TKH.Core.Common.Constants;
+using TKH.Core.Common.Settings;
 using TKH.Core.DataAccess;
 using TKH.Entities;
 using TKH.Entities.Enums;
@@ -127,9 +128,6 @@ namespace TKH.Business.Features.Products.Services
             if (matchedCategory is not null)
             {
                 product.CategoryId = matchedCategory.Id;
-                if (product.CommissionRate == 0)
-                    product.CommissionRate = matchedCategory.DefaultCommissionRate ?? 0;
-
                 SyncProductAttributes(product, dto.Attributes, matchedCategory);
             }
         }
@@ -295,11 +293,13 @@ namespace TKH.Business.Features.Products.Services
 
                 var analysisData = orderItems
                     .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
-                    .GroupBy(x => x.Item.ProductId!.Value)
+                    .GroupBy(order => order.Item.ProductId!.Value)
                     .Select(group => new
                     {
                         ProductId = group.Key,
-                        LatestCommissionRate = group.OrderByDescending(x => x.Order.OrderDate).Select(x => x.Item.CommissionRate).FirstOrDefault()
+                        LatestCommissionRate = group.OrderByDescending(ordergroup => ordergroup.Order.OrderDate)
+                                                    .Select(order => order.Item.CommissionRate)
+                                                    .FirstOrDefault()
                     })
                     .ToList();
 
@@ -315,40 +315,55 @@ namespace TKH.Business.Features.Products.Services
         {
             for (int i = 0; i < commissionsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
             {
-                List<(int ProductId, decimal LatestCommissionRate)> batch = commissionsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
-
-                List<int> batchProductIds = batch.Select(item => item.ProductId).ToList();
+                var batch = commissionsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+                var batchProductIds = batch.Select(item => item.ProductId).ToList();
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
                     IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    TaxSettings taxSettings = scope.ServiceProvider.GetRequiredService<TaxSettings>();
+
                     IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
 
                     IList<Product> products = await productRepository.GetAllAsync(
                         predicate: product => batchProductIds.Contains(product.Id),
+                        include: source => source.Include(product => product.Expenses.Where(productexpense => productexpense.GenerationType == GenerationType.Automated)),
                         disableTracking: false,
                         ignoreQueryFilters: true
                     );
-
-                    bool isBatchModified = false;
 
                     foreach (var (productId, latestRate) in batch)
                     {
                         Product? product = products.FirstOrDefault(product => product.Id == productId);
 
-                        if (product is null || product.CommissionRate == latestRate)
+                        if (product is null) continue;
+
+                        if (product.Expenses is null) product.Expenses = new List<ProductExpense>();
+
+                        ProductExpense? activeExpense = product.Expenses.FirstOrDefault(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate is null);
+
+                        if (activeExpense is not null && activeExpense.Amount == latestRate)
                             continue;
 
-                        product.CommissionRate = latestRate;
-                        product.LastUpdateDateTime = DateTime.UtcNow;
-                        isBatchModified = true;
+                        if (activeExpense is not null)
+                            activeExpense.EndDate = DateTime.UtcNow;
+
+                        product.Expenses.Add(new ProductExpense
+                        {
+                            ProductId = product.Id,
+                            Type = ProductExpenseType.CommissionRate,
+                            GenerationType = GenerationType.Automated,
+                            Amount = latestRate,
+                            IsVatIncluded = true,
+                            VatRate = taxSettings.ComissionVatRate,
+                            StartDate = DateTime.UtcNow,
+                            EndDate = null
+                        });
                     }
 
-                    if (isBatchModified)
-                        await unitOfWork.SaveChangesAsync();
+                    await unitOfWork.SaveChangesAsync();
                 }
             }
         }
-
     }
 }

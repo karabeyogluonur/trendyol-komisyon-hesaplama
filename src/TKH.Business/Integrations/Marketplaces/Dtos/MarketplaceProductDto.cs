@@ -22,7 +22,6 @@ namespace TKH.Business.Integrations.Marketplaces.Dtos
         public bool IsArchived { get; set; }
         public DateTime LastUpdateDateTime { get; set; }
         public decimal VatRate { get; set; }
-        public decimal CommissionRate { get; set; }
         public int ExternalCategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
 

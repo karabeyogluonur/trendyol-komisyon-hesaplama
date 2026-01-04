@@ -16,7 +16,6 @@ namespace TKH.Entities
         public string ImageUrl { get; set; } = string.Empty;
         public double Deci { get; set; }
         public decimal VatRate { get; set; }
-        public decimal CommissionRate { get; set; }
         public int StockQuantity { get; set; }
         public ProductUnitType UnitType { get; set; } = ProductUnitType.Piece;
         public bool IsOnSale { get; set; }

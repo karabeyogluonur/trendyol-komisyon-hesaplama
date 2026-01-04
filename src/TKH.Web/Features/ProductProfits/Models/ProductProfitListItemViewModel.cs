@@ -22,7 +22,7 @@ namespace TKH.Web.Features.ProductProfits.Models
         public string ExternalUrl { get; set; } = string.Empty;
 
         [Display(Name = "Kargo Ücreti (Kullanıcı)")]
-        public decimal UserShippingCost { get; set; }
+        public decimal ManualShippingCost { get; set; }
 
         [Display(Name = "Kargo Ücreti (Sistem)")]
         public decimal AutomatedShippingCost { get; set; }
@@ -36,14 +36,14 @@ namespace TKH.Web.Features.ProductProfits.Models
         [Display(Name = "Alış Fiyatı")]
         public decimal PurchasePrice { get; set; }
 
-        [Display(Name = "Komisyon Oranı")]
-        public decimal CommissionRate { get; set; }
+        [Display(Name = "Komisyon Oranı (Kullanıcı)")]
+        public decimal ManualCommissionRate { get; set; }
+
+        [Display(Name = "Komisyon Oranı (Sistem)")]
+        public decimal AutomatedCommissionRate { get; set; }
 
         [Display(Name = "KDV Oranı")]
         public decimal VatRate { get; set; }
-
-        [Display(Name = "Kargo Maliyeti")]
-        public decimal ShippingCost { get; set; }
 
         [Display(Name = "Hizmet Bedeli")]
         public decimal ServiceFee { get; set; }

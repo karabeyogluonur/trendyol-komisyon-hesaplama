@@ -57,21 +57,53 @@
                             </div>
                         </div>
                         <div class="col-6">
-                            <label class="fs-9 fw-bold form-label text-gray-600">Komisyon (%)</label>
+                            <label class="fs-9 fw-bold form-label text-gray-600 d-flex align-items-center gap-1">
+                                Komisyon (%)
+
+                                @if (item.ManualCommissionRate != 0 && item.AutomatedCommissionRate != 0)
+                                {
+                                    <i class="ki-duotone ki-abstract-26 fs-8 text-primary" data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="Bu komisyon otomasyon hesaplamasıyla %@(item.AutomatedCommissionRate.ToJsFormat()) olarak hesaplanmıştır.">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                    </i>
+                                }
+                            </label>
+
                             <div class="input-group input-group-sm input-group-solid">
                                 <input type="number" class="form-control form-control-sm calc-input"
-                                    data-field="commissionRate" value="@item.CommissionRate.ToJsFormat()" step="0.1" />
+                                    data-field="commissionRate"
+                                    value="@(item.ManualCommissionRate != 0 ? item.ManualCommissionRate.ToJsFormat() : item.AutomatedCommissionRate.ToJsFormat())"
+                                    step="0.1" />
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
+
                         <div class="col-6">
-                            <label class="fs-9 fw-bold form-label text-gray-600">Kargo</label>
+                            <label class="fs-9 fw-bold form-label text-gray-600 d-flex align-items-center gap-1">
+                                Kargo
+                                @if (item.ManualShippingCost != 0 && item.AutomatedShippingCost != 0)
+                                {
+                                    <i class="ki-duotone ki-abstract-26 fs-8 text-primary" data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="Bu kargo ücreti otomasyon hesaplamasıyla ₺@(item.AutomatedShippingCost.ToJsFormat()) olarak hesaplanmıştır.">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                    </i>
+                                }
+                            </label>
+
                             <div class="input-group input-group-sm input-group-solid">
                                 <input type="number" class="form-control form-control-sm calc-input"
-                                    data-field="shippingCost" value="@item.ShippingCost.ToJsFormat()" step="0.01" />
+                                    data-field="shippingCost"
+                                    value="@(item.ManualShippingCost != 0 ? item.ManualShippingCost.ToJsFormat() : item.AutomatedShippingCost.ToJsFormat())"
+                                    step="0.01" />
                                 <span class="input-group-text">₺</span>
                             </div>
                         </div>
+
+
                     </div>
 
                     <div class="separator separator-dashed my-4"></div>

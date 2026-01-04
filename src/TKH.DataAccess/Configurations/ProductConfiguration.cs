@@ -19,7 +19,6 @@ namespace TKH.DataAccess.Configurations
             builder.Property(product => product.Name).IsRequired().HasMaxLength(500);
             builder.Property(product => product.ImageUrl).HasMaxLength(1000);
             builder.Property(product => product.VatRate).HasPrecision(18, 2);
-            builder.Property(product => product.CommissionRate).HasPrecision(18, 2);
             builder.HasIndex(product => product.ExternalId);
             builder.HasIndex(product => product.ExternalProductCode);
             builder.HasIndex(product => product.Barcode);

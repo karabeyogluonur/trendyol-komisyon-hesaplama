@@ -4,7 +4,6 @@ namespace TKH.Entities.Enums
     {
         MarketplaceServiceFee = 1,
         ShippingCost = 2,
-        PackagingCost = 3,
-        MarketingCost = 4,
+        CommissionRate = 3,
     }
 }

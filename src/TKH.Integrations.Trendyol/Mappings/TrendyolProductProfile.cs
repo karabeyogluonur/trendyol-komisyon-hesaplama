@@ -32,7 +32,6 @@ namespace TKH.Business.Integrations.Providers.Trendyol.Profiles
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.CategoryName))
                 .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.Attributes))
                 .ForMember(dest => dest.Prices, opt => opt.MapFrom(src => MapPrices(src)))
-                .ForMember(dest => dest.CommissionRate, opt => opt.Ignore())
                 .ForMember(dest => dest.Expenses, opt => opt.Ignore())
                 .ForMember(dest => dest.MarketplaceAccountId, opt => opt.Ignore());
 
