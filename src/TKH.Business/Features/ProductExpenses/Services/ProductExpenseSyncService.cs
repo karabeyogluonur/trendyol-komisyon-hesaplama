@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TKH.Core.Common.Constants;
+using TKH.Core.Common.Settings;
 using TKH.Core.DataAccess;
 using TKH.Entities;
 using TKH.Entities.Enums;
@@ -115,10 +116,11 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 {
                     IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
+                    TaxSettings taxSettings = scope.ServiceProvider.GetRequiredService<TaxSettings>();
 
                     IList<Product> products = await productRepository.GetAllAsync(
                         predicate: product => batchProductIds.Contains(product.Id),
-                        include: source => source.Include(product => product.Expenses),
+                        include: source => source.Include(product => product.Expenses.Where(expense => expense.GenerationType == GenerationType.Automated)),
                         disableTracking: false,
                         ignoreQueryFilters: true
                     );
@@ -146,7 +148,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
                             Type = ProductExpenseType.ShippingCost,
                             Amount = item.AverageCost,
                             IsVatIncluded = true,
-                            VatRate = 20,
+                            VatRate = taxSettings.ShippingVatRate,
                             StartDate = DateTime.UtcNow,
                             EndDate = null
                         });

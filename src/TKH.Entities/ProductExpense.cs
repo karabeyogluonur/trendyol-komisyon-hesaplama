@@ -9,6 +9,7 @@ namespace TKH.Entities
         public int ProductId { get; set; }
         public virtual Product Product { get; set; }
         public ProductExpenseType Type { get; set; }
+        public GenerationType GenerationType { get; set; }
         public decimal Amount { get; set; }
         public decimal VatRate { get; set; }
         public bool IsVatIncluded { get; set; }

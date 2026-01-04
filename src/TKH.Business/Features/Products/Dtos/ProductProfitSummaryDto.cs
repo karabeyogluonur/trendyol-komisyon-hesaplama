@@ -15,7 +15,8 @@ namespace TKH.Business.Features.Products.Dtos
         public decimal PurchasePrice { get; set; }
         public decimal CommissionRate { get; set; }
         public decimal VatRate { get; set; }
-        public decimal ShippingCost { get; set; }
+        public decimal UserShippingCost { get; set; }
+        public decimal AutomatedShippingCost { get; set; }
         public decimal ServiceFee { get; set; }
     }
 }

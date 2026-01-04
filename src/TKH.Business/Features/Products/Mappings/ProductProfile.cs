@@ -17,17 +17,18 @@ namespace TKH.Business.Features.Products.Mappings
                 .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src =>
                     src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.PurchasePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).FirstOrDefault()))
 
-                .ForMember(dest => dest.ShippingCost, opt => opt.MapFrom(src =>
-                    src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null).Select(productExpense => productExpense.Amount)
+                .ForMember(dest => dest.UserShippingCost, opt => opt.MapFrom(src =>
+                    src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.User).Select(productExpense => productExpense.Amount)
+                    .FirstOrDefault()))
+
+                .ForMember(dest => dest.AutomatedShippingCost, opt => opt.MapFrom(src =>
+                    src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.Automated).Select(productExpense => productExpense.Amount)
                     .FirstOrDefault()))
 
                 .ForMember(dest => dest.ServiceFee, opt => opt.MapFrom(src =>
                     src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.MarketplaceServiceFee && productExpense.EndDate == null)
                                 .Select(productExpense => productExpense.Amount)
                                 .FirstOrDefault()));
-
-
-
 
 
             CreateMap<MarketplaceProductDto, Product>()

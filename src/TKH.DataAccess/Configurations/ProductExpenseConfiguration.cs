@@ -10,13 +10,32 @@ namespace TKH.DataAccess.Configurations
         {
             builder.ToTable("ProductExpenses");
 
-            builder.Property(productExpense => productExpense.Amount).HasPrecision(18, 2);
-            builder.Property(productExpense => productExpense.VatRate).HasPrecision(18, 2);
+            builder.HasKey(productExpense => productExpense.Id);
+
+            builder.Property(productExpense => productExpense.Amount).HasPrecision(18, 2).IsRequired();
+
+            builder.Property(productExpense => productExpense.VatRate).HasPrecision(18, 2).IsRequired();
+
+            builder.Property(productExpense => productExpense.IsVatIncluded).HasDefaultValue(false).IsRequired();
+
+            builder.Property(productExpense => productExpense.Type).IsRequired();
+
+            builder.Property(productExpense => productExpense.GenerationType).IsRequired();
+
+            builder.Property(productExpense => productExpense.StartDate).IsRequired();
+
+            builder.Property(productExpense => productExpense.EndDate).IsRequired(false);
 
             builder.HasOne(productExpense => productExpense.Product)
-                   .WithMany(product => product.Expenses)
-                   .HasForeignKey(productExpense => productExpense.ProductId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithMany()
+                .HasForeignKey(productExpense => productExpense.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(productExpense => new { productExpense.ProductId, productExpense.Type, productExpense.GenerationType })
+                .HasDatabaseName("IX_ProductExpenses_Filter");
+
+            builder.HasIndex(productExpense => productExpense.EndDate)
+                .HasDatabaseName("IX_ProductExpenses_ActiveRecords");
         }
     }
 }

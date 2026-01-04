@@ -21,6 +21,12 @@ namespace TKH.Web.Features.ProductProfits.Models
         [Display(Name = "Pazaryeri Linki")]
         public string ExternalUrl { get; set; } = string.Empty;
 
+        [Display(Name = "Kargo Ücreti (Kullanıcı)")]
+        public decimal UserShippingCost { get; set; }
+
+        [Display(Name = "Kargo Ücreti (Sistem)")]
+        public decimal AutomatedShippingCost { get; set; }
+
         [Display(Name = "Stok Adedi")]
         public int StockQuantity { get; set; }
 

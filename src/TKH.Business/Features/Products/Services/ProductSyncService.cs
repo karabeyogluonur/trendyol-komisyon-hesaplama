@@ -178,15 +178,14 @@ namespace TKH.Business.Features.Products.Services
 
         private void SyncProductExpenses(Product product, List<MarketplaceProductExpenseDto> incomingExpenses)
         {
-            if (incomingExpenses is null || incomingExpenses.Count == 0) return;
+            if (incomingExpenses is null || incomingExpenses.Count is 0) return;
 
-            if (product.Expenses == null)
+            if (product.Expenses is null)
                 product.Expenses = new List<ProductExpense>();
 
             foreach (MarketplaceProductExpenseDto incomingExpenseDto in incomingExpenses)
             {
-                ProductExpense? activeProductExpense = product.Expenses
-                    .FirstOrDefault(productExpense => productExpense.Type == incomingExpenseDto.Type && productExpense.EndDate == null);
+                ProductExpense? activeProductExpense = product.Expenses.FirstOrDefault(productExpense => productExpense.Type == incomingExpenseDto.Type && productExpense.EndDate is null && productExpense.GenerationType == GenerationType.Automated);
 
                 if (activeProductExpense is not null)
                 {
@@ -203,6 +202,7 @@ namespace TKH.Business.Features.Products.Services
                         Amount = incomingExpenseDto.Amount,
                         VatRate = incomingExpenseDto.VatRate,
                         IsVatIncluded = incomingExpenseDto.IsVatIncluded,
+                        GenerationType = GenerationType.Automated,
                         StartDate = DateTime.UtcNow,
                         EndDate = null
                     });
@@ -215,6 +215,7 @@ namespace TKH.Business.Features.Products.Services
                         Amount = incomingExpenseDto.Amount,
                         VatRate = incomingExpenseDto.VatRate,
                         IsVatIncluded = incomingExpenseDto.IsVatIncluded,
+                        GenerationType = GenerationType.Automated,
                         StartDate = DateTime.UtcNow,
                         EndDate = null
                     });
