@@ -18,8 +18,6 @@ namespace TKH.DataAccess.Configurations
 
             builder.Property(productPrice => productPrice.Type).IsRequired();
 
-            builder.Property(productPrice => productPrice.GenerationType).IsRequired();
-
             builder.Property(productPrice => productPrice.StartDate).IsRequired();
 
             builder.Property(productPrice => productPrice.EndDate).IsRequired(false);
@@ -29,7 +27,7 @@ namespace TKH.DataAccess.Configurations
                 .HasForeignKey(productPrice => productPrice.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(productPrice => new { productPrice.ProductId, productPrice.Type, productPrice.GenerationType })
+            builder.HasIndex(productPrice => new { productPrice.ProductId, productPrice.Type })
                 .HasDatabaseName("IX_ProductPrices_Filter");
 
             builder.HasIndex(productPrice => productPrice.EndDate)

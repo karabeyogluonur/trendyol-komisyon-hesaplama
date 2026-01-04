@@ -141,7 +141,7 @@ namespace TKH.Business.Features.Products.Services
 
             foreach (MarketplaceProductPriceDto incomingPriceDto in incomingPrices)
             {
-                ProductPrice? activeProductPrice = product.Prices.FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null && productPrice.GenerationType == GenerationType.Automated);
+                ProductPrice? activeProductPrice = product.Prices.FirstOrDefault(productPrice => productPrice.Type == incomingPriceDto.Type && productPrice.EndDate == null);
 
                 if (activeProductPrice is not null)
                 {
@@ -156,7 +156,6 @@ namespace TKH.Business.Features.Products.Services
                         Amount = incomingPriceDto.Amount,
                         IsVatIncluded = incomingPriceDto.IsVatIncluded,
                         StartDate = DateTime.UtcNow,
-                        GenerationType = GenerationType.Automated,
                         EndDate = null
                     });
                 }
@@ -166,7 +165,6 @@ namespace TKH.Business.Features.Products.Services
                     {
                         Type = incomingPriceDto.Type,
                         Amount = incomingPriceDto.Amount,
-                        GenerationType = GenerationType.Automated,
                         IsVatIncluded = incomingPriceDto.IsVatIncluded,
                         StartDate = DateTime.UtcNow,
                         EndDate = null
