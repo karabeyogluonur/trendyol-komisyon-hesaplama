@@ -165,6 +165,7 @@
     }
 </div>
 
+
 <script>
     const CONFIG = {
         RATES: {
@@ -174,10 +175,10 @@
             EXPORT_FEE_RATE: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeRate"),
             VAT_COMMISSION: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ProductCommissionVatRate"),
             VAT_EXPORT: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeVatRate")
-        },
+            },
         FEES: {
             SAME_DAY_SERVICE: @Model.MarketplaceDefaults.Metadata.GetJsDecimal("SameDayServiceFee")
-        }
+            }
     };
 
     console.log("Profit Calculator Config (Cleaned):", CONFIG);

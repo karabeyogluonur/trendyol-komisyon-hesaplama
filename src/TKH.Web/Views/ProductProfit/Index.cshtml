@@ -122,10 +122,11 @@
 {
     @await Html.PartialAsync(designPartial, Model)
 
-    <div class="card mt-10">
-        <div class="card-body pt-0">
-            @if (Model.Products != null && Model.Products.TotalPages > 1)
-            {
+
+    @if (Model.Products != null && Model.Products.TotalPages > 0)
+    {
+        <div class="card mt-10">
+            <div class="card-body pt-0">
                 <div class="row pt-10">
                     <div class="col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start">
                         <div class="dataTables_info text-gray-600 fs-7">
@@ -176,9 +177,10 @@
                         </div>
                     </div>
                 </div>
-            }
+            </div>
         </div>
-    </div>
+    }
+
 }
 else
 {
