@@ -13,7 +13,7 @@ namespace TKH.Core.Common.Constants
         public const int ClaimBatchSize = 100;
         public const int MarketplaceSyncParallelism = 10;
         public const int ShippingCostAnalysisLookbackDays = 60;
-        public const int ProductCommissionRateAnalysisLookbackDays = 60;
+        public const int ProductCommissionRateAnalysisLookbackDays = 30;
         public const decimal MinimumShippingCostThreshold = 1;
         public const int ExpenseSyncBatchSize = 100;
     }

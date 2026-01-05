@@ -161,15 +161,18 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
         public async Task CalculateAndSyncCommissionRatesAsync()
         {
-            List<(int ProductId, decimal LatestCommissionRate)> calculatedCommissions = new List<(int ProductId, decimal LatestCommissionRate)>();
+            List<(int ProductId, decimal LatestCommissionRate)> finalCommissionsToSync = new List<(int ProductId, decimal LatestCommissionRate)>();
 
             using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
                 IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
                 IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
+                IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
 
                 DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
+
+                Dictionary<int, decimal> orderBasedRates = new Dictionary<int, decimal>();
 
                 IList<Order> orders = await orderRepository.GetAllAsync(
                     predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
@@ -177,34 +180,64 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     ignoreQueryFilters: true
                 );
 
-                if (!orders.Any()) return;
+                if (orders.Any())
+                {
+                    List<int> orderIds = orders.Select(order => order.Id).ToList();
 
-                List<int> orderIds = orders.Select(order => order.Id).ToList();
+                    IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
+                        predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
+                        disableTracking: true,
+                        ignoreQueryFilters: true
+                    );
 
-                IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
-                    predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
+                    var analysisData = orderItems
+                        .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
+                        .GroupBy(order => order.Item.ProductId!.Value)
+                        .Select(group => new
+                        {
+                            ProductId = group.Key,
+                            LatestCommissionRate = group.OrderByDescending(g => g.Order.OrderDate)
+                                                    .Select(o => o.Item.CommissionRate)
+                                                    .FirstOrDefault()
+                        })
+                        .ToList();
+
+                    orderBasedRates = analysisData.ToDictionary(k => k.ProductId, v => v.LatestCommissionRate);
+                }
+
+                var productCategoryData = await productRepository.GetAllAsync(
+                    selector: product => new
+                    {
+                        ProductId = product.Id,
+                        CategoryDefaultRate = product.Category != null ? product.Category.DefaultCommissionRate : null
+                    },
+                    include: source => source.Include(product => product.Category),
                     disableTracking: true,
                     ignoreQueryFilters: true
                 );
 
-                var analysisData = orderItems
-                    .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
-                    .GroupBy(order => order.Item.ProductId!.Value)
-                    .Select(group => new
-                    {
-                        ProductId = group.Key,
-                        LatestCommissionRate = group.OrderByDescending(ordergroup => ordergroup.Order.OrderDate)
-                                                    .Select(order => order.Item.CommissionRate)
-                                                    .FirstOrDefault()
-                    })
-                    .ToList();
+                foreach (var productCategory in productCategoryData)
+                {
+                    decimal rateToUse = 0;
+                    bool rateFound = false;
 
-                foreach (var item in analysisData)
-                    calculatedCommissions.Add((item.ProductId, item.LatestCommissionRate));
+                    if (orderBasedRates.TryGetValue(productCategory.ProductId, out decimal orderRate))
+                    {
+                        rateToUse = orderRate;
+                        rateFound = true;
+                    }
+                    else if (productCategory.CategoryDefaultRate.HasValue)
+                    {
+                        rateToUse = productCategory.CategoryDefaultRate.Value;
+                        rateFound = true;
+                    }
+                    if (rateFound)
+                        finalCommissionsToSync.Add((productCategory.ProductId, rateToUse));
+                }
             }
 
-            if (calculatedCommissions.Count > 0)
-                await ProcessCommissionUpdateBatchAsync(calculatedCommissions);
+            if (finalCommissionsToSync.Count > 0)
+                await ProcessCommissionUpdateBatchAsync(finalCommissionsToSync);
         }
 
         private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync)
