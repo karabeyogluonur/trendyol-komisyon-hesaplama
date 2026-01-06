@@ -1,4 +1,6 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TKH.Core.DataAccess;
 using TKH.Core.Entities.Abstract;
 using TKH.DataAccess.Contexts;
@@ -9,6 +11,7 @@ namespace TKH.DataAccess.Concrete
     {
         private readonly TKHDbContext _context;
         private bool _disposed = false;
+        private IDbContextTransaction _currentTransaction;
         private Dictionary<Type, object> _repositories;
 
         public UnitOfWork(TKHDbContext context)
@@ -81,5 +84,56 @@ namespace TKH.DataAccess.Concrete
             }
             GC.SuppressFinalize(this);
         }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            if (_currentTransaction is not null)
+                return _currentTransaction;
+
+            _currentTransaction = await _context.Database.BeginTransactionAsync(isolationLevel);
+            return _currentTransaction;
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            try
+            {
+                if (_currentTransaction is null)
+                    throw new InvalidOperationException("Commit edilecek bir transaction bulunamadı.");
+
+                await _currentTransaction.CommitAsync();
+            }
+            catch
+            {
+                await RollbackTransactionAsync();
+                throw;
+            }
+            finally
+            {
+                if (_currentTransaction is not null)
+                {
+                    await _currentTransaction.DisposeAsync();
+                    _currentTransaction = null;
+                }
+            }
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            try
+            {
+                if (_currentTransaction is not null)
+                    await _currentTransaction.RollbackAsync();
+            }
+            finally
+            {
+                if (_currentTransaction is not null)
+                {
+                    await _currentTransaction.DisposeAsync();
+                    _currentTransaction = null;
+                }
+            }
+        }
+
     }
 }

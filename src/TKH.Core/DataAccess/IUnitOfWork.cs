@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore.Storage;
 using TKH.Core.Entities.Abstract;
 
@@ -10,5 +11,8 @@ namespace TKH.Core.DataAccess
         Task<int> SaveChangesAsync();
         int ExecuteSqlCommand(string sql, params object[] parameters);
         IQueryable<T> FromSql<T>(string sql, params object[] parameters) where T : class, IEntity, new();
+        Task<IDbContextTransaction> BeginTransactionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 }
