@@ -10,6 +10,9 @@ namespace TKH.Web.Features.Products.Mappings
         {
             CreateMap<ProductSummaryDto, ProductListItemViewModel>();
             CreateMap<ProductListFilterViewModel, ProductListFilterDto>();
+
+            CreateMap<ProductCostListFilterViewModel, ProductCostListFilterDto>();
+            CreateMap<ProductCostSummaryDto, ProductCostListItemViewModel>();
         }
     }
 }

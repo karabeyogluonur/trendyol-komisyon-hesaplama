@@ -26,5 +26,25 @@ namespace TKH.Web.Controllers
 
             return View(prepareProductListViewModelResult.Data);
         }
+
+        public async Task<IActionResult> Costs(ProductCostListFilterViewModel productCostListFilterViewModel)
+        {
+            IDataResult<ProductCostListViewModel> prepareProductCostListViewModelResult = await _productOrchestrator.PrepareProductCostListViewModelAsync(productCostListFilterViewModel);
+
+            if (!prepareProductCostListViewModelResult.Success)
+                return View(new ProductCostListViewModel { Filter = productCostListFilterViewModel });
+
+            return View(prepareProductCostListViewModelResult.Data);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveCosts([FromBody] List<ProductCostBatchViewModel> productCostBatchViewModels)
+        {
+            if (productCostBatchViewModels is null || !productCostBatchViewModels.Any())
+                return HandleJsonResult(new ErrorResult("Güncellenecek veri gönderilmedi."));
+
+            return HandleJsonResult(await _productOrchestrator.UpdateProductCostsAsync(productCostBatchViewModels));
+        }
+
     }
 }

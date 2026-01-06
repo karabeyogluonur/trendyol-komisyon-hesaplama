@@ -25,7 +25,7 @@ namespace TKH.DataAccess.Concrete
             _dbSet = _dbContext.Set<TEntity>();
         }
 
-        public IQueryable<TEntity> GetAll()
+        public IQueryable<TEntity> Query()
         {
             return _dbSet;
         }

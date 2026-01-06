@@ -82,7 +82,7 @@ namespace TKH.Core.DataAccess
 
         ValueTask<TEntity> FindAsync(object[] keyValues, CancellationToken cancellationToken);
 
-        IQueryable<TEntity> GetAll();
+        IQueryable<TEntity> Query();
 
         IQueryable<TEntity> GetAll(Expression<Func<TEntity, bool>> predicate = null,
           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,

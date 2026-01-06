@@ -9,12 +9,12 @@ using TKH.Business.Features.FinancialTransactions.Services;
 using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Features.Orders.Services;
 using TKH.Business.Features.ProductExpenses.Services;
+using TKH.Business.Features.ProductPrices.Services;
 using TKH.Business.Features.Products.Services;
 using TKH.Business.Features.Settings.Services;
 using TKH.Business.Features.ShipmentTransactions.Services;
 using TKH.Business.Infrastructure.Storage.Services;
 using TKH.Business.Integrations.Marketplaces.Factories;
-using TKH.Business.Integrations.Marketplaces.Handlers;
 using TKH.Business.Integrations.Marketplaces.RateLimiting;
 using TKH.Business.Jobs.Services;
 using TKH.Business.Jobs.Workers;
@@ -45,6 +45,8 @@ namespace TKH.Business
 
             services.AddScoped<IMarketplaceAccountService, MarketplaceAccountService>();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductPriceService, ProductPriceService>();
+            services.AddScoped<IProductExpenseService, ProductExpenseService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
 
             #endregion

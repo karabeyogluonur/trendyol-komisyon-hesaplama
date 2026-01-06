@@ -18,5 +18,6 @@ namespace TKH.Business.Features.Products.Dtos
         public string VariantSummary { get; init; } = string.Empty;
         public bool IsOnSale { get; init; }
         public bool IsApproved { get; init; }
+        public MarketplaceType MarketplaceType { get; init; }
     }
 }

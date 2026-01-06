@@ -10,6 +10,9 @@ namespace TKH.Business.Features.Products.Services
         Task<IDataResult<IPagedList<ProductSummaryDto>>> GetPagedListAsync(ProductListFilterDto productListFilterDto);
         Task<IDataResult<List<CategoryLookupDto>>> GetUsedCategoriesAsync();
         Task<IDataResult<IPagedList<ProductProfitSummaryDto>>> GetPagedProductProfitListAsync(ProductProfitListFilterDto productProfitListFilterDto);
+        Task<IDataResult<IPagedList<ProductCostSummaryDto>>> GetPagedProductCostListAsync(ProductCostListFilterDto productCostListFilterDto);
+        Task<IDataResult<ProductSummaryDto>> GetByIdAsync(int productId);
+        Task<IDataResult<List<ProductSummaryDto>>> GetByIdsAsync(IEnumerable<int> productIds);
 
     }
 }
