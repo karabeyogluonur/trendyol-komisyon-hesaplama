@@ -541,7 +541,7 @@
             }
         }
 
-        function saveCostData(dataList, $specificRow = null) {
+       function saveCostData(dataList, $specificRow = null) {
             $.ajax({
                 url: '@Url.Action("SaveCosts", "Product")',
                 method: 'POST',
@@ -556,20 +556,62 @@
                                 manualCommissionRate: item.manualCommissionRate.toString(),
                                 manualShippingCost: item.manualShippingCost.toString()
                             });
-
                             changedRows.delete(item.id);
                             $row.removeClass('bg-light-primary');
                             $row.find('.save-row-btn, .reset-row-btn').addClass('d-none');
                         });
-
                         updateBulkSaveButton();
                         toastr.success('Maliyet bilgileri başarıyla kaydedildi');
                     } else {
                         toastr.error(response.message || 'Kayıt sırasında bir hata oluştu');
                     }
                 },
-                error: function() {
-                    toastr.error('Kayıt sırasında bir hata oluştu');
+                error: function(xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON) {
+                        const res = xhr.responseJSON;
+                        if (res.validationErrors) {
+                            let errorListHtml = '<ul class="mb-0 ps-3 text-start">';
+                            for (const [key, messages] of Object.entries(res.validationErrors)) {
+                                const indexMatch = key.match(/\[(\d+)\]/);
+                                let productInfo = "";
+
+                                if (indexMatch && dataList[indexMatch[1]]) {
+                                    const itemIndex = indexMatch[1];
+                                    const failedItem = dataList[itemIndex];
+
+                                    if(failedItem) {
+                                        const $errorRow = $(`.cost-row[data-product-id="${failedItem.id}"]`);
+                                        $errorRow.addClass('bg-light-danger'); // Hata görselleştirme
+                                        setTimeout(() => $errorRow.removeClass('bg-light-danger'), 3000); // 3sn sonra kaldır
+
+                                        productInfo = `(Ürün ID: ${failedItem.id}) `;
+                                    }
+                                }
+
+                                messages.forEach(msg => {
+                                    errorListHtml += `<li>${productInfo}${msg}</li>`;
+                                });
+                            }
+                            errorListHtml += '</ul>';
+
+                            toastr.error(errorListHtml, 'Validasyon Hatası', {
+                                timeOut: 7000,
+                                extendedTimeOut: 2000,
+                                closeButton: true,
+                                progressBar: true,
+                                enableHtml: true
+                            });
+
+                        } else {
+                            toastr.error(res.message || 'Geçersiz istek gönderildi.');
+                        }
+                    }
+                    else if (xhr.status === 500) {
+                        toastr.error('Sunucu tarafında beklenmedik bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.');
+                    }
+                    else {
+                        toastr.error('İşlem gerçekleştirilemedi. Bağlantınızı kontrol ediniz.');
+                    }
                 }
             });
         }

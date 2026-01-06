@@ -40,8 +40,8 @@ namespace TKH.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveCosts([FromBody] List<ProductCostBatchViewModel> productCostBatchViewModels)
         {
-            if (productCostBatchViewModels is null || !productCostBatchViewModels.Any())
-                return HandleJsonResult(new ErrorResult("Güncellenecek veri gönderilmedi."));
+            if (!ModelState.IsValid)
+                return HandleValidationJsonResult(ModelState);
 
             return HandleJsonResult(await _productOrchestrator.UpdateProductCostsAsync(productCostBatchViewModels));
         }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TKH.Core.Utilities.Results;
 using TKH.Web.Infrastructure.Services;
 using IResult = TKH.Core.Utilities.Results.IResult;
@@ -62,6 +63,22 @@ namespace TKH.Web.Controllers
             };
 
             return Ok(response);
+        }
+
+        protected IActionResult HandleValidationJsonResult(ModelStateDictionary modelState)
+        {
+            var errors = modelState.Where(x => x.Value.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+
+            return BadRequest(new
+            {
+                success = false,
+                message = "Lütfen hatalı alanları kontrol ediniz.",
+                validationErrors = errors
+            });
         }
     }
 }
