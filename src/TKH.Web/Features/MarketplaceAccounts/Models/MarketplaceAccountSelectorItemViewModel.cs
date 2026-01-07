@@ -21,5 +21,8 @@ namespace TKH.Web.Features.MarketplaceAccounts.Models
 
         [Display(Name = "Senkronizasyon")]
         public MarketplaceSyncState SyncState { get; set; }
+
+        [Display(Name = "Demo")]
+        public bool IsDemo { get; set; }
     }
 }

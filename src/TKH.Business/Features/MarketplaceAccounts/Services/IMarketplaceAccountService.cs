@@ -11,8 +11,7 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
         Task<IDataResult<MarketplaceAccountDetailsDto>> GetByIdAsync(int id);
         Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto);
         Task<IResult> DeleteAsync(int id);
-        Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id);
-        Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsAsync(int accountId);
+        Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int marketplaceAccountId);
         Task<IDataResult<IList<int>>> GetActiveConnectedAccountIdsAsync();
         Task<bool> TryMarkAsSyncingAsync(int marketplaceAccountId);
         Task MarkSyncCompletedAsync(int marketplaceAccountId);

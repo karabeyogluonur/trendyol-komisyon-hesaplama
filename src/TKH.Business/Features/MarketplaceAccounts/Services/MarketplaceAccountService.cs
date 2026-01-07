@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
+using TKH.Core.Common.Constants;
 using TKH.Core.Common.Exceptions;
 using TKH.Core.Contexts;
 using TKH.Core.DataAccess;
@@ -83,6 +84,9 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             if (marketplaceAccountEntity is null)
                 return new ErrorResult("Düzenlenecek kayıt bulunamadı.");
 
+            if (marketplaceAccountEntity.MerchantId is ApplicationDefaults.DemoAccountMerchantId)
+                return new ErrorResult("Demo hesap güncellenemez.");
+
             if (marketplaceAccountEntity.SyncState == MarketplaceSyncState.Syncing)
             {
                 bool isZombieLock = marketplaceAccountEntity.LastSyncStartTime.HasValue &&
@@ -132,14 +136,17 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             if (_workContext.CurrentMarketplaceAccountId == id)
                 return new ErrorResult("Şu anda aktif olarak seçili olan mağazayı silemezsiniz. Lütfen önce başka bir mağazaya geçiş yapın.");
 
-            MarketplaceAccount account = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
 
-            if (account is null)
+            if (marketplaceAccount is null)
                 return new ErrorResult("Silinecek hesap bulunamadı.");
 
-            if (account.SyncState == MarketplaceSyncState.Syncing)
+            if (marketplaceAccount.MerchantId is ApplicationDefaults.DemoAccountMerchantId)
+                return new ErrorResult("Demo hesap silinemez.");
+
+            if (marketplaceAccount.SyncState == MarketplaceSyncState.Syncing)
             {
-                bool isZombieLock = account.LastSyncStartTime.HasValue && account.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
+                bool isZombieLock = marketplaceAccount.LastSyncStartTime.HasValue && marketplaceAccount.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
 
                 if (!isZombieLock)
                 {
@@ -148,7 +155,7 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
                 }
             }
 
-            _marketplaceAccountRepository.Delete(account);
+            _marketplaceAccountRepository.Delete(marketplaceAccount);
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Marketplace Account deleted. Id: {AccountId}", id);
@@ -163,26 +170,6 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
 
             return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Aktif Hesaplar listelendi.");
-        }
-
-        public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int id)
-        {
-            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
-
-            if (marketplaceAccountEntity is null)
-                return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>("Bağlantı bilgileri için gerekli hesap bulunamadı.");
-
-            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountEntity);
-
-            if (!string.IsNullOrEmpty(marketplaceAccountEntity.ApiSecretKey))
-            {
-                marketplaceAccountConnectionDetailsDto = marketplaceAccountConnectionDetailsDto with
-                {
-                    ApiSecretKey = _cipherService.Decrypt(marketplaceAccountEntity.ApiSecretKey)
-                };
-            }
-
-            return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountConnectionDetailsDto);
         }
 
         public async Task<bool> TryMarkAsSyncingAsync(int marketplaceAccountId)
@@ -254,10 +241,10 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             _logger.LogError(exception, "Sync cycle failed for Account {AccountId}. ConnectionState set to {ConnectionState}.", marketplaceAccountId, marketplaceAccount.ConnectionState);
         }
 
-        public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsAsync(int accountId)
+        public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int marketplaceAccountId)
         {
             MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
-                predicate: marketplaceAccount => marketplaceAccount.Id == accountId,
+                predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
                 disableTracking: true
             );
 

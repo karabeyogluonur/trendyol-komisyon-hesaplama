@@ -43,7 +43,7 @@ namespace TKH.Business.Jobs.Workers
 
         private async Task<MarketplaceAccountConnectionDetailsDto> GetConnectionDetailsOrThrow(int marketplaceAccountId)
         {
-            IDataResult<MarketplaceAccountConnectionDetailsDto> marketplaceAccountConnectionDetailsResult = await _marketplaceAccountService.GetConnectionDetailsAsync(marketplaceAccountId);
+            IDataResult<MarketplaceAccountConnectionDetailsDto> marketplaceAccountConnectionDetailsResult = await _marketplaceAccountService.GetConnectionDetailsByIdAsync(marketplaceAccountId);
 
             if (!marketplaceAccountConnectionDetailsResult.Success || marketplaceAccountConnectionDetailsResult.Data is null)
                 throw new Exception($"Failed to retrieve account connection details. AccountID: {marketplaceAccountId} - Error: {marketplaceAccountConnectionDetailsResult.Message}");

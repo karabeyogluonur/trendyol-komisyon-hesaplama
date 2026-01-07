@@ -2,6 +2,7 @@ using AutoMapper;
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Jobs.Services;
+using TKH.Core.Common.Constants;
 using TKH.Core.Utilities.Results;
 using TKH.Web.Features.MarketplaceAccounts.Models;
 using IResult = TKH.Core.Utilities.Results.IResult;
@@ -59,12 +60,21 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
             if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data == null)
                 return new ErrorDataResult<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Message);
 
-            return new SuccessDataResult<MarketplaceAccountUpdateViewModel>(
-                _mapper.Map<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Data));
+            if (getMarketplaceAccountResult.Data.MerchantId == ApplicationDefaults.DemoAccountMerchantId)
+            {
+                getMarketplaceAccountResult.Data.ApiKey = "*****";
+                getMarketplaceAccountResult.Data.ApiKey = "*****";
+            }
+
+
+            return new SuccessDataResult<MarketplaceAccountUpdateViewModel>(_mapper.Map<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Data));
         }
 
         public async Task<IResult> UpdateMarketplaceAccountAsync(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
         {
+            if (marketplaceAccountUpdateViewModel.MerchantId == ApplicationDefaults.DemoAccountMerchantId || marketplaceAccountUpdateViewModel.IsDemo == true)
+                return new ErrorResult("Demo hesap düzenlenemez!");
+
             MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
             IResult updateMarketplaceAccountResult = await _marketplaceAccountService.UpdateAsync(marketplaceAccountUpdateDto);
 

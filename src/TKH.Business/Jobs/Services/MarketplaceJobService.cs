@@ -27,7 +27,7 @@ namespace TKH.Business.Jobs.Services
         {
             IDataResult<IList<int>> activeAccountsResult = await _marketplaceAccountService.GetActiveConnectedAccountIdsAsync();
 
-            if (!activeAccountsResult.Success || activeAccountsResult.Data == null)
+            if (!activeAccountsResult.Success || activeAccountsResult.Data is null)
                 return;
 
             foreach (int marketplaceAccountId in activeAccountsResult.Data)

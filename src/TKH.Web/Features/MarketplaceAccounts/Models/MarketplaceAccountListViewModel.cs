@@ -30,5 +30,8 @@ namespace TKH.Web.Features.MarketplaceAccounts.Models
 
         [Display(Name = "Hata Tarihi")]
         public DateTime? LastErrorDate { get; set; }
+
+        [Display(Name = "Demo")]
+        public bool IsDemo { get; set; }
     }
 }

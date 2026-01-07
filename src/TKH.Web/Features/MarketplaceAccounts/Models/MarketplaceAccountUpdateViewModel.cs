@@ -33,5 +33,8 @@ namespace TKH.Web.Features.MarketplaceAccounts.Models
 
         [Display(Name = "Son Hata Mesajı")]
         public string? LastErrorMessage { get; set; }
+
+        [Display(Name = "Demo")]
+        public bool IsDemo { get; set; }
     }
 }

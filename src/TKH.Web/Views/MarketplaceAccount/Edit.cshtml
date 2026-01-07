@@ -38,7 +38,21 @@
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="Id" />
-
+    @if (Model.IsDemo)
+    {
+        <div
+            class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
+            <i class="ki-outline ki-lock-2 fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
+            <div class="d-flex flex-column pe-0 pe-sm-10">
+                <h5 class="mb-1 fs-6 text-warning">Demo Modu Aktif</h5>
+                <span class="fs-7 text-gray-600">
+                    Bu hesap <strong>Demo Modunda</strong> olduğu için API anahtarları ve kritik ayarlar üzerinde değişiklik
+                    yapamazsınız.
+                    Sadece mevcut konfigürasyonu görüntüleyebilirsiniz.
+                </span>
+            </div>
+        </div>
+    }
     @if (Model.SyncState == MarketplaceSyncState.Syncing || Model.SyncState == MarketplaceSyncState.Queued)
     {
         <div
@@ -197,14 +211,16 @@
                     <div class="row mb-5">
                         <div class="col-md-6 fv-row">
                             <label asp-for="ApiKey" class="required form-label fs-7 fw-semibold"></label>
-                            <input asp-for="ApiKey" class="form-control form-control-sm" autocomplete="off" />
+                            <input asp-for="ApiKey" class="form-control form-control-sm" autocomplete="off"
+                                disabled="@(Model.IsDemo ? "disabled" : null)" />
                             <span asp-validation-for="ApiKey" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6 fv-row">
                             <label asp-for="ApiSecretKey" class="form-label fs-7 fw-semibold"></label>
                             <input asp-for="ApiSecretKey" type="password" class="form-control form-control-sm"
-                                placeholder="Değiştirmek için yeni şifreyi girin..." autocomplete="new-password" />
+                                placeholder="Değiştirmek için yeni şifreyi girin..." autocomplete="new-password"
+                                disabled="@(Model.IsDemo ? "disabled" : null)" />
                             <div class="text-muted fs-8 mt-1">
                                 Gizli anahtarınız güvenlik nedeniyle maskelenmiştir.
                             </div>
@@ -224,6 +240,15 @@
                     <span class="spinner-border spinner-border-sm align-middle me-2"></span>
                     İşlem Sürüyor...
                 </button>
+            }
+            else if (Model.IsDemo)
+            {
+                <span data-bs-toggle="tooltip" title="Demo hesaplarda düzenleme yapılamaz">
+                    <button type="button" class="btn btn-sm btn-primary opacity-50" disabled>
+                        <i class="ki-outline ki-lock fs-5 me-1"></i>
+                        Salt Okunur
+                    </button>
+                </span>
             }
             else
             {

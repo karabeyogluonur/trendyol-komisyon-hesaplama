@@ -127,6 +127,12 @@
                                             @account.StoreName
                                         </span>
 
+                                        @if (account.IsDemo)
+                                        {
+                                            <span
+                                                class="badge badge-light-warning fw-bold fs-9 mt-1 border border-warning border-dashed">Demo</span>
+                                        }
+
                                         @if (isLocked)
                                         {
                                             <span class="fs-9 text-danger fw-bold mt-1">Seçilemez</span>
