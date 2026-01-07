@@ -46,14 +46,14 @@ namespace TKH.Business.Jobs.Workers
             IDataResult<MarketplaceAccountConnectionDetailsDto> marketplaceAccountConnectionDetailsResult = await _marketplaceAccountService.GetConnectionDetailsAsync(marketplaceAccountId);
 
             if (!marketplaceAccountConnectionDetailsResult.Success || marketplaceAccountConnectionDetailsResult.Data is null)
-                throw new Exception($"Hesap bağlantı detayları alınamadı. AccountID: {marketplaceAccountId} - Hata: {marketplaceAccountConnectionDetailsResult.Message}");
+                throw new Exception($"Failed to retrieve account connection details. AccountID: {marketplaceAccountId} - Error: {marketplaceAccountConnectionDetailsResult.Message}");
 
             return marketplaceAccountConnectionDetailsResult.Data;
         }
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         [AutomaticRetry(Attempts = 0)]
-        [DisplayName("1. Ürün Senkronizasyonu | Hesap: {0}")]
+        [DisplayName("Product Synchronization | Account: {0}")]
         public async Task SyncProductsStep(int marketplaceAccountId)
         {
             MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
@@ -62,7 +62,7 @@ namespace TKH.Business.Jobs.Workers
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         [AutomaticRetry(Attempts = 0)]
-        [DisplayName("2. Sipariş Senkronizasyonu | Hesap: {0}")]
+        [DisplayName("Order Synchronization | Account: {0}")]
         public async Task SyncOrdersStep(int marketplaceAccountId)
         {
             MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
@@ -71,7 +71,7 @@ namespace TKH.Business.Jobs.Workers
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         [AutomaticRetry(Attempts = 0)]
-        [DisplayName("3. İade Senkronizasyonu | Hesap: {0}")]
+        [DisplayName("Claim Synchronization | Account: {0}")]
         public async Task SyncClaimsStep(int marketplaceAccountId)
         {
             MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
@@ -80,7 +80,7 @@ namespace TKH.Business.Jobs.Workers
 
         [AutomaticRetry(Attempts = 0)]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
-        [DisplayName("4. Finans Senkronizasyonu | Hesap: {0}")]
+        [DisplayName("Finance Synchronization | Account: {0}")]
         public async Task SyncFinanceStep(int marketplaceAccountId)
         {
             MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = await GetConnectionDetailsOrThrow(marketplaceAccountId);
@@ -91,7 +91,7 @@ namespace TKH.Business.Jobs.Workers
 
         [AutomaticRetry(Attempts = 3)]
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
-        [DisplayName("Senkronizasyon Bitiş | Hesap: {0}")]
+        [DisplayName("Synchronization Finalization | Account: {0}")]
         public async Task FinalizeSyncStep(int marketplaceAccountId)
         {
             await _marketplaceAccountService.MarkSyncCompletedAsync(marketplaceAccountId);
@@ -99,8 +99,8 @@ namespace TKH.Business.Jobs.Workers
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         [AutomaticRetry(Attempts = 0)]
-        [DisplayName("Referans Veri Güncelleme | Tip: {0}")]
-        public async Task ExecuteReferenceSyncAsync(MarketplaceType marketplaceType)
+        [DisplayName("Marketplace Category Data Update | Type: {0}")]
+        public async Task ExecuteCategorySyncAsync(MarketplaceType marketplaceType)
         {
             await _categorySyncService.SyncCategoriesAsync(marketplaceType);
             await _categorySyncService.SyncCategoryAttributesAsync(marketplaceType);

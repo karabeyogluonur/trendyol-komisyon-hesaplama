@@ -56,23 +56,9 @@ namespace TKH.Web.Configuration.Extensions
             );
 
             RecurringJob.AddOrUpdate<IMarketplaceJobService>(
-                "weekly-reference-dispatcher",
+                "weekly-category-dispatcher",
                 service => service.DispatchMarketplaceCategoryDataSyncAsync(),
                 "0 4 * * 0",
-                new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
-            );
-
-            RecurringJob.AddOrUpdate<InternalCalculationWorkerJob>(
-                "product-shipping-cost-analysis",
-                service => service.ExecuteProductShippingCostAnalysisAsync(),
-                Cron.Daily(4, 0),
-                new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
-            );
-
-            RecurringJob.AddOrUpdate<InternalCalculationWorkerJob>(
-                "product-commission-rate-analysis",
-                service => service.ExecuteProductCommissionSyncAsync(),
-                Cron.Daily(4, 0),
                 new RecurringJobOptions { TimeZone = TimeZoneInfo.Local, MisfireHandling = MisfireHandlingMode.Ignorable }
             );
         }

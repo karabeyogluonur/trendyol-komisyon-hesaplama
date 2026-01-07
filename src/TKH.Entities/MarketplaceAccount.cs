@@ -17,7 +17,6 @@ namespace TKH.Entities
         public DateTime? LastErrorDate { get; set; }
         public MarketplaceSyncState SyncState { get; set; } = MarketplaceSyncState.Idle;
         public DateTime? LastSyncStartTime { get; set; }
-
         public virtual ICollection<Product> Products { get; set; } = new List<Product>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<ShipmentTransaction> ShipmentTransactions { get; set; } = new List<ShipmentTransaction>();

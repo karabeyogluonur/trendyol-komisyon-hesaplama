@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using TKH.Business.Common.Services;
 using TKH.Business.Execution;
 using TKH.Business.Executors;
 using TKH.Business.Extensions;
@@ -48,6 +49,7 @@ namespace TKH.Business
             services.AddScoped<IProductPriceService, ProductPriceService>();
             services.AddScoped<IProductExpenseService, ProductExpenseService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
+            services.AddScoped<IMarketplaceTaxService, MarketplaceTaxService>();
 
             #endregion
 
@@ -72,7 +74,9 @@ namespace TKH.Business
             #region Background Jobs & Workers
 
             services.AddScoped<IMarketplaceJobService, MarketplaceJobService>();
+            services.AddScoped<IProductExpenseJobService, ProductExpenseJobService>();
             services.AddScoped<MarketplaceWorkerJob>();
+            services.AddScoped<ProductExpenseWorkerJob>();
 
             #endregion
 

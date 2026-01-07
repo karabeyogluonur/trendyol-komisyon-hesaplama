@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TKH.Business.Common.Services;
+using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Core.Common.Constants;
 using TKH.Core.Common.Settings;
 using TKH.Core.DataAccess;
@@ -17,9 +19,12 @@ namespace TKH.Business.Features.ProductExpenses.Services
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public async Task CalculateAndSyncShippingCostsAsync()
+        public async Task CalculateAndSyncShippingCostsAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
             List<(int ProductId, decimal AverageCost)> calculatedCosts = new List<(int ProductId, decimal AverageCost)>();
+
+            int marketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
+            MarketplaceType marketplaceType = marketplaceAccountConnectionDetailsDto.MarketplaceType;
 
             using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
@@ -32,10 +37,15 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ShippingCostAnalysisLookbackDays);
 
                 IList<Order> orders = await orderRepository.GetAllAsync(
-                    predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered) && !order.IsMicroExport,
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId
+                                     && order.OrderDate >= analysisStartDate
+                                     && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
+                                     && !order.IsMicroExport,
                     disableTracking: true,
                     ignoreQueryFilters: true
                 );
+
+                if (!orders.Any()) return;
 
                 List<int> orderIds = orders.Select(order => order.Id).ToList();
                 List<string> orderExternalNumbers = orders.Select(order => order.ExternalOrderNumber).ToList();
@@ -55,7 +65,8 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 HashSet<string> claimedOrderNumbers = claims.Select(claim => claim.ExternalOrderNumber).ToHashSet();
 
                 IList<ShipmentTransaction> shipmentTransactions = await shipmentTransactionRepository.GetAllAsync(
-                    predicate: transaction => orderExternalNumbers.Contains(transaction.ExternalOrderNumber)
+                    predicate: transaction => transaction.MarketplaceAccountId == marketplaceAccountId
+                                           && orderExternalNumbers.Contains(transaction.ExternalOrderNumber)
                                            && transaction.Amount > ApplicationDefaults.MinimumShippingCostThreshold,
                     disableTracking: true,
                     ignoreQueryFilters: true
@@ -73,8 +84,8 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         orderItem => orderItem.OrderId,
                         (order, orderItem) => new { Order = order, OrderItem = orderItem })
                     .Join(shipmentTransactions,
-                        combined => new { combined.Order.ExternalOrderNumber, combined.Order.MarketplaceAccountId },
-                        transaction => new { transaction.ExternalOrderNumber, transaction.MarketplaceAccountId },
+                        combined => combined.Order.ExternalOrderNumber,
+                        transaction => transaction.ExternalOrderNumber,
                         (combined, transaction) => new
                         {
                             combined.Order,
@@ -102,15 +113,102 @@ namespace TKH.Business.Features.ProductExpenses.Services
             }
 
             if (calculatedCosts.Count > 0)
-                await ProcessExpenseUpdateBatchAsync(calculatedCosts);
+                await ProcessExpenseUpdateBatchAsync(calculatedCosts, marketplaceType);
         }
 
-        private async Task ProcessExpenseUpdateBatchAsync(List<(int ProductId, decimal AverageCost)> costsToSync)
+        public async Task CalculateAndSyncCommissionRatesAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
+        {
+            List<(int ProductId, decimal LatestCommissionRate)> finalCommissionsToSync = new List<(int ProductId, decimal LatestCommissionRate)>();
+
+            int marketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
+            MarketplaceType marketplaceType = marketplaceAccountConnectionDetailsDto.MarketplaceType;
+
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            {
+                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
+                IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
+                IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
+
+                DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
+                Dictionary<int, decimal> orderBasedRates = new Dictionary<int, decimal>();
+
+                IList<Order> orders = await orderRepository.GetAllAsync(
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId
+                                     && order.OrderDate >= analysisStartDate
+                                     && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                if (orders.Any())
+                {
+                    List<int> orderIds = orders.Select(order => order.Id).ToList();
+
+                    IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
+                        predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
+                        disableTracking: true,
+                        ignoreQueryFilters: true
+                    );
+
+                    var analysisData = orderItems
+                        .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
+                        .GroupBy(order => order.Item.ProductId!.Value)
+                        .Select(group => new
+                        {
+                            ProductId = group.Key,
+                            LatestCommissionRate = group.OrderByDescending(g => g.Order.OrderDate)
+                                                    .Select(o => o.Item.CommissionRate)
+                                                    .FirstOrDefault()
+                        })
+                        .ToList();
+
+                    orderBasedRates = analysisData.ToDictionary(k => k.ProductId, v => v.LatestCommissionRate);
+                }
+
+                var productCategoryData = await productRepository.GetAllAsync(
+                    predicate: product => product.MarketplaceAccountId == marketplaceAccountId,
+                    selector: product => new
+                    {
+                        ProductId = product.Id,
+                        CategoryDefaultRate = product.Category != null ? product.Category.DefaultCommissionRate : null
+                    },
+                    include: source => source.Include(product => product.Category),
+                    disableTracking: true,
+                    ignoreQueryFilters: true
+                );
+
+                foreach (var productCategory in productCategoryData)
+                {
+                    decimal rateToUse = 0;
+                    bool rateFound = false;
+
+                    if (orderBasedRates.TryGetValue(productCategory.ProductId, out decimal orderRate))
+                    {
+                        rateToUse = orderRate;
+                        rateFound = true;
+                    }
+                    else if (productCategory.CategoryDefaultRate.HasValue)
+                    {
+                        rateToUse = productCategory.CategoryDefaultRate.Value;
+                        rateFound = true;
+                    }
+
+                    if (rateFound)
+                        finalCommissionsToSync.Add((productCategory.ProductId, rateToUse));
+                }
+            }
+
+            if (finalCommissionsToSync.Count > 0)
+                await ProcessCommissionUpdateBatchAsync(finalCommissionsToSync, marketplaceType);
+        }
+
+        private async Task ProcessExpenseUpdateBatchAsync(List<(int ProductId, decimal AverageCost)> costsToSync, MarketplaceType marketplaceType)
         {
             for (int i = 0; i < costsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
             {
-                List<(int ProductId, decimal AverageCost)> batch = costsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
-                List<int> batchProductIds = batch.Select(item => item.ProductId).ToList();
+                var batch = costsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+                var batchProductIds = batch.Select(item => item.ProductId).ToList();
 
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
@@ -146,6 +244,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         {
                             ProductId = product.Id,
                             Type = ProductExpenseType.ShippingCost,
+                            GenerationType = GenerationType.Automated,
                             Amount = item.AverageCost,
                             IsVatIncluded = true,
                             VatRate = taxSettings.ShippingVatRate,
@@ -159,88 +258,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
             }
         }
 
-        public async Task CalculateAndSyncCommissionRatesAsync()
-        {
-            List<(int ProductId, decimal LatestCommissionRate)> finalCommissionsToSync = new List<(int ProductId, decimal LatestCommissionRate)>();
-
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
-            {
-                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
-                IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
-                IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
-
-                DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
-
-                Dictionary<int, decimal> orderBasedRates = new Dictionary<int, decimal>();
-
-                IList<Order> orders = await orderRepository.GetAllAsync(
-                    predicate: order => order.OrderDate >= analysisStartDate && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
-                    disableTracking: true,
-                    ignoreQueryFilters: true
-                );
-
-                if (orders.Any())
-                {
-                    List<int> orderIds = orders.Select(order => order.Id).ToList();
-
-                    IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
-                        predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
-                        disableTracking: true,
-                        ignoreQueryFilters: true
-                    );
-
-                    var analysisData = orderItems
-                        .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
-                        .GroupBy(order => order.Item.ProductId!.Value)
-                        .Select(group => new
-                        {
-                            ProductId = group.Key,
-                            LatestCommissionRate = group.OrderByDescending(g => g.Order.OrderDate)
-                                                    .Select(o => o.Item.CommissionRate)
-                                                    .FirstOrDefault()
-                        })
-                        .ToList();
-
-                    orderBasedRates = analysisData.ToDictionary(k => k.ProductId, v => v.LatestCommissionRate);
-                }
-
-                var productCategoryData = await productRepository.GetAllAsync(
-                    selector: product => new
-                    {
-                        ProductId = product.Id,
-                        CategoryDefaultRate = product.Category != null ? product.Category.DefaultCommissionRate : null
-                    },
-                    include: source => source.Include(product => product.Category),
-                    disableTracking: true,
-                    ignoreQueryFilters: true
-                );
-
-                foreach (var productCategory in productCategoryData)
-                {
-                    decimal rateToUse = 0;
-                    bool rateFound = false;
-
-                    if (orderBasedRates.TryGetValue(productCategory.ProductId, out decimal orderRate))
-                    {
-                        rateToUse = orderRate;
-                        rateFound = true;
-                    }
-                    else if (productCategory.CategoryDefaultRate.HasValue)
-                    {
-                        rateToUse = productCategory.CategoryDefaultRate.Value;
-                        rateFound = true;
-                    }
-                    if (rateFound)
-                        finalCommissionsToSync.Add((productCategory.ProductId, rateToUse));
-                }
-            }
-
-            if (finalCommissionsToSync.Count > 0)
-                await ProcessCommissionUpdateBatchAsync(finalCommissionsToSync);
-        }
-
-        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync)
+        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync, MarketplaceType marketplaceType)
         {
             for (int i = 0; i < commissionsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
             {
@@ -250,13 +268,12 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
                     IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                    TaxSettings taxSettings = scope.ServiceProvider.GetRequiredService<TaxSettings>();
-
                     IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
+                    IMarketplaceTaxService marketplaceTaxService = scope.ServiceProvider.GetRequiredService<IMarketplaceTaxService>();
 
                     IList<Product> products = await productRepository.GetAllAsync(
                         predicate: product => batchProductIds.Contains(product.Id),
-                        include: source => source.Include(product => product.Expenses.Where(productexpense => productexpense.GenerationType == GenerationType.Automated)),
+                        include: source => source.Include(product => product.Expenses.Where(expense => expense.GenerationType == GenerationType.Automated)),
                         disableTracking: false,
                         ignoreQueryFilters: true
                     );
@@ -277,6 +294,8 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         if (activeExpense is not null)
                             activeExpense.EndDate = DateTime.UtcNow;
 
+                        decimal vatRate = marketplaceTaxService.GetVatRateByExpenseType(marketplaceType, ProductExpenseType.CommissionRate);
+
                         product.Expenses.Add(new ProductExpense
                         {
                             ProductId = product.Id,
@@ -284,7 +303,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
                             GenerationType = GenerationType.Automated,
                             Amount = latestRate,
                             IsVatIncluded = true,
-                            VatRate = taxSettings.ComissionVatRate,
+                            VatRate = vatRate,
                             StartDate = DateTime.UtcNow,
                             EndDate = null
                         });
@@ -294,7 +313,5 @@ namespace TKH.Business.Features.ProductExpenses.Services
                 }
             }
         }
-
-
     }
 }

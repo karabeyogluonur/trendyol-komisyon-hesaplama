@@ -10,13 +10,16 @@ namespace TKH.Business.Jobs.Services
     public class MarketplaceJobService : IMarketplaceJobService
     {
         private readonly IMarketplaceAccountService _marketplaceAccountService;
+        private readonly IProductExpenseJobService _productExpenseJobService;
         private readonly IBackgroundJobClient _backgroundJobClient;
 
         public MarketplaceJobService(
             IMarketplaceAccountService marketplaceAccountService,
+            IProductExpenseJobService productExpenseJobService,
             IBackgroundJobClient backgroundJobClient)
         {
             _marketplaceAccountService = marketplaceAccountService;
+            _productExpenseJobService = productExpenseJobService;
             _backgroundJobClient = backgroundJobClient;
         }
 
@@ -47,7 +50,7 @@ namespace TKH.Business.Jobs.Services
             foreach (MarketplaceType marketplaceType in marketplaceTypes)
             {
                 _backgroundJobClient.Schedule<MarketplaceWorkerJob>(
-                    job => job.ExecuteReferenceSyncAsync(marketplaceType),
+                    job => job.ExecuteCategorySyncAsync(marketplaceType),
                     TimeSpan.FromMinutes(delayMinutes)
                 );
 
@@ -88,8 +91,10 @@ namespace TKH.Business.Jobs.Services
                     job => job.SyncFinanceStep(marketplaceAccountId),
                     JobContinuationOptions.OnlyOnSucceededState);
 
+                string calculationLastJobId = _productExpenseJobService.ContinueWithExpenseAnalysisChain(marketplaceAccountId, financeSyncJobId);
+
                 _backgroundJobClient.ContinueJobWith<MarketplaceWorkerJob>(
-                    financeSyncJobId,
+                    calculationLastJobId,
                     job => job.FinalizeSyncStep(marketplaceAccountId),
                     JobContinuationOptions.OnlyOnSucceededState);
             }
