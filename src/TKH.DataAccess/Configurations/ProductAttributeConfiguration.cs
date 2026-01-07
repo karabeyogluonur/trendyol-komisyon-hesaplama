@@ -12,15 +12,10 @@ namespace TKH.DataAccess.Configurations
 
             builder.Property(productAttribute => productAttribute.CustomValue).HasMaxLength(500);
 
-            builder.HasOne(productAttribute => productAttribute.Product)
-                   .WithMany(product => product.Attributes)
-                   .HasForeignKey(productAttribute => productAttribute.ProductId)
-                   .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasOne(productAttribute => productAttribute.Attribute)
-                   .WithMany(categoryAttribute => categoryAttribute.ProductAttributes)
-                   .HasForeignKey(productAttribute => productAttribute.CategoryAttributeId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany(categoryAttribute => categoryAttribute.ProductAttributes)
+                    .HasForeignKey(productAttribute => productAttribute.CategoryAttributeId)
+                    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

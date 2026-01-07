@@ -15,6 +15,11 @@ namespace TKH.DataAccess.Configurations
             builder.Property(category => category.Name).IsRequired().HasMaxLength(250);
             builder.Property(category => category.DefaultCommissionRate).HasPrecision(18, 4);
             builder.HasIndex(category => new { category.MarketplaceType, category.ExternalId }).IsUnique();
+
+            builder.HasMany(category => category.Attributes)
+                   .WithOne(categoryAttribute => categoryAttribute.Category)
+                   .HasForeignKey(categoryAttribute => categoryAttribute.CategoryId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

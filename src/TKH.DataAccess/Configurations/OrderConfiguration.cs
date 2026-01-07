@@ -24,6 +24,11 @@ namespace TKH.DataAccess.Configurations
             builder.HasIndex(order => order.ExternalShipmentId);
             builder.HasIndex(order => order.OrderDate);
             builder.HasIndex(order => order.MarketplaceAccountId);
+
+            builder.HasMany(order => order.OrderItems)
+                   .WithOne(orderItem => orderItem.Order)
+                   .HasForeignKey(orderItem => orderItem.OrderId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -20,5 +20,7 @@ namespace TKH.Entities
         public virtual ICollection<Product> Products { get; set; } = new List<Product>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<ShipmentTransaction> ShipmentTransactions { get; set; } = new List<ShipmentTransaction>();
+        public virtual ICollection<Claim> Claims { get; set; } = new List<Claim>();
+        public virtual ICollection<FinancialTransaction> FinancialTransactions { get; set; } = new List<FinancialTransaction>();
     }
 }

@@ -32,10 +32,10 @@ namespace TKH.DataAccess.Configurations
             builder.HasIndex(claim => claim.ClaimDate);
             builder.HasIndex(claim => claim.LastUpdateDateTime);
 
-            builder.HasOne(claim => claim.MarketplaceAccount)
-                   .WithMany()
-                   .HasForeignKey(claim => claim.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasMany(claim => claim.ClaimItems)
+                   .WithOne(claimItem => claimItem.Claim)
+                   .HasForeignKey(claimItem => claimItem.ClaimId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

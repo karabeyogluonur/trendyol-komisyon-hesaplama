@@ -11,15 +11,9 @@ namespace TKH.DataAccess.Configurations
             builder.ToTable("AttributeValues");
 
             builder.Property(attributeValue => attributeValue.ExternalId).IsRequired().HasMaxLength(100);
-
             builder.Property(attributeValue => attributeValue.Value).IsRequired().HasMaxLength(500);
 
             builder.HasIndex(attributeValue => new { attributeValue.CategoryAttributeId, attributeValue.ExternalId }).IsUnique();
-
-            builder.HasOne(attributeValue => attributeValue.Attribute)
-                   .WithMany(categoryAttribute => categoryAttribute.Values)
-                   .HasForeignKey(attributeValue => attributeValue.CategoryAttributeId)
-                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -19,15 +19,32 @@ namespace TKH.DataAccess.Configurations
             builder.Property(product => product.Name).IsRequired().HasMaxLength(500);
             builder.Property(product => product.ImageUrl).HasMaxLength(1000);
             builder.Property(product => product.VatRate).HasPrecision(18, 2);
+
             builder.HasIndex(product => product.ExternalId);
             builder.HasIndex(product => product.ExternalProductCode);
             builder.HasIndex(product => product.Barcode);
             builder.HasIndex(product => product.Sku);
             builder.HasIndex(product => product.MarketplaceAccountId);
+
             builder.HasOne(product => product.Category)
-                   .WithMany(category => category.Products)
-                   .HasForeignKey(product => product.CategoryId)
-                   .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany(category => category.Products)
+                    .HasForeignKey(product => product.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasMany(product => product.Expenses)
+                   .WithOne(productExpense => productExpense.Product)
+                   .HasForeignKey(productExpense => productExpense.ProductId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(product => product.Prices)
+                   .WithOne(productPrice => productPrice.Product)
+                   .HasForeignKey(productPrice => productPrice.ProductId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(product => product.Attributes)
+                   .WithOne(productAttribute => productAttribute.Product)
+                   .HasForeignKey(productAttribute => productAttribute.ProductId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

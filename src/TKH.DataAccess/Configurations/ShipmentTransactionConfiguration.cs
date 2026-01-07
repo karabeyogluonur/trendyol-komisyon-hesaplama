@@ -12,13 +12,7 @@ namespace TKH.DataAccess.Configurations
 
             builder.Property(shipmentTransaction => shipmentTransaction.ExternalOrderNumber).IsRequired().HasMaxLength(100);
             builder.Property(shipmentTransaction => shipmentTransaction.ExternalParcelId).HasMaxLength(100);
-
             builder.Property(shipmentTransaction => shipmentTransaction.Amount).HasPrecision(18, 2);
-
-            builder.HasOne(shipmentTransaction => shipmentTransaction.MarketplaceAccount)
-                   .WithMany(account => account.ShipmentTransactions)
-                   .HasForeignKey(shipmentTransaction => shipmentTransaction.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -15,17 +15,11 @@ namespace TKH.DataAccess.Configurations
             builder.Property(financialTransaction => financialTransaction.ExternalTransactionType).HasMaxLength(100);
             builder.Property(financialTransaction => financialTransaction.Description).HasMaxLength(1000);
             builder.Property(financialTransaction => financialTransaction.Title).HasMaxLength(250);
-
             builder.Property(financialTransaction => financialTransaction.Amount).HasPrecision(18, 2);
 
             builder.HasIndex(financialTransaction => financialTransaction.TransactionDate);
             builder.HasIndex(financialTransaction => financialTransaction.ExternalTransactionId);
             builder.HasIndex(financialTransaction => financialTransaction.ExternalOrderNumber);
-
-            builder.HasOne(financialTransaction => financialTransaction.MarketplaceAccount)
-                   .WithMany()
-                   .HasForeignKey(financialTransaction => financialTransaction.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

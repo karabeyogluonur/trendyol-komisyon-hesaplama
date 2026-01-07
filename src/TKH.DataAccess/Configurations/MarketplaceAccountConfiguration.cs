@@ -16,41 +16,50 @@ namespace TKH.DataAccess.Configurations
             builder.Property(marketplaceAccount => marketplaceAccount.MerchantId).HasMaxLength(100).IsRequired();
 
             builder.Property(marketplaceAccount => marketplaceAccount.IsActive)
-                   .HasDefaultValue(true);
+                    .HasDefaultValue(true);
 
             builder.Property(marketplaceAccount => marketplaceAccount.ConnectionState)
-                   .HasConversion<int>()
-                   .IsRequired();
+                    .HasConversion<int>()
+                    .IsRequired();
 
             builder.Property(marketplaceAccount => marketplaceAccount.LastErrorMessage)
-                   .HasMaxLength(2000)
-                   .IsRequired(false);
+                    .HasMaxLength(2000)
+                    .IsRequired(false);
 
             builder.Property(marketplaceAccount => marketplaceAccount.LastErrorDate)
-                   .IsRequired(false);
+                    .IsRequired(false);
 
             builder.Property(marketplaceAccount => marketplaceAccount.SyncState)
-                   .HasConversion<int>()
-                   .IsRequired();
+                    .HasConversion<int>()
+                    .IsRequired();
 
             builder.Property(marketplaceAccount => marketplaceAccount.LastSyncStartTime)
-                   .IsRequired(false);
-
+                    .IsRequired(false);
 
             builder.HasMany(marketplaceAccount => marketplaceAccount.Products)
                    .WithOne(product => product.MarketplaceAccount)
                    .HasForeignKey(product => product.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(marketplaceAccount => marketplaceAccount.Orders)
                    .WithOne(order => order.MarketplaceAccount)
                    .HasForeignKey(order => order.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(marketplaceAccount => marketplaceAccount.Claims)
+                   .WithOne(claim => claim.MarketplaceAccount)
+                   .HasForeignKey(claim => claim.MarketplaceAccountId)
+                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(marketplaceAccount => marketplaceAccount.ShipmentTransactions)
                    .WithOne(shipmentTransaction => shipmentTransaction.MarketplaceAccount)
                    .HasForeignKey(shipmentTransaction => shipmentTransaction.MarketplaceAccountId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(marketplaceAccount => marketplaceAccount.FinancialTransactions)
+                   .WithOne(financialTransaction => financialTransaction.MarketplaceAccount)
+                   .HasForeignKey(financialTransaction => financialTransaction.MarketplaceAccountId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

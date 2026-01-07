@@ -12,7 +12,6 @@ namespace TKH.DataAccess.Configurations
 
             builder.Property(claimItem => claimItem.ExternalId).IsRequired().HasMaxLength(100);
             builder.Property(claimItem => claimItem.ExternalOrderLineItemId).HasMaxLength(100);
-
             builder.Property(claimItem => claimItem.Barcode).HasMaxLength(100);
             builder.Property(claimItem => claimItem.Sku).HasMaxLength(100);
             builder.Property(claimItem => claimItem.ProductName).HasMaxLength(500);
@@ -28,11 +27,6 @@ namespace TKH.DataAccess.Configurations
             builder.HasIndex(claimItem => claimItem.Status);
 
             builder.Property(claimItem => claimItem.ReasonType).HasConversion<int>().IsRequired();
-
-            builder.HasOne(claimItem => claimItem.Claim)
-                   .WithMany(claim => claim.ClaimItems)
-                   .HasForeignKey(claimItem => claimItem.ClaimId)
-                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(claimItem => claimItem.Product)
                    .WithMany()

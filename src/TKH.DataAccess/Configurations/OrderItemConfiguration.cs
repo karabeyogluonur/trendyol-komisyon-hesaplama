@@ -18,11 +18,6 @@ namespace TKH.DataAccess.Configurations
             builder.Property(orderItem => orderItem.CommissionRate).HasPrecision(18, 2);
             builder.Property(orderItem => orderItem.VatRate).HasPrecision(18, 2);
 
-            builder.HasOne(orderItem => orderItem.Order)
-                   .WithMany(order => order.OrderItems)
-                   .HasForeignKey(orderItem => orderItem.OrderId)
-                   .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasOne(orderItem => orderItem.Product)
                    .WithMany(product => product.OrderItems)
                    .HasForeignKey(orderItem => orderItem.ProductId)
