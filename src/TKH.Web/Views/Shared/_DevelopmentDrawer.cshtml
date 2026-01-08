@@ -1,0 +1,164 @@
+<button id="kt_dev_drawer_toggle"
+    class="btn btn-icon btn-dark w-35px h-35px shadow position-fixed rounded-start-2 rounded-end-0"
+    style="top: 50%; right: 0; transform: translateY(-50%); z-index: 1050;" data-bs-toggle="tooltip"
+    data-bs-placement="left" data-bs-dismiss="click" title="Geliştirici Konsolu">
+    <i class="ki-duotone ki-setting-2 fs-3 animation-spin">
+        <span class="path1"></span><span class="path2"></span>
+    </i>
+</button>
+
+<div id="kt_dev_drawer" class="bg-body" data-kt-drawer="true" data-kt-drawer-name="dev-console"
+    data-kt-drawer-activate="true" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'350px', 'lg': '450px'}"
+    data-kt-drawer-direction="end" data-kt-drawer-toggle="#kt_dev_drawer_toggle"
+    data-kt-drawer-close="#kt_dev_drawer_close">
+
+    <div class="card shadow-none rounded-0 w-100 h-100">
+
+        <div class="card-header pe-5">
+            <div class="card-title">
+                <div class="d-flex justify-content-center flex-column me-3">
+                    <a href="#" class="fs-6 fw-bold text-gray-900 text-hover-primary lh-1">Geliştirici Modu</a>
+                    <div class="fs-7 fw-semibold text-gray-600 mt-1">Sistem Durumu ve Loglar</div>
+                </div>
+            </div>
+            <div class="card-toolbar">
+                <button type="button" class="btn btn-sm btn-icon btn-light-danger btn-active-danger"
+                    id="kt_dev_drawer_close">
+                    <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body hover-scroll-overlay-y">
+
+            <div class="mb-8">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center">
+                        <span class="badge badge-light-primary px-2 py-1 fs-8 fw-bold me-2">BETA v0.9.6</span>
+                        <span class="text-gray-500 fs-8 fw-semibold">Build: <span id="kt_build_date">...</span></span>
+                    </div>
+                    <span class="badge badge-outline badge-success fs-9">ENV: DEV</span>
+                </div>
+
+                <div
+                    class="d-flex align-items-center bg-light-warning rounded-end border-start border-4 border-warning p-5 mb-5">
+                    <i class="ki-duotone ki-shield-search fs-2x text-warning me-4">
+                        <span class="path1"></span><span class="path2"></span><span class="path3"></span>
+                    </i>
+                    <div class="d-flex flex-column">
+                        <h4 class="text-gray-900 fw-bold mb-1 fs-7">Test Ortamı Bildirimi</h4>
+                        <span class="text-gray-700 fs-7 fw-semibold">
+                            Bu ortam <strong>test ve geliştirme</strong> amaçlıdır. Girilen veriler periyodik olarak
+                            sıfırlanabilir.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-4 mt-5">
+                <h3 class="fw-bold text-dark fs-7 m-0">Son Değişiklikler (Canlı)</h3>
+            </div>
+
+            <div class="timeline timeline-none" id="kt_changelog_container">
+                <div class="d-flex justify-content-center align-items-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card-footer py-4">
+            <a href="https://github.com/karabeyogluonur" target="_blank" class="btn btn-sm btn-dark w-100 fs-7">
+                <i class="ki-duotone ki-github fs-4 me-2"><span class="path1"></span><span class="path2"></span></i>
+                GitHub Repo
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const today = new Date();
+        document.getElementById('kt_build_date').innerText = today.toISOString().slice(0, 10).replace(/-/g, '.');
+        loadChangeLog();
+    });
+
+    function loadChangeLog() {
+        const container = document.getElementById('kt_changelog_container');
+        fetch('/data/changelog.json')
+            .then(response => {
+                if (!response.ok) throw new Error("JSON Dosyası Bulunamadı");
+                return response.json();
+            })
+            .then(data => {
+                let html = '';
+                data.forEach(item => {
+                    const timeString = timeAgo(item.date);
+                    const iconPaths = '<span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span>';
+
+                    html += `
+                    <div class="timeline-item align-items-start mb-4">
+                        <div class="timeline-media">
+                            <div class="symbol symbol-35px symbol-circle bg-light-${item.type} border border-${item.type} border-opacity-25">
+                                <span class="symbol-label">
+                                    <i class="ki-duotone ${item.icon} fs-4 text-${item.type}">
+                                        ${iconPaths}
+                                    </i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="timeline-content ms-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-bold text-gray-800 fs-7">${item.title}</span>
+                                <span class="text-gray-500 fs-8">${timeString}</span>
+                            </div>
+
+                            <div class="d-flex align-items-center mb-2">
+                                    <span class="badge badge-light-${item.type} fs-9 px-2 py-1 me-2">${item.badge}</span>
+                                    <span class="text-gray-400 fs-9 border-start ps-2">${item.category}</span>
+                            </div>
+
+                            <p class="text-gray-600 fs-7 mb-0">
+                                ${item.description}
+                            </p>
+                        </div>
+                    </div>`;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Changelog Error:', error);
+                container.innerHTML = `<div class="text-center text-danger fs-7 py-4">Veri yüklenemedi. JSON dosyasını kontrol edin.</div>`;
+            });
+    }
+
+    function timeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " yıl önce";
+
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " ay önce";
+
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " gün önce";
+
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " saat önce";
+
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " dk önce";
+
+        return "Az önce";
+    }
+</script>
+
+<style>
+    
+</style>

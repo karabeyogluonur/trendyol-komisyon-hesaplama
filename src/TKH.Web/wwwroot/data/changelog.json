@@ -1,0 +1,47 @@
+[
+  {
+    "title": "Geliştirici Konsolu",
+    "description": "Sağ panelde çalışan Geliştirici Konsolu (Dev Drawer) entegre edildi. Sürüm takibi ve sistem bildirimleri artık bu alandan yönetiliyor.",
+    "date": "2026-01-05T16:45:00",
+    "category": "System",
+    "badge": "NEW MODULE",
+    "type": "primary",
+    "icon": "ki-setting-2"
+  },
+  {
+    "title": "Tema Altyapısı",
+    "description": "Projenin kök dosya yapısı Metronic v8 standartlarına göre yeniden yapılandırıldı. Header, Sidebar ve Footer alanları modüler partial yapılara dönüştürüldü.",
+    "date": "2026-01-04T11:20:00",
+    "category": "Core Layout",
+    "badge": "REFACTOR",
+    "type": "info",
+    "icon": "ki-abstract-26"
+  },
+  {
+    "title": "Demo Hesap Modu",
+    "description": "Ziyaretçilerin sistemi inceleyebilmesi için Demo Hesap özelliği aktif edildi. <br/><span class='text-danger fst-italic fs-8'>* Not: Bu özellik geliştirme süreci içindir.</span>",
+    "date": "2026-01-06T09:15:00",
+    "category": "Guest Access",
+    "badge": "TEMP FEATURE",
+    "type": "warning",
+    "icon": "ki-eye"
+  },
+  {
+    "title": "Hesap & Veri Temizliği",
+    "description": "Kullanıcı deneyimi sonrası için 'Tam Temizlik' özelliği eklendi. Pazaryeri hesabını silen kullanıcıların tüm verileri, veritabanından kalıntı bırakmayacak şekilde (Hard Delete) silinmektedir.",
+    "date": "2026-01-07T14:30:00",
+    "category": "GDPR",
+    "badge": "PRIVACY",
+    "type": "danger",
+    "icon": "ki-trash"
+  },
+  {
+    "title": "Komisyon Algoritması",
+    "description": "Komisyon güncelleme mantığı iyileştirildi. Son 1 ayda satış hareketi bulunmayan ürünler için, sistem otomatik olarak kategori bazlı varsayılan (default) komisyon oranlarını uygulamaya başladı.",
+    "date": "2026-01-08T10:00:00",
+    "category": "Core Logic",
+    "badge": "ALGORITHM",
+    "type": "success",
+    "icon": "ki-chart-pie-3"
+  }
+]
