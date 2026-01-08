@@ -1,78 +1,32 @@
-<div id="kt_app_footer" class="app-footer border-top">
-    <div class="app-container container-fluid py-4">
-        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <span
-                    class="badge badge-light-success d-inline-flex align-items-center gap-2 fs-8 px-3 py-2 footer-active-badge">
-                    <span class="bullet bullet-dot bg-success h-6px w-6px animation-blink"></span>
-                    GELİŞTİRİLİYOR
-                </span>
-                <span class="text-gray-600 fs-7">
-                    Bu proje açık kaynak olarak geliştirilmektedir.
-                </span>
-            </div>
-            <div class="d-flex align-items-center gap-6">
-                <a href="https://buymeacoffee.com/karabeyogluonur" target="_blank"
-                    class="opacity-75 opacity-hover-100 transition">
-                    <img src="~/assets/media/external-badges/buymeacoffee.png" alt="Buy Me a Coffee"
-                        style="height: 22px;">
-                </a>
-                <a href="https://github.com/karabeyogluonur" target="_blank"
-                    class="text-gray-600 text-hover-primary transition">
-                    <i class="bi bi-github fs-4"></i>
-                </a>
-                <a href="https://www.linkedin.com/in/onurkarabeyoglu" target="_blank"
-                    class="text-gray-600 text-hover-primary transition">
-                    <i class="bi bi-linkedin fs-4"></i>
-                </a>
-            </div>
+<div id="kt_app_footer" class="app-footer">
+    <div
+        class="app-container container-fluid d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3">
+
+        <div
+            class="text-gray-500 fs-7 fw-semibold order-2 order-md-1 text-center text-md-start w-100 w-md-auto mt-2 mt-md-0">
+            Bu proje açık kaynak olarak geliştirilmektedir.
+        </div>
+
+        <div class="d-flex align-items-center gap-3 order-1 order-md-2">
+
+            <a href="https://buymeacoffee.com/karabeyogluonur" target="_blank"
+                class="transition opacity-75 opacity-hover-100">
+                <img src="~/assets/media/external-badges/buymeacoffee.png" alt="Support" style="height: 26px;">
+            </a>
+
+            <div class="h-20px w-1px bg-gray-300 mx-1"></div>
+
+            <a href="https://github.com/karabeyogluonur" target="_blank"
+                class="btn btn-icon btn-sm btn-active-light-primary text-gray-400 text-hover-gray-700 w-30px h-30px">
+                <i class="bi bi-github fs-4"></i>
+            </a>
+
+            <a href="https://www.linkedin.com/in/onurkarabeyoglu" target="_blank"
+                class="btn btn-icon btn-sm btn-active-light-primary text-gray-400 text-hover-gray-700 w-30px h-30px">
+                <i class="bi bi-linkedin fs-4"></i>
+            </a>
 
         </div>
+
     </div>
 </div>
-
-<style>
-    .footer-active-badge {
-        animation: footerBadgeCoffeeFlash 2.2s infinite;
-        color: var(--bs-gray-600);
-        font-weight: 400;
-    }
-
-    @@keyframes footerBadgeCoffeeFlash {
-        0% {
-            background-color: #fff7ed;
-            color: var(--bs-gray-600);
-            font-weight: 400;
-        }
-
-        40% {
-            background-color: #fff7ed;
-            color: var(--bs-gray-600);
-            font-weight: 400;
-        }
-
-        45% {
-            background-color: #fd0;
-            color: #000000;
-            font-weight: 900;
-        }
-
-        55% {
-            background-color: #fd0;
-            color: #000000;
-            font-weight: 900;
-        }
-
-        60% {
-            background-color: #fff7ed;
-            color: var(--bs-gray-600);
-            font-weight: 400;
-        }
-
-        100% {
-            background-color: #fff7ed;
-            color: var(--bs-gray-600);
-            font-weight: 400;
-        }
-    }
-</style>
