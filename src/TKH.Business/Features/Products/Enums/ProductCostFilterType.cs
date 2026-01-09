@@ -4,9 +4,6 @@ namespace TKH.Business.Features.Products.Enums
 {
     public enum ProductCostFilterType
     {
-        [Display(Name = "Tümü")]
-        All = 0,
-
         [Display(Name = "Tamamlanmışlar")]
         Completed = 1,
 

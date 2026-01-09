@@ -8,16 +8,15 @@
 </button>
 
 <div id="kt_dev_drawer" class="bg-body" data-kt-drawer="true" data-kt-drawer-name="dev-console"
-    data-kt-drawer-activate="true" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'350px', 'lg': '450px'}"
+    data-kt-drawer-activate="true" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'340px', 'lg': '400px'}"
     data-kt-drawer-direction="end" data-kt-drawer-toggle="#kt_dev_drawer_toggle"
     data-kt-drawer-close="#kt_dev_drawer_close">
 
     <div class="card shadow-none rounded-0 w-100 h-100">
-
         <div class="card-header pe-5">
             <div class="card-title">
                 <div class="d-flex justify-content-center flex-column me-3">
-                    <a href="#" class="fs-6 fw-bold text-gray-900 text-hover-primary lh-1">Geliştirici Modu</a>
+                    <span class="fs-6 fw-bold text-gray-900 lh-1">Geliştirici Modu</span>
                     <div class="fs-7 fw-semibold text-gray-600 mt-1">Sistem Durumu ve Loglar</div>
                 </div>
             </div>
@@ -30,11 +29,10 @@
         </div>
 
         <div class="card-body hover-scroll-overlay-y">
-
             <div class="mb-8">
                 <div class="d-flex align-items-center justify-content-between mb-4">
                     <div class="d-flex align-items-center">
-                        <span class="badge badge-light-primary px-2 py-1 fs-8 fw-bold me-2">BETA v0.9.6</span>
+                        <span class="badge badge-light-primary px-2 py-1 fs-8 fw-bold me-2">BETA v1</span>
                         <span class="text-gray-500 fs-8 fw-semibold">Build: <span id="kt_build_date">...</span></span>
                     </div>
                     <span class="badge badge-outline badge-success fs-9">ENV: DEV</span>
@@ -48,57 +46,56 @@
                     <div class="d-flex flex-column">
                         <h4 class="text-gray-900 fw-bold mb-1 fs-7">Test Ortamı Bildirimi</h4>
                         <span class="text-gray-700 fs-7 fw-semibold">
-                            Bu ortam <strong>test ve geliştirme</strong> amaçlıdır. Girilen veriler periyodik olarak
+                            Bu ortam <strong>test ve geliştirme</strong> amaçlıdır. Veriler periyodik olarak
                             sıfırlanabilir.
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between mb-4 mt-5">
-                <h3 class="fw-bold text-dark fs-7 m-0">Son Değişiklikler (Canlı)</h3>
+            <div class="d-flex align-items-center justify-content-between mb-6">
+                <h3 class="fw-bold text-gray-800 fs-7 m-0 text-uppercase ls-1">Son Değişiklikler</h3>
             </div>
 
             <div class="timeline timeline-none" id="kt_changelog_container">
-                <div class="d-flex justify-content-center align-items-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                <div class="d-flex justify-content-center align-items-center py-10">
+                    <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    <span class="text-muted fs-8 ms-2">Yükleniyor...</span>
                 </div>
             </div>
-
         </div>
 
         <div class="card-footer py-4">
             <a href="https://github.com/karabeyogluonur" target="_blank" class="btn btn-sm btn-dark w-100 fs-7">
                 <i class="ki-duotone ki-github fs-4 me-2"><span class="path1"></span><span class="path2"></span></i>
-                GitHub Repo
+                GitHub Repository
             </a>
         </div>
     </div>
 </div>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const today = new Date();
-        document.getElementById('kt_build_date').innerText = today.toISOString().slice(0, 10).replace(/-/g, '.');
-        loadChangeLog();
-    });
+    var TKH = TKH || {};
 
-    function loadChangeLog() {
-        const container = document.getElementById('kt_changelog_container');
-        fetch('/data/changelog.json')
-            .then(response => {
-                if (!response.ok) throw new Error("JSON Dosyası Bulunamadı");
-                return response.json();
-            })
-            .then(data => {
-                let html = '';
-                data.forEach(item => {
-                    const timeString = timeAgo(item.date);
-                    const iconPaths = '<span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span>';
+    TKH.DevDrawer = (() => {
+        'use strict';
 
-                    html += `
-                    <div class="timeline-item align-items-start mb-4">
+        const loadLog = () => {
+            const container = document.getElementById('kt_changelog_container');
+            if (!container) return;
+
+            fetch('/data/changelog.json')
+                .then(res => res.json())
+                .then(data => {
+                    const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    const items = sortedData.slice(0, 10);
+
+                    container.innerHTML = items.map(item => {
+                        const iconPaths = '<span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span>';
+
+                        return `
+                    <div class="timeline-item align-items-start mb-6">
                         <div class="timeline-media">
                             <div class="symbol symbol-35px symbol-circle bg-light-${item.type} border border-${item.type} border-opacity-25">
                                 <span class="symbol-label">
@@ -108,57 +105,50 @@
                                 </span>
                             </div>
                         </div>
-
                         <div class="timeline-content ms-3">
                             <div class="d-flex align-items-center justify-content-between mb-1">
                                 <span class="fw-bold text-gray-800 fs-7">${item.title}</span>
-                                <span class="text-gray-500 fs-8">${timeString}</span>
+                                <span class="text-gray-500 fs-9">${timeAgo(item.date)}</span>
                             </div>
-
                             <div class="d-flex align-items-center mb-2">
-                                    <span class="badge badge-light-${item.type} fs-9 px-2 py-1 me-2">${item.badge}</span>
-                                    <span class="text-gray-400 fs-9 border-start ps-2">${item.category}</span>
+                                <span class="badge badge-light-${item.type} fs-9 px-2 py-0 me-2">${item.badge}</span>
+                                <span class="text-gray-400 fs-9 border-start ps-2">${item.category}</span>
                             </div>
-
-                            <p class="text-gray-600 fs-7 mb-0">
-                                ${item.description}
-                            </p>
+                            <p class="text-gray-600 fs-8 mb-0 lh-sm">${item.description}</p>
                         </div>
                     </div>`;
+                    }).join('');
+                })
+                .catch(() => {
+                    container.innerHTML = `<div class="text-center text-danger fs-8 py-4">Loglar yüklenemedi.</div>`;
                 });
+        };
 
-                container.innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Changelog Error:', error);
-                container.innerHTML = `<div class="text-center text-danger fs-7 py-4">Veri yüklenemedi. JSON dosyasını kontrol edin.</div>`;
-            });
-    }
+        const timeAgo = (dateStr) => {
+            const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+            const intervals = {
+                "yıl": 31536000, "ay": 2592000, "gün": 86400, "saat": 3600, "dk": 60
+            };
+            for (let [unit, value] of Object.entries(intervals)) {
+                let count = Math.floor(seconds / value);
+                if (count >= 1) return `${count} ${unit} önce`;
+            }
+            return "Az önce";
+        };
 
-    function timeAgo(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
+        return {
+            init: () => {
+                const buildEl = document.getElementById('kt_build_date');
+                if (buildEl) {
+                    const today = new Date();
+                    buildEl.innerText = today.getFullYear() + '.' +
+                        String(today.getMonth() + 1).padStart(2, '0') + '.' +
+                        String(today.getDate()).padStart(2, '0');
+                }
+                loadLog();
+            }
+        };
+    })();
 
-        let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + " yıl önce";
-
-        interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " ay önce";
-
-        interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " gün önce";
-
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " saat önce";
-
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " dk önce";
-
-        return "Az önce";
-    }
+    document.addEventListener("DOMContentLoaded", () => TKH.DevDrawer.init());
 </script>
-
-<style>
-    
-</style>

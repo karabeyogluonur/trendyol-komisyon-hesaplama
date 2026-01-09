@@ -6,6 +6,5 @@ namespace TKH.Core.Common.Settings
     {
         public decimal WithholdingRate { get; set; } = 1;
         public decimal ShippingVatRate { get; set; } = 20;
-        public decimal ComissionVatRate { get; set; } = 20;
     }
 }

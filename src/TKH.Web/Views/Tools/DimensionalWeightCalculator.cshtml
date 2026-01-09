@@ -1,491 +1,126 @@
-<div class="card mb-5">
-    <div class="card-body py-4">
-        <div id="kt_app_toolbar" class="app-toolbar">
-            <div class="d-flex flex-stack w-100">
-                <div class="page-title d-flex flex-column justify-content-center gap-2">
-                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
-                        Desi Hesaplama
-                    </h1>
-                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
-                        </li>
-                        <li class="breadcrumb-item text-gray-800 fw-semibold">
-                            Araçlar
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div
-    class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-5">
-    <i class="ki-duotone ki-package fs-2hx text-primary me-4 mb-5 mb-sm-0 flex-shrink-0">
-        <span class="path1"></span><span class="path2"></span><span class="path3"></span>
-    </i>
-    <div class="d-flex flex-column pe-0 pe-sm-10 flex-grow-1">
-        <span class="fw-bold text-gray-900 fs-6 mb-2">Desi Hesaplama Hakkında</span>
-        <div class="text-gray-700 fs-7">
-            Gireceğiniz koli ebatları üzerinden <strong>Hacimsel Ağırlık (Desi)</strong> hesaplanır ve tüm anlaşmalı
-            kargo firmalarının güncel fiyatları karşılaştırılır.
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Desi Hesaplama", "Araçlar", "Desi Hesaplama"))
+
+<app-alert type="Info" icon="ki-package" title="Desi Hesaplama Hakkında">
+    Gireceğiniz koli ebatları üzerinden <strong>Hacimsel Ağırlık (Desi)</strong> hesaplanır ve tüm kargo firmalarının
+    güncel fiyatları karşılaştırılır.
+</app-alert>
+
 <div class="card mb-5 shadow-sm">
     <div class="card-body">
-        <form id="kt_desi_form" class="form">
-            <div class="row g-9 mb-8">
-                <div class="col-md-3 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="width">En (cm)</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="number" class="form-control form-control-sm" id="width" name="width"
-                            placeholder="0" value="30" min="0" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">cm</span>
+        <form id="kt_desi_form" class="form" onsubmit="return false;">
+            <div class="row g-5 g-lg-9 mb-8">
+                <div class="col-6 col-lg-3 fv-row">
+                    <label class="required form-label fs-7 fw-bold mb-2">En (cm)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="number" class="form-control form-control-solid fs-7" id="width" value="30"
+                            min="0" />
+                        <span class="input-group-text">cm</span>
                     </div>
-                    <div class="text-muted fs-8 mt-2">Kutunun kısa kenarı</div>
                 </div>
-                <div class="col-md-3 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="length">Boy (cm)</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="number" class="form-control form-control-sm" id="length" name="length"
-                            placeholder="0" value="40" min="0" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">cm</span>
+                <div class="col-6 col-lg-3 fv-row">
+                    <label class="required form-label fs-7 fw-bold mb-2">Boy (cm)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="number" class="form-control form-control-solid fs-7" id="length" value="40"
+                            min="0" />
+                        <span class="input-group-text">cm</span>
                     </div>
-                    <div class="text-muted fs-8 mt-2">Kutunun uzun kenarı</div>
                 </div>
-                <div class="col-md-3 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="height">Yükseklik (cm)</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="number" class="form-control form-control-sm" id="height" name="height"
-                            placeholder="0" value="20" min="0" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">cm</span>
+                <div class="col-6 col-lg-3 fv-row">
+                    <label class="required form-label fs-7 fw-bold mb-2">Yükseklik (cm)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="number" class="form-control form-control-solid fs-7" id="height" value="20"
+                            min="0" />
+                        <span class="input-group-text">cm</span>
                     </div>
-                    <div class="text-muted fs-8 mt-2">Kutunun yüksekliği</div>
                 </div>
-                <div class="col-md-3 fv-row">
-                    <label class="form-label fs-7 fw-semibold mb-2" for="salesPrice">Satış Fiyatı (TL)</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="number" class="form-control form-control-sm" id="salesPrice" name="salesPrice"
+                <div class="col-6 col-lg-3 fv-row">
+                    <label class="form-label fs-7 fw-bold mb-2">Satış Fiyatı (TL)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="number" class="form-control form-control-solid fs-7" id="salesPrice"
                             placeholder="0.00" min="0" step="0.01" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">₺</span>
-                    </div>
-                    <div class="text-muted fs-8 mt-2">Opsiyonel (Barem Altı Kontrolü)</div>
-                </div>
-            </div>
-            <div class="notice d-flex bg-light-warning rounded border-warning border border-dashed mb-9 p-6">
-                <i class="ki-duotone ki-information-5 fs-2tx text-warning me-4">
-                    <span class="path1"></span><span class="path2"></span><span class="path3"></span>
-                </i>
-                <div class="d-flex flex-stack flex-grow-1">
-                    <div class="fw-semibold">
-                        <div class="fs-7 text-gray-700">
-                            Hesaplama Standart Kargo Formülü ile yapılır: <br />
-                            <strong class="text-gray-900">(En x Boy x Yükseklik) / 3000</strong>
-                        </div>
+                        <span class="input-group-text">₺</span>
                     </div>
                 </div>
             </div>
             <div class="d-flex justify-content-end pt-5">
-                <button type="button" class="btn btn-primary" id="btnCalculateDesi">
-                    <i class="ki-duotone ki-calculator fs-2 me-2">
-                        <span class="path1"></span><span class="path2"></span>
-                    </i>
-                    <span class="indicator-label">Maliyetleri Hesapla</span>
+                <button type="button" class="btn btn-sm btn-primary" id="btnCalculateDesi">
+                    <span class="indicator-label"><i class="ki-outline ki-calculator fs-4 me-1"></i> Maliyetleri
+                        Hesapla</span>
                 </button>
             </div>
         </form>
     </div>
 </div>
+
 <div id="resultSection" class="d-none">
-    <div class="row g-5 g-xl-8 mb-5">
-        <div class="col-xl-6">
-            <div class="card bg-info hoverable card-xl-stretch mb-xl-8">
-                <div class="card-body">
-                    <i class="ki-duotone ki-cube-2 fs-2x text-white ms-n1">
-                        <span class="path1"></span><span class="path2"></span><span class="path3"></span>
-                    </i>
-                    <div class="text-white fw-bold fs-2 mb-2 mt-5" id="lblCalculatedDesi">0.00 Desi</div>
-                    <div class="fw-semibold text-white">Hesaplanan Hacimsel Ağırlık</div>
+    <div class="row g-5 mb-5">
+        <div class="col-md-6">
+            <div class="card bg-info card-xl-stretch mb-xl-8">
+                <div class="card-body py-5">
+                    <i class="ki-outline ki-cube-2 fs-2hx text-white ms-n1"></i>
+                    <div class="text-white fw-bold fs-1 mb-1 mt-5" id="lblCalculatedDesi">0.00 Desi</div>
+                    <div class="fw-semibold text-white fs-7">Hesaplanan Hacimsel Ağırlık</div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-6">
-            <div class="card bg-success hoverable card-xl-stretch mb-xl-8" id="cardPriceType">
-                <div class="card-body">
-                    <i class="ki-duotone ki-wallet fs-2x text-white ms-n1">
-                        <span class="path1"></span><span class="path2"></span><span class="path3"></span><span
-                            class="path4"></span>
-                    </i>
-                    <div class="text-white fw-bold fs-2 mb-2 mt-5" id="lblBaremType">Standart Desi</div>
-                    <div class="fw-semibold text-white" id="lblPriceTypeDesc">Uygulanan Tarife Modeli</div>
+        <div class="col-md-6">
+            <div class="card bg-success card-xl-stretch mb-xl-8" id="cardPriceType">
+                <div class="card-body py-5">
+                    <i class="ki-outline ki-wallet fs-2hx text-white ms-n1"></i>
+                    <div class="text-white fw-bold fs-1 mb-1 mt-5" id="lblBaremType">Standart Desi</div>
+                    <div class="fw-semibold text-white fs-7" id="lblPriceTypeDesc">Uygulanan Tarife Modeli</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="card card-flush">
-        <div class="card-header pt-5">
-            <h3 class="card-title align-items-start flex-column">
-                <span class="card-label fw-bold text-gray-900">Kargo Fiyat Karşılaştırması</span>
-                <span class="text-muted mt-1 fw-semibold fs-7">En uygun fiyatlı kargo firmaları sıralanmıştır.</span>
-            </h3>
-        </div>
-        <div class="card-body pt-0">
+
+    <div class="card card-flush shadow-sm">
+        <div class="card-body pt-3">
             <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+                <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-3">
                     <thead>
-                        <tr class="fw-bold text-muted bg-light">
+                        <tr class="fw-bold text-muted bg-light fs-8 text-uppercase">
                             <th class="ps-4 min-w-150px rounded-start">Kargo Firması</th>
                             <th class="min-w-100px text-end">Hesaplanan Tutar</th>
                             <th class="min-w-100px text-center">Durum</th>
-                            <th class="min-w-50px text-center rounded-end">Detay</th>
+                            <th class="min-w-50px text-center rounded-end pe-4">Detay</th>
                         </tr>
                     </thead>
-                    <tbody id="resultTableBody">
-                    </tbody>
+                    <tbody id="resultTableBody"></tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
 
-@section Scripts {
+<template id="carrier-row-template">
+    <tr class="carrier-row">
+        <td class="ps-4">
+            <div class="d-flex align-items-center">
+                <div class="symbol symbol-35px me-4">
+                    <span class="symbol-label bg-light-{color}"><span
+                            class="text-{color} fw-bold fs-7">{firstLetter}</span></span>
+                </div>
+                <span class="text-gray-900 fw-bold fs-7">{carrierName}</span>
+            </div>
+        </td>
+        <td class="text-end fw-bold text-gray-800 pe-4">{price}</td>
+        <td class="text-center">{status}</td>
+        <td class="text-center pe-4">
+            <button type="button" class="btn btn-icon btn-sm btn-light btn-active-light-primary"
+                data-bs-toggle="collapse" data-bs-target="#{collapseId}">
+                <i class="ki-outline ki-down fs-5"></i>
+            </button>
+        </td>
+    </tr>
+    <tr class="collapse bg-light-secondary detail-row" id="{collapseId}">
+        <td colspan="4" class="px-10 py-5">
+            <div class="fw-bold text-gray-800 mb-2">Ek Hizmet Bedelleri ve Koşullar</div>
+            <div class="extras-container">{extras}</div>
+        </td>
+    </tr>
+</template>
 
-    <script>
-        const DesiCalculator = (() => {
-            const CONFIG = {
-                DESI_DIVISOR: 3000,
-                MAX_DESI_LIMIT: 100,
-                BAREM_DESI_LIMIT: 10,
-                BAREM_PRICE_LIMIT: 300,
-                UI_COLORS: ['primary', 'warning', 'success', 'danger', 'info', 'dark']
-            };
-            const DATA = {
-                desiPrices: {
-                    columns: ["Aras Kargo", "DHL E-commerce", "Kolay Gelsin", "PTT Kargo", "Sürat Kargo", "TEX", "Yurtiçi Kargo", "Borusan", "CEVA", "Horoz Lojistik"],
-                    rows: [
-                        [0, 83.93, 92.99, 91.99, 77.54, 89.71, 77.54, 112.77, 433.53, 594.46, 527.63],
-                        [1, 83.93, 92.99, 91.99, 77.54, 89.71, 77.54, 112.77, 433.53, 594.46, 527.63],
-                        [2, 83.93, 92.99, 91.99, 77.54, 89.71, 77.54, 112.77, 433.53, 594.46, 527.63],
-                        [3, 95.12, 103.99, 101.99, 96, 99.96, 93.63, 120.56, 433.53, 594.46, 527.63],
-                        [4, 103.68, 116.99, 112.99, 96, 109.3, 101.46, 123.15, 433.53, 594.46, 527.63],
-                        [5, 111.17, 129.99, 121.99, 100.55, 114.94, 107.98, 142.91, 433.53, 594.46, 527.63],
-                        [6, 121.12, 141.99, 131.99, 106.83, 126.28, 118.3, 149.82, 433.53, 594.46, 527.63],
-                        [7, 128.46, 149.99, 140.99, 113.15, 134.85, 125.66, 169.44, 433.53, 594.46, 527.63],
-                        [8, 137.05, 159.99, 150.99, 125.73, 143.29, 134.21, 175.96, 433.53, 594.46, 527.63],
-                        [9, 144.91, 169.99, 159.99, 138.34, 151.87, 142.42, 186.86, 433.53, 594.46, 527.63],
-                        [10, 153.48, 176.99, 170.99, 157.26, 160.43, 153.47, 195.12, 433.53, 594.46, 527.63],
-                        [11, 161.77, 184.99, 180.99, 165.01, 171.83, 162.13, 207.75, 433.53, 594.46, 527.63],
-                        [12, 167.73, 194.99, 191.99, 173.31, 181.55, 170.33, 220.8, 433.53, 594.46, 527.63],
-                        [13, 175.34, 204.99, 201.99, 181.63, 188.84, 178.04, 227.79, 433.53, 594.46, 527.63],
-                        [14, 182.1, 216.99, 212.99, 189.94, 193.44, 185.17, 245.62, 433.53, 594.46, 527.63],
-                        [15, 188.82, 226.99, 223.99, 198.22, 200.48, 192.81, 258.72, 433.53, 594.46, 527.63],
-                        [16, 199.4, 244.99, 234.99, 206.52, 207.26, 200.82, 266.13, 433.53, 594.46, 527.63],
-                        [17, 209.92, 259.99, 245.99, 214.83, 218.26, 209.7, 280.92, 433.53, 594.46, 527.63],
-                        [18, 220.51, 276.99, 256.99, 223.13, 229.26, 218.6, 294.85, 433.53, 594.46, 527.63],
-                        [19, 231.07, 291.99, 267.99, 231.45, 240.14, 227.46, 300.97, 433.53, 594.46, 527.63],
-                        [20, 235.6, 309.99, 278.99, 239.76, 251.15, 236.21, 307.46, 433.53, 594.46, 527.63],
-                        [21, 247.47, 334.99, 289.99, 248.06, 262.4, 244.98, 324.89, 433.53, 594.46, 527.63],
-                        [22, 258.31, 354.99, 300.99, 256.36, 272.64, 254.82, 334.91, 433.53, 594.46, 527.63],
-                        [23, 269.13, 379.99, 311.99, 264.66, 282.62, 264.97, 347.55, 433.53, 594.46, 527.63],
-                        [24, 278.75, 404.99, 322.99, 272.95, 292.72, 274.36, 354.51, 433.53, 594.46, 527.63],
-                        [25, 288.32, 429.99, 333.99, 281.27, 302.7, 283.69, 378.43, 433.53, 594.46, 527.63],
-                        [27, 306.79, 479.99, 355.99, 297.88, 322.15, 301.77, 433.31, 433.53, 594.46, 527.63],
-                        [28, 316.06, 504.99, 366.99, 306.18, 331.87, 310.84, 452.92, 433.53, 594.46, 527.63],
-                        [29, 325.31, 529.99, 377.99, 314.48, 341.59, 319.89, 468.61, 433.53, 594.46, 527.63],
-                        [30, 334.54, 554.99, 388.99, 322.78, 351.32, 328.88, 473.4, 433.53, 594.46, 527.63],
-                        [31, 345.25, 587.98, 398.99, 666.93, 420.28, 394.39, 486.99, 433.9, 600.94, 527.63],
-                        [32, 355.95, 620.97, 408.99, 683.01, 432.43, 404.79, 500.58, 447.89, 607.56, 527.63],
-                        [33, 366.66, 653.96, 418.99, 699.09, 444.71, 415.21, 514.17, 461.9, 614.21, 527.63],
-                        [34, 377.36, 686.95, 428.99, 715.18, 456.87, 425.61, 527.76, 475.89, 621.02, 527.63],
-                        [35, 388.07, 719.94, 438.99, 731.25, 469.15, 436.04, 541.35, 489.89, 627.79, 527.63],
-                        [36, 398.78, 752.93, 448.99, 747.34, 481.3, 446.43, 554.95, 503.88, 634.78, 527.63],
-                        [37, 409.48, 785.92, 458.99, 763.41, 493.58, 456.86, 568.54, 517.88, 641.68, 527.63],
-                        [38, 420.19, 818.91, 468.99, 779.5, 505.86, 467.29, 582.13, 531.88, 648.71, 527.63],
-                        [39, 430.89, 851.9, 478.99, 795.57, 518.02, 477.69, 595.72, 545.87, 655.92, 527.63],
-                        [40, 441.6, 884.89, 488.99, 811.66, 536.06, 489.37, 609.31, 559.87, 663.18, 527.63],
-                        [41, 452.31, 917.88, 498.99, 827.73, 548.34, 499.8, 622.9, 573.87, 669.71, 527.63],
-                        [42, 463.01, 950.87, 508.99, 843.82, 560.76, 510.26, 636.49, 587.87, 676.52, 527.63],
-                        [43, 473.72, 983.86, 518.99, 859.9, 573.04, 520.68, 650.08, 601.86, 683.33, 527.63],
-                        [44, 484.42, 1016.85, 528.99, 875.98, 585.44, 531.13, 663.67, 615.86, 690.05, 527.63],
-                        [45, 495.13, 1049.84, 538.99, 892.06, 597.86, 541.59, 677.27, 629.85, 697.04, 527.63],
-                        [46, 505.83, 1082.83, 548.99, 908.14, 610.14, 552.02, 690.86, 643.85, 703.92, 533.03],
-                        [47, 516.54, 1115.82, 558.99, 924.22, 622.54, 562.47, 704.45, 657.85, 711.07, 544.62],
-                        [48, 527.25, 1148.81, 568.99, 940.31, 634.83, 572.89, 718.04, 671.84, 718.11, 556.21],
-                        [49, 537.95, 1181.8, 578.99, 956.38, 647.24, 583.35, 731.63, 685.84, 725.32, 567.79],
-                        [50, 548.66, 1214.79, 588.99, 972.47, 659.65, 593.8, 745.22, 699.84, 732.58, 579.38],
-                        [51, 559.36, 1247.78, 598.99, 988.54, 671.93, 604.23, 758.81, 713.84, 774.9, 590.97],
-                        [52, 570.07, 1280.77, 608.99, 1004.63, 684.34, 614.68, 772.4, 727.83, 782.63, 602.56],
-                        [53, 580.77, 1313.76, 618.99, 1020.7, 696.62, 625.11, 785.99, 741.83, 790.42, 614.15],
-                        [54, 591.48, 1346.75, 628.99, 1036.79, 709.03, 635.56, 799.58, 755.83, 798.34, 625.73],
-                        [55, 602.19, 1379.74, 638.99, 1052.86, 721.44, 646.01, 813.18, 769.82, 805.9, 637.32],
-                        [56, 612.89, 1412.73, 648.99, 1068.95, 733.73, 656.45, 826.77, 783.82, 809.85, 648.91],
-                        [57, 623.6, 1445.72, 658.99, 1085.03, 746.13, 666.9, 840.36, 797.81, 812.39, 660.5],
-                        [58, 634.3, 1478.71, 668.99, 1101.11, 758.41, 677.32, 853.95, 811.82, 814.8, 672.08],
-                        [60, 655.72, 1544.69, 688.99, 1133.28, 783.23, 698.23, 881.13, 839.81, 816.78, 695.26],
-                        [61, 666.42, 1577.68, 698.99, 1149.35, 795.52, 708.66, 894.72, 853.8, 817.59, 706.85],
-                        [62, 677.13, 1610.67, 708.99, 1165.44, 807.93, 719.11, 908.31, 867.8, 818.71, 718.43],
-                        [63, 687.83, 1643.66, 718.99, 1181.51, 820.21, 729.54, 921.9, 881.8, 819.82, 730.02],
-                        [64, 698.54, 1676.65, 728.99, 1197.6, 832.62, 739.99, 935.5, 895.79, 822.16, 741.61],
-                        [65, 709.24, 1709.64, 738.99, 1213.67, 845.03, 750.44, 949.09, 909.79, 822.58, 753.2],
-                        [66, 719.95, 1742.63, 748.99, 1229.76, 857.31, 760.88, 962.68, 923.78, 835.21, 764.78],
-                        [67, 730.66, 1775.62, 758.99, 1245.83, 869.72, 771.33, 976.27, 937.79, 847.88, 776.37],
-                        [68, 741.36, 1808.61, 768.99, 1261.92, 882, 781.75, 989.86, 951.78, 860.52, 787.96],
-                        [69, 752.07, 1841.6, 778.99, 1277.99, 894.42, 792.2, 1003.45, 965.78, 873.19, 799.55],
-                        [70, 762.77, 1874.59, 788.99, 1294.08, 906.82, 802.66, 1017.04, 979.77, 885.82, 811.14],
-                        [71, 773.48, 1907.58, 798.99, 1310.16, 919.1, 813.09, 1030.63, 993.78, 898.5, 822.72],
-                        [72, 784.19, 1940.57, 808.99, 1326.24, 931.52, 823.54, 1044.22, 1007.77, 911.12, 834.31],
-                        [73, 794.89, 1973.56, 818.99, 1342.32, 943.8, 833.97, 1057.81, 1021.76, 923.8, 845.9],
-                        [74, 805.6, 2006.55, 828.99, 1358.41, 956.2, 844.42, 1071.41, 1035.76, 936.52, 857.49],
-                        [75, 816.3, 2039.54, 838.99, 1374.48, 968.62, 854.87, 1085, 1049.75, 949.11, 869.07],
-                        [76, 827.01, 2072.53, 848.99, 1390.57, 980.9, 865.3, 1098.59, 1063.76, 961.82, 880.66],
-                        [77, 837.71, 2105.52, 858.99, 1406.64, 993.31, 875.76, 1112.18, 1077.75, 974.41, 892.25],
-                        [78, 848.42, 2138.51, 868.99, 1422.73, 1005.59, 886.18, 1125.77, 1091.75, 987.13, 903.84],
-                        [79, 859.13, 2171.5, 878.99, 1438.8, 1018, 896.63, 1139.36, 1105.74, 999.71, 915.42],
-                        [80, 869.83, 2204.49, 888.99, 1454.89, 1030.41, 907.09, 1152.95, 1119.75, 1012.43, 927.01],
-                        [81, 880.54, 2237.48, 898.99, 1470.96, 1042.69, 917.52, 1166.54, 1133.74, 1025.02, 938.6],
-                        [82, 891.24, 2270.47, 908.99, 1487.05, 1055.11, 927.97, 1180.13, 1147.73, 1037.74, 950.19],
-                        [83, 901.95, 2303.46, 918.99, 1503.13, 1067.39, 938.4, 1193.73, 1161.73, 1050.32, 961.77],
-                        [84, 912.65, 2336.45, 928.99, 1519.21, 1079.79, 948.85, 1207.32, 1175.73, 1063.04, 973.36],
-                        [85, 923.36, 2369.44, 938.99, 1535.29, 1092.21, 959.3, 1220.91, 1189.73, 1075.63, 984.95],
-                        [86, 934.07, 2402.43, 948.99, 1551.37, 1104.49, 969.73, 1234.5, 1203.72, 1088.34, 996.54],
-                        [87, 944.77, 2435.42, 958.99, 1567.45, 1116.89, 980.18, 1248.09, 1204.62, 1100.93, 1008.13],
-                        [88, 955.48, 2468.41, 968.99, 1583.54, 1129.18, 990.61, 1261.68, 1205.64, 1113.65, 1019.71],
-                        [89, 966.18, 2501.4, 978.99, 1599.61, 1141.59, 1001.06, 1275.27, 1206.66, 1126.33, 1031.3],
-                        [90, 976.89, 2534.39, 988.99, 1615.7, 1154, 1011.51, 1288.86, 1207.68, 1138.95, 1042.89],
-                        [91, 987.6, 2567.38, 998.99, 1631.77, 1166.28, 1021.95, 1302.45, 1208.7, 1151.63, 1054.48],
-                        [93, 1009.01, 2633.36, 1018.99, 1663.93, 1190.98, 1042.82, 1329.64, 1208.7, 1176.93, 1077.65],
-                        [94, 1019.71, 2666.35, 1028.99, 1680.02, 1203.38, 1053.28, 1343.23, 1208.7, 1189.52, 1089.24],
-                        [95, 1030.42, 2699.34, 1038.99, 1696.09, 1215.8, 1063.73, 1356.82, 1208.7, 1202.24, 1100.83],
-                        [96, 1041.12, 2732.33, 1048.99, 1712.18, 1228.08, 1074.16, 1370.41, 1209.72, 1214.82, 1112.41],
-                        [97, 1051.83, 2765.32, 1058.99, 1728.26, 1240.48, 1084.61, 1384, 1210.74, 1227.54, 1124],
-                        [98, 1062.54, 2798.31, 1068.99, 1744.34, 1252.76, 1095.04, 1397.59, 1211.76, 1240.13, 1135.59],
-                        [99, 1073.24, 2831.3, 1078.99, 1760.42, 1265.18, 1105.49, 1411.18, 1212.78, 1247.68, 1147.18],
-                        [100, 1083.95, 2864.29, 1088.99, 1776.5, 1277.58, 1115.94, 1424.77, 1213.8, 1248.85, 1158.77]
-                    ]
-                },
-                baremPrices: [
-                    { min: 0, max: 149.99, prices: { "TEX": 34.16, "PTT Kargo": 34.16, "Aras Kargo": 42.91, "Sürat Kargo": 48.74, "Kolay Gelsin": 51.24, "DHL E-commerce": 52.08, "Yurtiçi Kargo": 74.58 } },
-                    { min: 150, max: 299.99, prices: { "TEX": 65.83, "PTT Kargo": 65.83, "Aras Kargo": 73.74, "Sürat Kargo": 79.58, "Kolay Gelsin": 82.08, "DHL E-Commerce": 82.91, "Yurtiçi Kargo": 104.58 } }
-                ],
-                extraCosts: {
-                    "Aras Kargo": ["Ağır Kargo: 4250 TL", "Başarısız Teslimat: %50"],
-                    "DHL E-commerce": ["Ağır Kargo: 6749,99 TL", "Başarısız Teslimat: %50"],
-                    "Kolay Gelsin": ["Başarısız Teslimat: %50"],
-                    "PTT Kargo": ["Ağır Kargo: 4500 TL", "Başarısız Teslimat: %30"],
-                    "Sürat Kargo": ["Başarısız Teslimat: %25"],
-                    "TEX": [],
-                    "Yurtiçi Kargo": ["Ağır Kargo: 5350 TL", "Tekrar Sevk: %50", "Başarısız Teslimat: %50"],
-                    "Borusan": ["AT Dışı Teslimat: 1912,63 TL", "Tekrar Sevk: %50", "Başarısız Teslimat: %100"],
-                    "CEVA": ["AT Dışı Teslimat: 2193 TL", "Tekrar Sevk: %50", "Başarısız Teslimat: %100"],
-                    "Horoz Lojistik": ["Adrese Teslim Hizmeti Dışı Teslimat: 1890 TL", "Başarısız Teslimat: %100"]
-                }
-            };
-            const Utils = {
-                formatCurrency: (amount) => {
-                    return new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: 'TRY',
-                        minimumFractionDigits: 2
-                    }).format(amount);
-                },
-                calculateDesi: (w, l, h) => {
-                    return (w * l * h) / CONFIG.DESI_DIVISOR;
-                },
-                findPriceRow: (desi) => {
-                    if (desi > CONFIG.MAX_DESI_LIMIT) return null;
-                    let row = DATA.desiPrices.rows.find(r => r[0] === desi);
-                    if (!row) {
-                        row = DATA.desiPrices.rows.find(r => r[0] === Math.ceil(desi));
-                    }
-                    return row;
-                }
-            };
-            const UI = {
-                elements: {},
-                init: () => {
-                    UI.elements = {
-                        inputs: {
-                            width: document.getElementById('width'),
-                            length: document.getElementById('length'),
-                            height: document.getElementById('height'),
-                            salesPrice: document.getElementById('salesPrice')
-                        },
-                        buttons: {
-                            calculate: document.getElementById('btnCalculateDesi')
-                        },
-                        displays: {
-                            resultSection: document.getElementById('resultSection'),
-                            calculatedDesi: document.getElementById('lblCalculatedDesi'),
-                            baremType: document.getElementById('lblBaremType'),
-                            priceTypeDesc: document.getElementById('lblPriceTypeDesc'),
-                            cardPriceType: document.getElementById('cardPriceType'),
-                            tableBody: document.getElementById('resultTableBody')
-                        }
-                    };
-                },
-                renderHeader: (displayDesi, isBaremApplied, salesPrice, warningMessage) => {
-                    const { displays } = UI.elements;
-                    displays.calculatedDesi.innerText = `${displayDesi} Desi`;
-                    if (isBaremApplied) {
-                        displays.baremType.innerText = `Sabit Barem Fiyatı (${Utils.formatCurrency(salesPrice)})`;
-                        displays.priceTypeDesc.innerText = "Uygulanan Tarife Modeli";
-                        displays.cardPriceType.classList.replace('bg-success', 'bg-warning');
-                    } else {
-                        displays.baremType.innerText = "Desi Bazlı Tarife";
-                        displays.priceTypeDesc.innerText = "Uygulanan Tarife Modeli" + warningMessage;
-                        displays.cardPriceType.classList.replace('bg-warning', 'bg-success');
-                    }
-                    displays.resultSection.classList.remove('d-none');
-                },
-                renderTable: (results) => {
-                    const { tableBody } = UI.elements.displays;
-                    tableBody.innerHTML = '';
-                    const fragment = document.createDocumentFragment();
-                    results.forEach((row, index) => {
-                        const tr = document.createElement('tr');
-                        const trDetail = document.createElement('tr');
-                        const colorClass = CONFIG.UI_COLORS[index % CONFIG.UI_COLORS.length];
-                        const firstLetter = row.company.charAt(0);
-                        tr.innerHTML = UI.templates.mainRow(row, index, colorClass, firstLetter);
-                        trDetail.id = `collapseRow${index}`;
-                        trDetail.className = "collapse bg-light-secondary";
-                        trDetail.innerHTML = UI.templates.detailRow(row);
-                        fragment.appendChild(tr);
-                        fragment.appendChild(trDetail);
-                    });
-                    tableBody.appendChild(fragment);
-                },
-                templates: {
-                    mainRow: (row, index, colorClass, firstLetter) => {
-                        let priceHtml, statusHtml;
-                        if (row.isSupported) {
-                            priceHtml = `<span class="text-gray-800 fw-bold fs-7">${Utils.formatCurrency(row.price)}</span>`;
-                            if (row.note) {
-                                priceHtml += `<br/><span class="text-success fs-9 fw-bold">${row.note}</span>`;
-                            }
-                            statusHtml = `<span class="badge badge-light-success fs-8 fw-bold">Hizmet Veriyor</span>`;
-                        } else {
-                            priceHtml = `<span class="text-muted fs-7">-</span>`;
-                            statusHtml = `<span class="badge badge-light-danger fs-8 fw-bold">${row.errorReason}</span>`;
-                        }
-                        return `
-                                                <td>
-                                                    <div class="d-flex align-items-center ps-4">
-                                                        <div class="symbol symbol-45px me-5">
-                                                            <span class="symbol-label bg-light-${colorClass}">
-                                                                <span class="fs-7 text-${colorClass} fw-bold">${firstLetter}</span>
-                                                            </span>
-                                                        </div>
-                                                        <div class="d-flex justify-content-start flex-column">
-                                                            <span class="text-gray-900 fw-bold fs-7">${row.company}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-end pe-4">${priceHtml}</td>
-                                                <td class="text-center">${statusHtml}</td>
-                                                <td class="text-center pe-4">
-                                                    <button type="button" class="btn btn-icon btn-sm btn-light btn-active-light-primary" data-bs-toggle="collapse" data-bs-target="#collapseRow${index}">
-                                                        <i class="ki-duotone ki-down fs-5"></i>
-                                                    </button>
-                                                </td>
-                                            `;
-                    },
-                    detailRow: (row) => {
-                        let extrasList = "";
-                        if (row.extras && row.extras.length > 0) {
-                            extrasList = row.extras.map(ex =>
-                                `<div class="d-flex align-items-center mb-1"><span class="bullet bullet-dot bg-danger me-2"></span><span class="fs-8 text-gray-600">${ex}</span></div>`
-                            ).join('');
-                        } else {
-                            extrasList = `<span class="text-muted fs-8">Ek maliyet belirtilmemiş.</span>`;
-                        }
-                        return `
-                                                <td colspan="4" class="px-10 py-5">
-                                                    <div class="fw-bold text-gray-800 mb-2">Ek Hizmet Bedelleri ve Koşullar</div>
-                                                    ${extrasList}
-                                                </td>
-                                            `;
-                    }
-                }
-            };
-            const Logic = {
-                calculate: () => {
-                    const { inputs } = UI.elements;
-                    const width = Math.max(0, parseFloat(inputs.width.value) || 0);
-                    const length = Math.max(0, parseFloat(inputs.length.value) || 0);
-                    const height = Math.max(0, parseFloat(inputs.height.value) || 0);
-                    const salesPrice = Math.max(0, parseFloat(inputs.salesPrice.value) || 0);
-                    if (DATA.desiPrices.rows.length === 0) {
-                        alert("Veri seti bulunamadı.");
-                        return;
-                    }
-                    const calculatedDesi = Utils.calculateDesi(width, length, height);
-                    const displayDesi = calculatedDesi.toFixed(2);
-                    const lookupDesi = Math.ceil(calculatedDesi);
-                    let isBaremApplied = false;
-                    let appliedBaremPrices = null;
-                    let warningMessage = "";
-                    if (salesPrice > 0 && salesPrice < CONFIG.BAREM_PRICE_LIMIT) {
-                        if (calculatedDesi < CONFIG.BAREM_DESI_LIMIT) {
-                            const range = DATA.baremPrices.find(r => salesPrice >= r.min && salesPrice <= r.max);
-                            if (range) {
-                                isBaremApplied = true;
-                                appliedBaremPrices = range.prices;
-                            }
-                        } else {
-                            warningMessage = " (Barem fiyatı sadece 10 desi altı için geçerlidir.)";
-                        }
-                    }
-                    const results = DATA.desiPrices.columns.map((company, index) => {
-                        let finalPrice = 0;
-                        let isSupported = true;
-                        let note = "";
-                        let errorReason = "";
-                        if (isBaremApplied && appliedBaremPrices && appliedBaremPrices[company]) {
-                            finalPrice = appliedBaremPrices[company];
-                            note = "Kampanyalı Fiyat";
-                        } else {
-                            const priceRow = Utils.findPriceRow(lookupDesi);
-                            if (priceRow) {
-                                finalPrice = priceRow[index + 1];
-                            }
-                            if (!finalPrice || finalPrice <= 0) {
-                                isSupported = false;
-                                finalPrice = 0;
-                                errorReason = lookupDesi > CONFIG.MAX_DESI_LIMIT ? "Limit Üstü Desi" : "Bu Deside Hizmet Yok";
-                            }
-                        }
-                        return {
-                            company,
-                            price: finalPrice,
-                            isSupported,
-                            note,
-                            errorReason,
-                            extras: DATA.extraCosts[company] || []
-                        };
-                    });
-                    results.sort((a, b) => {
-                        if (a.isSupported && !b.isSupported) return -1;
-                        if (!a.isSupported && b.isSupported) return 1;
-                        return a.price - b.price;
-                    });
-                    UI.renderHeader(displayDesi, isBaremApplied, salesPrice, warningMessage);
-                    UI.renderTable(results);
-                    UI.elements.displays.resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            };
-            const init = () => {
-                UI.init();
-                if (UI.elements.buttons.calculate) {
-                    UI.elements.buttons.calculate.addEventListener('click', Logic.calculate);
-                }
-            };
-            return { init };
-        })();
-        document.addEventListener('DOMContentLoaded', DesiCalculator.init);
-    </script>
+@section Scripts {
+    <script src="~/assets/js/pages/tools/dimensional-weight-calculator.js"></script>
 }

@@ -1,620 +1,217 @@
 @model ProductCostListViewModel
 
-<style>
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
-</style>
+@await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Maliyet Yönetimi", "Maliyet Yönetimi"))
 
-<div class="card mb-5">
-    <div class="card-body py-4">
-        <div id="kt_app_toolbar" class="app-toolbar">
-            <div class="d-flex flex-stack w-100 flex-wrap gap-4">
 
-                <div class="page-title d-flex flex-column justify-content-center gap-2">
-                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
-                        Maliyet Yönetimi
-                    </h1>
-                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="text-gray-600">Maliyet Yönetimi</span>
-                        </li>
-                    </ul>
+<app-alert type="Info" title="Maliyet ve Komisyon Yönetimi Hakkında Bilgilendirme" dismissible="true"
+    class="mb-10 border-dashed border-primary">
+
+    <div class="fs-7 text-gray-700">
+        <p class="mb-3">Maliyet ekranı, satış kârlılığınızı etkileyen değişkenlerin yönetildiği dinamik bir alandır.
+            Alanların işleyişi şu şekildedir:</p>
+
+        <ul class="list-unstyled mb-0">
+            <li class="d-flex align-items-center mb-2">
+                <span class="bullet bullet-dot bg-primary me-2"></span>
+                <span class="fw-bold text-gray-800 me-1">Alış Fiyatı:</span>
+                Analizlerin temelini oluşturur ve girilmesi zorunludur. Boş bırakılması durumunda kâr hesaplaması
+                yapılamaz.
+            </li>
+
+            <li class="d-flex align-items-center mb-2">
+                <span class="bullet bullet-dot bg-primary me-2"></span>
+                <span class="fw-bold text-gray-800 me-1">Manuel Alanlar (Giriş Yapılabilir):</span>
+                Komisyon veya kargo ücretine değer girdiğinizde sistem otomatik hesaplamayı devre dışı bırakır ve sizin
+                verinizi öncelikli kabul eder.
+            </li>
+
+            <li class="d-flex align-items-center mb-2">
+                <span class="bullet bullet-dot bg-warning me-2"></span>
+                <span class="fw-bold text-warning me-1">Otomatik Hesaplama (<i
+                        class="ki-outline ki-calculator fs-7 text-warning"></i>):</span>
+                Sarı renkli alanlar, pazar yeri komisyon oranları ve kargo desilerine göre sistem tarafından anlık
+                hesaplanan değerlerdir.
+            </li>
+
+            <li class="d-flex align-items-center">
+                <span class="bullet bullet-dot bg-success me-2"></span>
+                <span>Değişiklik yapılan satırlar <span class="text-primary fw-bold">mavi renkle</span> vurgulanır.
+                    İşleminiz bitince <span class="badge badge-light-primary fw-bolder">Tümünü Kaydet</span> butonu ile
+                    güncellemeleri tamamlayabilirsiniz.</span>
+            </li>
+        </ul>
+    </div>
+</app-alert>
+
+<div class="card card-flush mt-5">
+    <div class="card-header border-0 pt-6">
+        <form method="get" class="w-100" id="filterForm">
+            <input type="hidden" name="PageIndex" value="1" />
+            <div class="row g-5 align-items-end">
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label fs-7 fw-bold text-gray-700">Arama</label>
+                    <div class="position-relative">
+                        <i class="ki-outline ki-magnifier fs-3 position-absolute top-50 translate-middle-y ms-4"></i>
+                        <input type="text" name="Barcode" value="@Model.Filter.Barcode"
+                            class="form-control form-control-sm form-control-solid ps-12 fs-7"
+                            placeholder="Barkod ara..." />
+                    </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="btn btn-sm btn-success d-none" id="bulkSaveBtn">
-                        <i class="ki-outline ki-check fs-2"></i>
-                        Değişiklikleri Kaydet (<span id="changeCount">0</span>)
+                <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                    <label class="form-label fs-7 fw-bold text-gray-700">Kategori</label>
+                    <app-filter-select asp-for="Filter.CategoryId" asp-items="Model.Filter.Categories"
+                        all-text="Tüm Kategoriler" class="form-select form-select-sm form-select-solid fs-7"
+                        data-control="select2" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                    <label class="form-label fs-7 fw-bold text-gray-700">Stok Durumu</label>
+                    <app-filter-select asp-for="Filter.HasStock" true-text="Stokta Var" false-text="Stok Yok"
+                        all-text="Tümü" class="form-select form-select-sm form-select-solid fs-7" data-control="select2"
+                        data-hide-search="true" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                    <label class="form-label fs-7 fw-bold text-gray-700">Satış Durumu</label>
+                    <app-filter-select asp-for="Filter.IsOnSale" true-text="Satışa Açık" false-text="Satışa Kapalı"
+                        all-text="Tümü" class="form-select form-select-sm form-select-solid fs-7" data-control="select2"
+                        data-hide-search="true" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                    <label class="form-label fs-7 fw-bold text-gray-700">Maliyet Durumu</label>
+                    <app-filter-select asp-for="Filter.CostStatus"
+                        class="form-select form-select-sm form-select-solid fs-7" data-control="select2"
+                        data-hide-search="true" />
+                </div>
+
+                <div class="col-12 col-md-4 col-lg-2 d-flex gap-2 justify-content-md-end">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="ki-outline ki-filter fs-4 me-1"></i> Uygula
                     </button>
-
-                    <form method="get" class="d-flex align-items-center gap-2 position-relative">
-                        <input type="hidden" name="PageIndex" value="1" />
-
-                        <div class="d-flex align-items-center position-relative my-1">
-                            <i class="ki-outline ki-magnifier fs-3 position-absolute ms-3"></i>
-                            <input type="text" name="Barcode" value="@Model.Filter.Barcode"
-                                class="form-control form-control-sm form-control-solid w-200px ps-10"
-                                placeholder="Barkod ara..." />
-                        </div>
-
-                        <button type="button" class="btn btn-sm btn-light-primary" data-kt-menu-trigger="click"
-                            data-kt-menu-placement="bottom-end">
-                            <i class="ki-outline ki-filter fs-2"></i>
-                            Filtrele
-                        </button>
-
-                        <div class="menu menu-sub menu-sub-dropdown w-300px w-md-325px" data-kt-menu="true">
-                            <div class="px-7 py-5">
-                                <div class="fs-5 text-gray-900 fw-bold">Filtre Seçenekleri</div>
-                            </div>
-                            <div class="separator border-gray-200"></div>
-
-                            <div class="px-7 py-5">
-                                <div class="mb-5">
-                                    <label class="form-label fw-semibold">Kategori</label>
-                                    <select name="CategoryId" class="form-select form-select-solid form-select-sm">
-                                        <!option value="" @(!Model.Filter.CategoryId.HasValue ? "selected" : "")>Tümü</!option>
-                                        @foreach (var item in Model.Filter.Categories ?? Enumerable.Empty<SelectListItem>())
-                                        {
-                                            <!option value="@item.Value" @(item.Selected ? "selected" : "")>@item.Text</!option>
-                                        }
-                                    </select>
-                                </div>
-
-                                <div class="mb-5">
-                                    <label class="form-label fw-semibold">Stok Durumu</label>
-                                    <select name="HasStock" class="form-select form-select-solid form-select-sm">
-                                        <!option value="" @(!Model.Filter.HasStock.HasValue ? "selected" : "")>Tümü</!option>
-                                        <!option value="true" @(Model.Filter.HasStock == true ? "selected" : "")>Stokta Var</!option>
-                                        <!option value="false" @(Model.Filter.HasStock == false ? "selected" : "")>Stok Yok</!option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-5">
-                                    <label class="form-label fw-semibold">Satış Durumu</label>
-                                    <select name="IsOnSale" class="form-select form-select-solid form-select-sm">
-                                        <!option value="" @(!Model.Filter.IsOnSale.HasValue ? "selected" : "")>Tümü</!option>
-                                        <!option value="true" @(Model.Filter.IsOnSale == true ? "selected" : "")>Satışta</!option>
-                                        <!option value="false" @(Model.Filter.IsOnSale == false ? "selected" : "")>Satışa Kapalı</!option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-5">
-                                    <label class="form-label fw-semibold">Maliyet Durumu</label>
-                                    <select name="CostStatus" class="form-select form-select-solid form-select-sm">
-                                        <!option value="0" @(Model.Filter.CostStatus == ProductCostFilterType.All ? "selected" : "")>Tümü</!option>
-                                        <!option value="1" @(Model.Filter.CostStatus == ProductCostFilterType.Completed ? "selected" : "")>Tamamlanmışlar</!option>
-                                        <!option value="10" @(Model.Filter.CostStatus == ProductCostFilterType.MissingPurchasePrice ? "selected" : "")>Alış Fiyatı Olmayanlar</!option>
-                                        <!option value="11" @(Model.Filter.CostStatus == ProductCostFilterType.MissingShippingCost ? "selected" : "")>Kargo Gideri Olmayanlar</!option>
-                                        <!option value="12" @(Model.Filter.CostStatus == ProductCostFilterType.MissingCommission ? "selected" : "")>Komisyon Oranı Olmayanlar</!option>
-                                    </select>
-                                </div>
-
-                                <div class="d-flex justify-content-end">
-                                    <a href="@Url.Action("Index")" class="btn btn-sm btn-light btn-active-light-primary me-2">
-                                        Temizle
-                                    </a>
-                                    <button type="submit" class="btn btn-sm btn-primary">
-                                        Uygula
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <select name="PageSize" onchange="this.form.submit()"
-                            class="form-select form-select-sm form-select-solid w-80px">
-                            @foreach (int size in new[] { 10, 20, 50, 100 })
-                            {
-                                <!option value="@size" @(Model.Filter.PageSize == size ? "selected" : "")>@size</!option>
-                            }
-                        </select>
-                    </form>
+                    <a href="@Url.Action("Costs")" class="btn btn-sm btn-light w-100">
+                        <i class="ki-outline ki-arrows-circle fs-4 me-1"></i> Temizle
+                    </a>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
-</div>
 
-<div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-5">
+    <div class="separator separator-dashed my-5"></div>
 
-    <button type="button" class="btn btn-icon btn-sm btn-active-light-primary position-absolute top-0 end-0 m-2" data-bs-dismiss="alert">
-        <i class="ki-outline ki-cross fs-1 text-primary"></i>
-    </button>
-
-    <div class="d-flex flex-column pe-0 pe-sm-10 w-100">
-
-        <div class="d-flex align-items-center mb-4">
-            <i class="ki-outline ki-information-2 fs-4 text-primary me-3"></i>
-            <span class="text-gray-700 fw-semibold fs-7">
-                <strong class="text-gray-900">Çalışma Prensibi:</strong> Sistem önceliği <span class="badge badge-light-primary badge-sm px-2 py-1 fs-8 mx-1 fw-bold">Manuel</span> girişe verir. Manuel Giriş yoksa veya 0 ise <span class="badge badge-light-warning badge-sm px-2 py-1 fs-8 mx-1 fw-bold">Otomasyon</span> devreye girer.
-            </span>
-        </div>
-
-        <div class="row g-4">
-
-            <div class="col-md-4">
-                <div class="bg-body border border-dashed border-gray-300 rounded p-4 d-flex align-items-center h-100">
-                    <i class="ki-outline ki-bill fs-2 text-danger me-4"></i>
-                    <div class="d-flex flex-column">
-                        <span class="text-gray-900 fw-bold fs-7 mb-1">Alış Fiyatı (Zorunlu)</span>
-                        <span class="text-gray-600 fs-8 lh-sm">KDV dahil olarak manuel girilmelidir. Bu alan bir otomasyon ile hesaplanabilecek veri setine sahip değildir.</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="bg-body border border-dashed border-gray-300 rounded p-4 d-flex align-items-center h-100">
-                    <i class="ki-outline ki-delivery fs-2 text-primary me-4"></i>
-                    <div class="d-flex flex-column">
-                        <span class="text-gray-900 fw-bold fs-7 mb-1">Kargo Maliyeti</span>
-                        <span class="text-gray-600 fs-8 lh-sm">Son 1 ay içerisinde tamamlanmış ve iadesi bulunmayan tekil siparişlerin ortalamasıdır.</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="bg-body border border-dashed border-gray-300 rounded p-4 d-flex align-items-center h-100">
-                    <i class="ki-outline ki-percentage fs-2 text-info me-4"></i>
-                    <div class="d-flex flex-column">
-                        <span class="text-gray-900 fw-bold fs-7 mb-1">Komisyon Oranı</span>
-                        <span class="text-gray-600 fs-8 lh-sm">Son 1 ay içerisinde son oluşturulmuş son siparişin oranı alınır. Sipariş yoksa kategorinin varsayılan değeri geçerli olur.</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<div class="card card-flush">
     <div class="card-body pt-0">
+        <div id="bulkSaveContainer"
+            class="d-none mb-5 p-4 bg-light-primary rounded d-flex align-items-center justify-content-between border border-primary border-dashed">
+            <span class="text-primary fw-bold fs-7">
+                <i class="ki-outline ki-information-5 text-primary fs-4 me-2"></i>
+                <span id="changeCount">0</span> adet maliyet bilgisinde değişiklik yapıldı.
+            </span>
+            <button type="button" class="btn btn-sm btn-primary" id="btnBulkSave">
+                <i class="ki-outline ki-check-square fs-4 me-1"></i> Değişiklikleri Kaydet
+            </button>
+        </div>
         <div class="table-responsive">
-            <table class="table align-middle table-row-dashed fs-6 gy-3" id="costTable">
+            <table class="table align-middle table-row-dashed fs-7 gy-3" id="costTable"
+                data-save-url="@Url.Action("SaveCosts", "Product")">
                 <thead>
                     <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
-                        <th class="min-w-250px ps-4">Ürün</th>
-                        <th class="min-w-150px text-center">
-                            <div class="d-flex flex-column align-items-center">
-                                <span>Alış Fiyatı</span>
-                                <span class="text-gray-400 fs-9 fw-normal text-lowercase">(zorunlu)</span>
-                            </div>
-                        </th>
-                        <th class="min-w-250px text-center">
-                            <div class="d-flex flex-column align-items-center">
-                                <span>Komisyon Oranı (%)</span>
-                                <span class="text-gray-400 fs-9 fw-normal text-lowercase">(manuel / otomatik)</span>
-                            </div>
-                        </th>
-                        <th class="min-w-250px text-center">
-                            <div class="d-flex flex-column align-items-center">
-                                <span>Kargo Ücreti (₺)</span>
-                                <span class="text-gray-400 fs-9 fw-normal text-lowercase">(manuel / otomatik)</span>
-                            </div>
-                        </th>
+                        <th class="min-w-250px ps-4">Ürün Bilgisi</th>
+                        <th class="min-w-250px text-center">Alış Fiyatı <br /><span
+                                class="text-gray-400 fs-9 fw-normal text-lowercase">(zorunlu)</span></th>
+                        <th class="min-w-250px text-center">Komisyon Oranı (%) <br /><span
+                                class="text-gray-400 fs-9 fw-normal text-lowercase">(manuel / otomatik)</span></th>
+                        <th class="min-w-250px text-center">Kargo Ücreti (₺) <br /><span
+                                class="text-gray-400 fs-9 fw-normal text-lowercase">(manuel / otomatik)</span></th>
                         <th class="min-w-100px text-center">İşlem</th>
                     </tr>
                 </thead>
                 <tbody class="fw-semibold text-gray-600">
                     @if (Model.Products != null && Model.Products.Items.Any())
                     {
-                        foreach (var product in Model.Products.Items)
+                        @foreach (var product in Model.Products.Items)
                         {
-                            var hasManualData = product.ManualCommissionRate > 0 || product.ManualShippingCost > 0;
-
                             <tr data-product-id="@product.Id" class="cost-row">
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
-                                        <a href="@product.ExternalUrl" target="_blank" class="symbol symbol-50px me-3">
+                                        <div class="symbol symbol-40px me-3">
                                             @if (!string.IsNullOrEmpty(product.ImageUrl))
                                             {
-                                                <span class="symbol-label" style="background-image:url(@product.ImageUrl);"></span>
+                                                <div class="symbol-label" style="background-image:url(@product.ImageUrl);"></div>
                                             }
                                             else
                                             {
-                                                <span class="symbol-label bg-light-primary text-primary fw-bold fs-3">
-                                                    @product.Name?.Substring(0, 1)
-                                                </span>
+                                                <div class="symbol-label bg-light-primary text-primary fw-bold">@product.Name?[0]
+                                                </div>
                                             }
-                                        </a>
-
+                                        </div>
                                         <div class="d-flex flex-column">
-                                            <span class="text-gray-800 fw-bold fs-7" title="@product.Name">
-                                                @product.Name.Truncate(45)
-                                            </span>
-                                            <div class="d-flex align-items-center gap-2 mt-1">
-                                                <span class="text-muted fs-9">@product.Barcode</span>
-                                                @if (hasManualData)
-                                                {
-                                                    <span class="badge badge-sm badge-light-primary">Manuel Veri Var</span>
-                                                }
-                                            </div>
+                                            <span class="text-gray-800 fw-bold fs-7">@product.Name.Truncate(35)</span>
+                                            <span class="text-muted fs-9">@product.Barcode</span>
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="text-center">
-                                    <input type="number"
-                                           step="0.01"
-                                           min="0"
-                                           value="@product.PurchasePrice.ToJsFormat()"
-                                           class="form-control form-control-sm text-center cost-input purchase-price-input mx-auto w-125px @(product.PurchasePrice == 0 ? "bg-light-danger text-danger fw-bold" : "form-control-solid")"
-                                           data-field="purchasePrice"
-                                           placeholder="0.00" />
+                                    <input type="number" step="0.01" data-field="purchasePrice"
+                                        value="@product.PurchasePrice.ToJsFormat()"
+                                        class="form-control form-control-sm text-center cost-input mx-auto w-100px @(product.PurchasePrice == 0 ? "border-danger border-dashed bg-light-danger" : "form-control-solid")"
+                                        placeholder="0.00" />
                                 </td>
-
                                 <td class="text-center">
-                                    <div class="d-flex align-items-center justify-content-center gap-3">
-                                        <div class="position-relative">
-                                            <input type="number"
-                                                   step="0.01"
-                                                   min="0"
-                                                   max="100"
-                                                   value="@(product.ManualCommissionRate > 0 ? product.ManualCommissionRate.ToJsFormat() : "")"
-                                                   class="form-control form-control-sm form-control-solid text-center cost-input commission-input w-100px"
-                                                   data-field="manualCommissionRate"
-                                                   placeholder="Manuel" />
-                                        </div>
-
-                                        <div class="vr h-25px border-gray-300 border-2 opacity-50"></div>
-
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <input type="number" step="0.01" data-field="manualCommissionRate"
+                                            value="@(product.ManualCommissionRate > 0 ? product.ManualCommissionRate.ToJsFormat() : "")"
+                                            class="form-control form-control-sm form-control-solid text-center cost-input w-100px"
+                                            placeholder="Manuel" />
+                                        <div class="vr h-20px opacity-25"></div>
                                         <div class="position-relative d-flex align-items-center">
-                                            <input type="text"
-                                                   value="@(product.AutomatedCommissionRate > 0 ? product.AutomatedCommissionRate.ToJsFormat() : "0.00")"
-                                                   class="form-control form-control-sm form-control-solid text-center bg-light-warning text-gray-800 fw-bold w-100px"
-                                                   readonly
-                                                   title="Otomatik hesaplanan değer" />
-
+                                            <input type="text" value="@product.AutomatedCommissionRate.ToJsFormat()"
+                                                class="form-control form-control-sm form-control-solid text-center bg-light-warning w-100px fw-bold"
+                                                readonly />
                                             @if (product.AutomatedCommissionRate > 0)
                                             {
-                                                <i class="ki-outline ki-calculator fs-4 text-warning position-absolute translate-middle-y top-50 end-0 me-3"
-                                                   title="Sistem tarafından hesaplandı"></i>
+                                                <i class="ki-outline ki-calculator fs-6 text-warning position-absolute end-0 me-2"
+                                                    data-bs-toggle="tooltip" title="Bu oran otomatik hesaplanmıştır."></i>
                                             }
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="text-center">
-                                    <div class="d-flex align-items-center justify-content-center gap-3">
-                                        <div class="position-relative">
-                                            <input type="number"
-                                                   step="0.01"
-                                                   min="0"
-                                                   value="@(product.ManualShippingCost > 0 ? product.ManualShippingCost.ToJsFormat() : "")"
-                                                   class="form-control form-control-sm form-control-solid text-center cost-input shipping-input w-100px"
-                                                   data-field="manualShippingCost"
-                                                   placeholder="Manuel" />
-                                        </div>
-
-                                        <div class="vr h-25px border-gray-300 border-2 opacity-50"></div>
-
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <input type="number" step="0.01" data-field="manualShippingCost"
+                                            value="@(product.ManualShippingCost > 0 ? product.ManualShippingCost.ToJsFormat() : "")"
+                                            class="form-control form-control-sm form-control-solid text-center cost-input w-100px"
+                                            placeholder="Manuel" />
+                                        <div class="vr h-20px opacity-25"></div>
                                         <div class="position-relative d-flex align-items-center">
-                                            <input type="text"
-                                                   value="@(product.AutomatedShippingCost > 0 ? product.AutomatedShippingCost.ToJsFormat() : "0.00")"
-                                                   class="form-control form-control-sm form-control-solid text-center bg-light-warning text-gray-800 fw-bold w-100px"
-                                                   readonly
-                                                   title="Otomatik hesaplanan değer" />
-
+                                            <input type="text" value="@product.AutomatedShippingCost.ToJsFormat()"
+                                                class="form-control form-control-sm form-control-solid text-center bg-light-warning w-100px fw-bold"
+                                                readonly />
                                             @if (product.AutomatedShippingCost > 0)
                                             {
-                                                 <i class="ki-outline ki-calculator fs-4 text-warning position-absolute translate-middle-y top-50 end-0 me-3"
-                                                   title="Sistem tarafından hesaplandı"></i>
+                                                <i class="ki-outline ki-calculator fs-6 text-warning position-absolute end-0 me-2"
+                                                    data-bs-toggle="tooltip" title="Bu ücret otomatik hesaplanmıştır."></i>
                                             }
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <button type="button" class="btn btn-sm btn-icon btn-light-primary save-row-btn d-none" data-product-id="@product.Id" title="Kaydet">
-                                            <i class="ki-outline ki-check fs-2"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-icon btn-light-danger reset-row-btn d-none" data-product-id="@product.Id" title="Geri Al">
-                                            <i class="ki-outline ki-cross fs-2"></i>
-                                        </button>
+                                        <button type="button" class="btn btn-sm btn-icon btn-light-primary btn-save-row d-none"
+                                            title="Kaydet"><i class="ki-outline ki-check fs-2"></i></button>
+                                        <button type="button" class="btn btn-sm btn-icon btn-light-danger btn-reset-row d-none"
+                                            title="İptal"><i class="ki-outline ki-cross fs-2"></i></button>
                                     </div>
                                 </td>
                             </tr>
                         }
                     }
-                    else
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center py-10">
-                                <div class="d-flex flex-column align-items-center">
-                                    <i class="ki-outline ki-magnifier fs-3x text-gray-300 mb-4"></i>
-                                    <span class="text-gray-500 fw-semibold fs-5">
-                                        Aradığınız kriterlere uygun kayıt bulunamadı.
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                    }
                 </tbody>
             </table>
         </div>
-
-        @if (Model.Products != null && Model.Products.TotalPages > 0)
-        {
-            <div class="row pt-10">
-                <div class="col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start">
-                    <div class="dataTables_info text-gray-600 fs-7">
-                        Toplam <strong>@Model.Products.TotalCount</strong> kayıttan
-                        <strong>@((Model.Products.PageIndex - 1) * Model.Products.PageSize + 1)</strong> -
-                        <strong>@(Math.Min(Model.Products.PageIndex * Model.Products.PageSize, Model.Products.TotalCount))</strong>
-                        arası gösteriliyor.
-                    </div>
-                </div>
-
-                <div class="col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end">
-                    <ul class="pagination">
-                        <li class="page-item previous @(Model.Products.HasPreviousPage ? "" : "disabled")">
-                            <a class="page-link"
-                                href="@Url.Action("Costs", new {
-                                    PageIndex = Model.Products.PageIndex - 1,
-                                    PageSize = Model.Products.PageSize,
-                                    Barcode = Model.Filter.Barcode,
-                                    CategoryId = Model.Filter.CategoryId,
-                                    HasStock = Model.Filter.HasStock,
-                                    IsOnSale = Model.Filter.IsOnSale,
-                                    CostStatus = Model.Filter.CostStatus
-                                })">
-                                <i class="previous"></i>
-                            </a>
-                        </li>
-
-                        @for (int i = 1; i <= Model.Products.TotalPages; i++)
-                        {
-                            if (i == 1 || i == Model.Products.TotalPages || (i >= Model.Products.PageIndex - 2 && i <= Model.Products.PageIndex + 2))
-                            {
-                                <li class="page-item @(i == Model.Products.PageIndex ? "active" : "")">
-                                    <a class="page-link"
-                                        href="@Url.Action("Costs", new {
-                                            PageIndex = i,
-                                            PageSize = Model.Products.PageSize,
-                                            Barcode = Model.Filter.Barcode,
-                                            CategoryId = Model.Filter.CategoryId,
-                                            HasStock = Model.Filter.HasStock,
-                                            IsOnSale = Model.Filter.IsOnSale,
-                                            CostStatus = Model.Filter.CostStatus
-                                        })">
-                                        @i
-                                    </a>
-                                </li>
-                            }
-                            else if (i == Model.Products.PageIndex - 3 || i == Model.Products.PageIndex + 3)
-                            {
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            }
-                        }
-
-                        <li class="page-item next @(Model.Products.HasNextPage ? "" : "disabled")">
-                            <a class="page-link"
-                                href="@Url.Action("Index", new {
-                                    PageIndex = Model.Products.PageIndex + 1,
-                                    PageSize = Model.Products.PageSize,
-                                    Barcode = Model.Filter.Barcode,
-                                    CategoryId = Model.Filter.CategoryId,
-                                    HasStock = Model.Filter.HasStock,
-                                    IsOnSale = Model.Filter.IsOnSale,
-                                    CostStatus = Model.Filter.CostStatus
-                                })">
-                                <i class="next"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        }
+        <app-pagination model="@Model.Products" controller="Product" action="Costs" form-id="filterForm" />
     </div>
 </div>
-
 @section Scripts {
-<script>
-    $(document).ready(function() {
-        const changedRows = new Set();
-        const originalValues = new Map();
-
-        $('.cost-row').each(function() {
-            const productId = $(this).data('product-id');
-            const data = {
-                purchasePrice: $(this).find('[data-field="purchasePrice"]').val(),
-                manualCommissionRate: $(this).find('[data-field="manualCommissionRate"]').val(),
-                manualShippingCost: $(this).find('[data-field="manualShippingCost"]').val()
-            };
-            originalValues.set(productId, data);
-        });
-
-        $('.cost-input').on('input', function() {
-            const $row = $(this).closest('.cost-row');
-            const productId = $row.data('product-id');
-
-            const $priceInput = $row.find('[data-field="purchasePrice"]');
-            const priceVal = parseFloat($priceInput.val()) || 0;
-
-            if (priceVal === 0) {
-                $priceInput.removeClass('form-control-solid').addClass('bg-light-danger text-danger fw-bold');
-            } else {
-                $priceInput.removeClass('bg-light-danger text-danger fw-bold').addClass('form-control-solid');
-            }
-
-            const currentValues = {
-                purchasePrice: $row.find('[data-field="purchasePrice"]').val(),
-                manualCommissionRate: $row.find('[data-field="manualCommissionRate"]').val(),
-                manualShippingCost: $row.find('[data-field="manualShippingCost"]').val()
-            };
-
-            const original = originalValues.get(productId);
-            const hasChanges =
-                currentValues.purchasePrice !== original.purchasePrice ||
-                currentValues.manualCommissionRate !== original.manualCommissionRate ||
-                currentValues.manualShippingCost !== original.manualShippingCost;
-
-            if (hasChanges) {
-                changedRows.add(productId);
-                $row.addClass('bg-light-primary');
-                $row.find('.save-row-btn, .reset-row-btn').removeClass('d-none');
-            } else {
-                changedRows.delete(productId);
-                $row.removeClass('bg-light-primary');
-                $row.find('.save-row-btn, .reset-row-btn').addClass('d-none');
-            }
-
-            updateBulkSaveButton();
-        });
-
-        $('.save-row-btn').on('click', function() {
-            const $btn = $(this);
-            const $row = $btn.closest('.cost-row');
-            const productId = $row.data('product-id');
-
-            const data = {
-                id: productId,
-                purchasePrice: parseFloat($row.find('[data-field="purchasePrice"]').val()) || 0,
-                manualCommissionRate: parseFloat($row.find('[data-field="manualCommissionRate"]').val()) || 0,
-                manualShippingCost: parseFloat($row.find('[data-field="manualShippingCost"]').val()) || 0
-            };
-
-            saveCostData([data], $row);
-        });
-
-        $('.reset-row-btn').on('click', function() {
-            const $row = $(this).closest('.cost-row');
-            const productId = $row.data('product-id');
-            const original = originalValues.get(productId);
-
-            const $priceInput = $row.find('[data-field="purchasePrice"]');
-            $priceInput.val(original.purchasePrice);
-
-            const priceVal = parseFloat(original.purchasePrice) || 0;
-            if (priceVal === 0) {
-                $priceInput.removeClass('form-control-solid').addClass('bg-light-danger text-danger fw-bold');
-            } else {
-                $priceInput.removeClass('bg-light-danger text-danger fw-bold').addClass('form-control-solid');
-            }
-
-            $row.find('[data-field="manualCommissionRate"]').val(original.manualCommissionRate);
-            $row.find('[data-field="manualShippingCost"]').val(original.manualShippingCost);
-
-            changedRows.delete(productId);
-            $row.removeClass('bg-light-primary');
-            $row.find('.save-row-btn, .reset-row-btn').addClass('d-none');
-            updateBulkSaveButton();
-        });
-
-        $('#bulkSaveBtn').on('click', function() {
-            const dataList = [];
-
-            changedRows.forEach(productId => {
-                const $row = $(`.cost-row[data-product-id="${productId}"]`);
-                dataList.push({
-                    id: productId,
-                    purchasePrice: parseFloat($row.find('[data-field="purchasePrice"]').val()) || 0,
-                    manualCommissionRate: parseFloat($row.find('[data-field="manualCommissionRate"]').val()) || 0,
-                    manualShippingCost: parseFloat($row.find('[data-field="manualShippingCost"]').val()) || 0
-                });
-            });
-
-            saveCostData(dataList);
-        });
-
-        function updateBulkSaveButton() {
-            const $btn = $('#bulkSaveBtn');
-            const count = changedRows.size;
-
-            if (count > 0) {
-                $btn.removeClass('d-none');
-                $('#changeCount').text(count);
-            } else {
-                $btn.addClass('d-none');
-            }
-        }
-
-       function saveCostData(dataList, $specificRow = null) {
-            $.ajax({
-                url: '@Url.Action("SaveCosts", "Product")',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(dataList),
-                success: function(response) {
-                    if (response.success) {
-                        dataList.forEach(item => {
-                            const $row = $(`.cost-row[data-product-id="${item.id}"]`);
-                            originalValues.set(item.id, {
-                                purchasePrice: item.purchasePrice.toString(),
-                                manualCommissionRate: item.manualCommissionRate.toString(),
-                                manualShippingCost: item.manualShippingCost.toString()
-                            });
-                            changedRows.delete(item.id);
-                            $row.removeClass('bg-light-primary');
-                            $row.find('.save-row-btn, .reset-row-btn').addClass('d-none');
-                        });
-                        updateBulkSaveButton();
-                        toastr.success('Maliyet bilgileri başarıyla kaydedildi');
-                    } else {
-                        toastr.error(response.message || 'Kayıt sırasında bir hata oluştu');
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.status === 400 && xhr.responseJSON) {
-                        const res = xhr.responseJSON;
-                        if (res.validationErrors) {
-                            let errorListHtml = '<ul class="mb-0 ps-3 text-start">';
-                            for (const [key, messages] of Object.entries(res.validationErrors)) {
-                                const indexMatch = key.match(/\[(\d+)\]/);
-                                let productInfo = "";
-
-                                if (indexMatch && dataList[indexMatch[1]]) {
-                                    const itemIndex = indexMatch[1];
-                                    const failedItem = dataList[itemIndex];
-
-                                    if(failedItem) {
-                                        const $errorRow = $(`.cost-row[data-product-id="${failedItem.id}"]`);
-                                        $errorRow.addClass('bg-light-danger'); // Hata görselleştirme
-                                        setTimeout(() => $errorRow.removeClass('bg-light-danger'), 3000); // 3sn sonra kaldır
-
-                                        productInfo = `(Ürün ID: ${failedItem.id}) `;
-                                    }
-                                }
-
-                                messages.forEach(msg => {
-                                    errorListHtml += `<li>${productInfo}${msg}</li>`;
-                                });
-                            }
-                            errorListHtml += '</ul>';
-
-                            toastr.error(errorListHtml, 'Validasyon Hatası', {
-                                timeOut: 7000,
-                                extendedTimeOut: 2000,
-                                closeButton: true,
-                                progressBar: true,
-                                enableHtml: true
-                            });
-
-                        } else {
-                            toastr.error(res.message || 'Geçersiz istek gönderildi.');
-                        }
-                    }
-                    else if (xhr.status === 500) {
-                        toastr.error('Sunucu tarafında beklenmedik bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.');
-                    }
-                    else {
-                        toastr.error('İşlem gerçekleştirilemedi. Bağlantınızı kontrol ediniz.');
-                    }
-                }
-            });
-        }
-    });
-</script>
+    <script src="~/assets/js/pages/products/costs.js"></script>
 }

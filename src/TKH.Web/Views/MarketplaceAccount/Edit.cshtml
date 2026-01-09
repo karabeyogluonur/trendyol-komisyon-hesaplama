@@ -1,120 +1,56 @@
 @model MarketplaceAccountUpdateViewModel
 
-<div class="card mb-5">
-    <div class="card-body py-4">
-        <div id="kt_app_toolbar" class="app-toolbar">
-            <div class="d-flex flex-stack w-100">
-                <div class="page-title d-flex flex-column justify-content-center gap-2">
-                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
-                        Pazaryeri Hesap Yönetimi
-                    </h1>
-                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="@Url.Action("Index", "MarketplaceAccount")"
-                                class="text-gray-600 text-hover-primary">Pazaryeri Hesapları</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
-                        </li>
-                        <li class="breadcrumb-item text-gray-800 fw-semibold">
-                            Düzenle
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Pazaryeri Hesap Yönetimi", "Pazaryeri Hesapları",
+"Düzenle"))
 
 <form asp-controller="MarketplaceAccount" asp-action="Edit" method="post" id="kt_marketplace_edit_form">
-
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
     @Html.AntiForgeryToken()
-
     <input type="hidden" asp-for="Id" />
+
     @if (Model.IsDemo)
     {
-        <div
-            class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
-            <i class="ki-outline ki-lock-2 fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
-            <div class="d-flex flex-column pe-0 pe-sm-10">
-                <h5 class="mb-1 fs-6 text-warning">Demo Modu Aktif</h5>
-                <span class="fs-7 text-gray-600">
-                    Bu hesap <strong>Demo Modunda</strong> olduğu için API anahtarları ve kritik ayarlar üzerinde değişiklik
-                    yapamazsınız.
-                    Sadece mevcut konfigürasyonu görüntüleyebilirsiniz.
-                </span>
-            </div>
-        </div>
+        <app-alert type="Warning" icon="ki-lock-2" title="Demo Modu Aktif">
+            Bu hesap <strong>Demo Modunda</strong> olduğu için API anahtarları ve kritik ayarlar üzerinde değişiklik
+            yapamazsınız.
+            Sadece mevcut konfigürasyonu görüntüleyebilirsiniz.
+        </app-alert>
     }
+
     @if (Model.SyncState == MarketplaceSyncState.Syncing || Model.SyncState == MarketplaceSyncState.Queued)
     {
-        <div
-            class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
-            <div class="me-4 mb-5 mb-sm-0 flex-shrink-0">
-                @if (Model.SyncState == MarketplaceSyncState.Syncing)
-                {
-                    <div class="spinner-border text-primary w-30px h-30px" role="status">
-                        <span class="visually-hidden">Yükleniyor...</span>
-                    </div>
-                }
-                else
-                {
-                    <i class="ki-outline ki-time fs-2hx text-primary"></i>
-                }
-            </div>
-            <div class="d-flex flex-column pe-0 pe-sm-10">
-                <h5 class="mb-1 fs-6 text-primary">Veri Eşitlemesi Sürüyor</h5>
-                <span class="fs-7 text-gray-600">
-                    Şu anda arka planda veri senkronizasyonu devam etmektedir (veya sırada beklemektedir).
-                    Veri tutarlılığı için bu süreçte <strong>düzenleme yapılması kısıtlanmıştır.</strong>
-                    Lütfen işlem bittikten sonra tekrar deneyiniz.
-                </span>
-            </div>
-        </div>
+        <app-alert type="Primary" icon="@(Model.SyncState == MarketplaceSyncState.Syncing ? "" : "ki-time")"
+            title="Veri Eşitlemesi Sürüyor">
+            @if (Model.SyncState == MarketplaceSyncState.Syncing)
+            {
+                <div class="spinner-border text-primary w-20px h-20px me-3 align-middle" role="status"></div>
+            }
+            Şu anda arka planda veri senkronizasyonu devam etmektedir (veya sırada beklemektedir).
+            Veri tutarlılığı için bu süreçte <strong>düzenleme yapılması kısıtlanmıştır.</strong>
+            Lütfen işlem bittikten sonra tekrar deneyiniz.
+        </app-alert>
     }
     else if (Model.ConnectionState == MarketplaceConnectionState.AuthError)
     {
-        <div
-            class="alert alert-dismissible bg-light-danger border border-danger border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
-            <i class="ki-outline ki-shield-cross fs-2hx text-danger me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
-            <div class="d-flex flex-column pe-0 pe-sm-10">
-                <h5 class="mb-1 fs-6 text-danger">Bağlantı Hatası Tespit Edildi</h5>
-                <span class="fs-7 text-gray-600 mb-2">
-                    Entegrasyon şu anda çalışmıyor. Son alınan hata mesajı aşağıdadır:
-                </span>
-                <div class="bg-white rounded border border-danger border-dashed p-3 text-danger fw-semibold fs-7 mb-2">
-                    @Model.LastErrorMessage
-                </div>
-                <span class="fs-7 text-gray-600">
-                    Lütfen <strong>API Konfigürasyonu</strong> sekmesinden API anahtarlarınızı kontrol edip güncelleyiniz.
-                </span>
+        <app-alert type="Error" icon="ki-shield-cross" title="Bağlantı Hatası Tespit Edildi">
+            <span class="d-block mb-2">Entegrasyon şu anda çalışmıyor. Son alınan hata mesajı aşağıdadır:</span>
+
+            <div class="bg-white rounded border border-danger border-dashed p-3 text-danger fw-semibold fs-7 mb-2">
+                @Model.LastErrorMessage
             </div>
-        </div>
+
+            Lütfen <strong>API Konfigürasyonu</strong> sekmesinden API anahtarlarınızı kontrol edip güncelleyiniz.
+        </app-alert>
     }
     else if (Model.ConnectionState == MarketplaceConnectionState.Initializing)
     {
-        <div
-            class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
-            <i class="ki-outline ki-arrows-circle fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0"></i>
-            <div class="d-flex flex-column pe-0 pe-sm-10">
-                <h5 class="mb-1 fs-6 text-warning">Kurulum Bekliyor</h5>
-                <span class="fs-7 text-gray-600">
-                    Hesap bilgileri güncellendi veya yeni eklendi. Sistem kısa süre içinde bağlantıyı test edip ilk
-                    veri çekimini başlatacaktır.
-                </span>
-            </div>
-        </div>
+        <app-alert type="Warning" icon="ki-arrows-circle" title="Kurulum Bekliyor">
+            Hesap bilgileri güncellendi veya yeni eklendi. Sistem kısa süre içinde bağlantıyı test edip ilk veri çekimini
+            başlatacaktır.
+        </app-alert>
     }
 
     <div class="card card-flush">
-
         <div class="card-header card-header-stretch min-h-50px">
             <div class="card-toolbar">
                 <ul class="nav nav-tabs nav-line-tabs nav-stretch fs-7 border-0">
@@ -133,10 +69,8 @@
         </div>
 
         <div class="card-body pt-5">
-
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab_general" role="tabpanel">
-
                     <div class="row mb-5">
                         <div class="col-md-6 fv-row">
                             <label asp-for="MarketplaceType" class="required form-label fs-7 fw-semibold"></label>
@@ -166,39 +100,13 @@
                         </div>
                     </div>
 
-                    <div
-                        class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row p-5 mb-0">
-                        <i class="ki-duotone ki-information-5 fs-2hx text-primary me-4 mb-5 mb-sm-0 flex-shrink-0">
-                            <span class="path1"></span><span class="path2"></span><span class="path3"></span>
-                        </i>
-                        <div class="d-flex flex-column pe-0 pe-sm-10">
-                            <h5 class="mb-1 fs-6">Bilgilendirme</h5>
-                            <span class="fs-7 text-gray-600">
-                                Mağaza adını değiştirmek, geçmiş sipariş verilerini etkilemez. Sadece paneldeki görünür
-                                ismi günceller.
-                            </span>
-                        </div>
-                    </div>
+                    <app-alert type="Primary" icon="ki-information-5" title="Bilgilendirme">
+                        Mağaza adını değiştirmek, geçmiş sipariş verilerini etkilemez. Sadece paneldeki görünür ismi
+                        günceller.
+                    </app-alert>
                 </div>
 
                 <div class="tab-pane fade" id="tab_api_config" role="tabpanel">
-
-                    <div
-                        class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row p-5 mb-10">
-                        <i class="ki-duotone ki-key fs-2hx text-warning me-4 mb-5 mb-sm-0 flex-shrink-0">
-                            <span class="path1"></span><span class="path2"></span>
-                        </i>
-                        <div class="d-flex flex-column pe-0 pe-sm-10">
-                            <h5 class="mb-1 fs-6">Hassas Alanlar</h5>
-                            <span class="fs-7 text-gray-600">
-                                API bilgilerini değiştirirken dikkatli olun. Yanlış bilgi girilmesi entegrasyonu
-                                durduracaktır.
-                                <br />
-                                <strong>Not:</strong> Şifre alanını boş bırakırsanız mevcut şifreniz korunur.
-                            </span>
-                        </div>
-                    </div>
-
                     <div class="row mb-5">
                         <div class="col-md-12 fv-row">
                             <label asp-for="MerchantId" class="required form-label fs-7 fw-semibold"></label>
@@ -219,7 +127,7 @@
                         <div class="col-md-6 fv-row">
                             <label asp-for="ApiSecretKey" class="form-label fs-7 fw-semibold"></label>
                             <input asp-for="ApiSecretKey" type="password" class="form-control form-control-sm"
-                                placeholder="Değiştirmek için yeni şifreyi girin..." autocomplete="new-password"
+                                placeholder="" autocomplete="new-password"
                                 disabled="@(Model.IsDemo ? "disabled" : null)" />
                             <div class="text-muted fs-8 mt-1">
                                 Gizli anahtarınız güvenlik nedeniyle maskelenmiştir.

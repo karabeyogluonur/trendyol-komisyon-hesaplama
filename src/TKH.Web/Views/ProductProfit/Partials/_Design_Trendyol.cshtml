@@ -1,10 +1,18 @@
 @model ProductProfitListViewModel
 
-<div class="row g-6 g-xl-9">
+<div class="row g-6 g-xl-9" id="profit-analysis-container" data-rate-withholding="@Model.WithholdingRate.ToJsFormat()"
+    data-rate-shipping-vat="@Model.ShippingVatRate.ToJsFormat()"
+    data-rate-commission-vat="@Model.MarketplaceDefaults.Metadata.GetJsDecimal("ProductCommissionVatRate")"
+    data-rate-service-vat="@Model.MarketplaceDefaults.ServiceFeeVatRate.ToJsFormat()"
+    data-rate-export="@Model.MarketplaceDefaults.Metadata.GetJsDecimal("ExportServiceFeeRate")"
+    data-rate-export-vat="@Model.MarketplaceDefaults.Metadata.GetJsDecimal("ExportServiceFeeVatRate")"
+    data-fee-standard="@Model.MarketplaceDefaults.ServiceFee.ToJsFormat()"
+    data-fee-sameday="@Model.MarketplaceDefaults.Metadata.GetJsDecimal("SameDayServiceFee")">
+
     @foreach (var item in Model.Products.Items)
     {
         <div class="col-md-6 col-xxl-4">
-            <div class="card card-flush h-xl-100 profit-card" data-id="@item.Id" data-vat-rate="@item.VatRate"
+            <div class="card card-flush h-xl-100 profit-card" data-id="@item.Id" data-vat-rate="@item.VatRate.ToJsFormat()"
                 data-service-fee="@item.ServiceFee.ToJsFormat()">
 
                 <div class="card-header pt-7">
@@ -12,150 +20,98 @@
                         <div class="symbol symbol-45px me-4">
                             @if (!string.IsNullOrEmpty(item.ImageUrl))
                             {
-                                <span class="symbol-label" style="background-image:url('@item.ImageUrl');"></span>
+                                <div class="symbol-label" style="background-image:url('@item.ImageUrl');"></div>
                             }
                             else
                             {
-                                <span class="symbol-label bg-light-primary text-primary fw-bold fs-4">
-                                    @item.Name.Substring(0, 1)
-                                </span>
+                                <div class="symbol-label bg-light-primary text-primary fw-bold fs-4">@item.Name.Substring(0, 1)
+                                </div>
                             }
                         </div>
                         <div class="d-flex flex-column">
                             <a href="@item.ExternalUrl" target="_blank"
-                                class="text-gray-800 text-hover-primary fs-7 fw-bold" title="@item.Name">
-                                @item.Name.Truncate(30)
-                            </a>
+                                class="text-gray-800 text-hover-primary fs-7 fw-bold">@item.Name.Truncate(30)</a>
                             <div class="text-muted fs-8 fw-bold">@item.Barcode</div>
                         </div>
                     </div>
-                    <div class="card-toolbar">
-                        <span
-                            class="badge badge-light-@(item.StockQuantity > 0 ? "success" : "danger") fw-bold px-3 py-2 fs-9">
-                            Stok: @item.StockQuantity
-                        </span>
-                    </div>
                 </div>
 
-                <div class="card-body pt-5">
-                    <div class="row g-5 mb-5">
+                <div class="card-body pt-5 position-relative">
+                    <div class="row g-5 mb-5 calculation-inputs">
                         <div class="col-6">
                             <label class="fs-9 fw-bold form-label text-gray-600">Satış Fiyatı</label>
-                            <div class="input-group input-group-sm input-group-solid">
-                                <input type="number" class="form-control form-control-sm calc-input" data-field="salesPrice"
-                                    value="@item.SalesPrice.ToJsFormat()" step="0.01" />
-                                <span class="input-group-text">₺</span>
-                            </div>
+                            <input type="number" class="form-control form-control-sm form-control-solid calc-input"
+                                data-field="salesPrice" value="@item.SalesPrice.ToJsFormat()" step="0.01" />
                         </div>
                         <div class="col-6">
                             <label class="fs-9 fw-bold form-label text-gray-600">Alış Fiyatı</label>
-                            <div class="input-group input-group-sm input-group-solid">
-                                <input type="number" class="form-control form-control-sm calc-input"
-                                    data-field="purchasePrice" value="@item.PurchasePrice.ToJsFormat()" step="0.01"
-                                    placeholder="0.00" />
-                                <span class="input-group-text">₺</span>
-                            </div>
+                            <input type="number" class="form-control form-control-sm form-control-solid calc-input"
+                                data-field="purchasePrice" value="@item.PurchasePrice.ToJsFormat()" step="0.01" />
                         </div>
                         <div class="col-6">
-                            <label class="fs-9 fw-bold form-label text-gray-600 d-flex align-items-center gap-1">
-                                Komisyon (%)
-
-                                @if (item.ManualCommissionRate != 0 && item.AutomatedCommissionRate != 0)
-                                {
-                                    <i class="ki-duotone ki-abstract-26 fs-8 text-primary" data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        title="Bu komisyon otomasyon hesaplamasıyla %@(item.AutomatedCommissionRate.ToJsFormat()) olarak hesaplanmıştır.">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                    </i>
-                                }
-                            </label>
-
-                            <div class="input-group input-group-sm input-group-solid">
-                                <input type="number" class="form-control form-control-sm calc-input"
-                                    data-field="commissionRate"
-                                    value="@(item.ManualCommissionRate != 0 ? item.ManualCommissionRate.ToJsFormat() : item.AutomatedCommissionRate.ToJsFormat())"
-                                    step="0.1" />
-                                <span class="input-group-text">%</span>
-                            </div>
+                            <label class="fs-9 fw-bold form-label text-gray-600">Komisyon (%)</label>
+                            <input type="number" class="form-control form-control-sm form-control-solid calc-input"
+                                data-field="commissionRate"
+                                value="@(item.ManualCommissionRate != 0 ? item.ManualCommissionRate.ToJsFormat() : item.AutomatedCommissionRate.ToJsFormat())"
+                                step="0.1" />
                         </div>
-
                         <div class="col-6">
-                            <label class="fs-9 fw-bold form-label text-gray-600 d-flex align-items-center gap-1">
-                                Kargo
-                                @if (item.ManualShippingCost != 0 && item.AutomatedShippingCost != 0)
-                                {
-                                    <i class="ki-duotone ki-abstract-26 fs-8 text-primary" data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        title="Bu kargo ücreti otomasyon hesaplamasıyla ₺@(item.AutomatedShippingCost.ToJsFormat()) olarak hesaplanmıştır.">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                    </i>
-                                }
-                            </label>
-
-                            <div class="input-group input-group-sm input-group-solid">
-                                <input type="number" class="form-control form-control-sm calc-input"
-                                    data-field="shippingCost"
-                                    value="@(item.ManualShippingCost != 0 ? item.ManualShippingCost.ToJsFormat() : item.AutomatedShippingCost.ToJsFormat())"
-                                    step="0.01" />
-                                <span class="input-group-text">₺</span>
-                            </div>
+                            <label class="fs-9 fw-bold form-label text-gray-600">Kargo</label>
+                            <input type="number" class="form-control form-control-sm form-control-solid calc-input"
+                                data-field="shippingCost"
+                                value="@(item.ManualShippingCost != 0 ? item.ManualShippingCost.ToJsFormat() : item.AutomatedShippingCost.ToJsFormat())"
+                                step="0.01" />
                         </div>
-
-
                     </div>
 
                     <div class="separator separator-dashed my-4"></div>
 
-                    <div class="calculation-container" style="min-height: 190px;">
+                    <div class="calculation-container position-relative min-h-150px">
 
                         <div class="results-area d-flex flex-column gap-3">
                             <div class="d-flex align-items-center bg-light-info rounded p-3">
-                                <i class="ki-outline ki-shop fs-2x text-info me-3"></i>
+                                <span class="ki-outline ki-shop fs-2 text-info me-3"></span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-gray-800 fs-7">Normal Satış</div>
-                                    <div class="text-muted fs-8">Standart Hizmet</div>
+                                    <div class="fw-bold fs-7 text-gray-800">Normal Satış</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-bolder text-gray-800 fs-6 result-profit-normal">0.00 ₺</div>
-                                    <span class="badge badge-light-info fw-bold fs-9 result-roi-normal">% 0</span>
+                                    <div class="fw-bolder fs-6" data-calc-result="profit-NORMAL">0.00 ₺</div>
+                                    <span class="badge badge-light-info fw-bold fs-9" data-calc-result="roi-NORMAL">%
+                                        0</span>
                                 </div>
                             </div>
 
                             <div class="d-flex align-items-center bg-light-warning rounded p-3">
-                                <i class="ki-outline ki-timer fs-2x text-warning me-3"></i>
+                                <span class="ki-outline ki-delivery-3 fs-2 text-warning me-3"></span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-gray-800 fs-7">Aynı Gün</div>
-                                    <div class="text-muted fs-8">Hızlı Teslimat</div>
+                                    <div class="fw-bold fs-7 text-gray-800">Aynı Gün</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-bolder text-gray-800 fs-6 result-profit-sameday">0.00 ₺</div>
-                                    <span class="badge badge-light-warning fw-bold fs-9 result-roi-sameday">% 0</span>
+                                    <div class="fw-bolder fs-6" data-calc-result="profit-SAMEDAY">0.00 ₺</div>
+                                    <span class="badge badge-light-warning fw-bold fs-9" data-calc-result="roi-SAMEDAY">%
+                                        0</span>
                                 </div>
                             </div>
 
                             <div class="d-flex align-items-center bg-light-success rounded p-3">
-                                <i class="ki-outline ki-airplane fs-2x text-success me-3"></i>
+                                <span class="ki-outline ki-geolocation fs-2 text-success me-3"></span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-gray-800 fs-7">E-İhracat</div>
-                                    <div class="text-muted fs-8">KDV İstisnası</div>
+                                    <div class="fw-bold fs-7 text-gray-800">E-İhracat</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-bolder text-gray-800 fs-6 result-profit-export">0.00 ₺</div>
-                                    <span class="badge badge-light-success fw-bold fs-9 result-roi-export">% 0</span>
+                                    <div class="fw-bolder fs-6" data-calc-result="profit-EXPORT">0.00 ₺</div>
+                                    <span class="badge badge-light-success fw-bold fs-9" data-calc-result="roi-EXPORT">%
+                                        0</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="empty-area d-none">
-                            <div class="d-flex flex-column align-items-center justify-content-center bg-light-secondary rounded p-10 border border-dashed border-gray-300"
-                                style="height: 185px;">
+                        <div class="empty-area d-none position-absolute top-0 start-0 w-100 h-100 bg-body bg-opacity-75 d-flex align-items-center justify-content-center rounded z-index-1"
+                            style="backdrop-filter: blur(1px);">
+                            <div class="text-center p-5">
                                 <i class="ki-outline ki-information-5 fs-2x text-gray-400 mb-2"></i>
-                                <span class="text-gray-500 fs-8 fw-bold text-center">
-                                    Eksik veri girişi
-                                    (Satış/Alış/Komisyon)<br>sebebiyle hesaplama yapılamıyor.
-                                </span>
+                                <div class="text-gray-500 fs-8 fw-bold">Eksik veri girişi sebebiyle<br>hesaplama
+                                    yapılamıyor.</div>
                             </div>
                         </div>
                     </div>
@@ -164,137 +120,3 @@
         </div>
     }
 </div>
-
-
-<script>
-    const CONFIG = {
-        RATES: {
-            WITHHOLDING: @Model.WithholdingRate.ToPercentageRate(),
-            VAT_SHIPPING: @Model.ShippingVatRate.ToPercentageRate(),
-            VAT_SERVICE: @Model.MarketplaceDefaults.ServiceFeeVatRate.ToPercentageRate(),
-            EXPORT_FEE_RATE: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeRate"),
-            VAT_COMMISSION: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ProductCommissionVatRate"),
-            VAT_EXPORT: @Model.MarketplaceDefaults.Metadata.GetJsPercentage("ExportServiceFeeVatRate")
-            },
-        FEES: {
-            SAME_DAY_SERVICE: @Model.MarketplaceDefaults.Metadata.GetJsDecimal("SameDayServiceFee")
-            }
-    };
-
-    console.log("Profit Calculator Config (Cleaned):", CONFIG);
-
-    const Calculator = {
-        utils: {
-            toDecimal: (val) => {
-                if (typeof val === 'string') val = val.replace(',', '.');
-                return parseFloat(val) || 0;
-            },
-            formatMoney: (val) => val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺',
-            calculateBase: (amount, vatRate) => amount / (1 + vatRate),
-            calculateVat: (amount, vatRate) => amount - (amount / (1 + vatRate))
-        },
-
-        calculateCard: (cardEl) => {
-            const inputs = {
-                sp: Calculator.utils.toDecimal(cardEl.querySelector('[data-field="salesPrice"]').value),
-                pp: Calculator.utils.toDecimal(cardEl.querySelector('[data-field="purchasePrice"]').value),
-                cr: Calculator.utils.toDecimal(cardEl.querySelector('[data-field="commissionRate"]').value),
-                sc: Calculator.utils.toDecimal(cardEl.querySelector('[data-field="shippingCost"]').value),
-                productVatRate: Calculator.utils.toDecimal(cardEl.dataset.vatRate) / 100,
-                serviceFee: Calculator.utils.toDecimal(cardEl.dataset.serviceFee)
-            };
-
-            const resultsArea = cardEl.querySelector('.results-area');
-            const emptyArea = cardEl.querySelector('.empty-area');
-
-            if (inputs.sp <= 0 || inputs.pp <= 0 || inputs.cr <= 0) {
-                resultsArea.classList.add('d-none');
-                emptyArea.classList.remove('d-none');
-                return;
-            } else {
-                resultsArea.classList.remove('d-none');
-                emptyArea.classList.add('d-none');
-            }
-
-            const resNormal = Calculator.computeScenario(inputs, 'NORMAL');
-            const resSameDay = Calculator.computeScenario(inputs, 'SAMEDAY');
-            const resExport = Calculator.computeScenario(inputs, 'EXPORT');
-
-            Calculator.updateUI(cardEl, '.result-profit-normal', '.result-roi-normal', resNormal);
-            Calculator.updateUI(cardEl, '.result-profit-sameday', '.result-roi-sameday', resSameDay);
-            Calculator.updateUI(cardEl, '.result-profit-export', '.result-roi-export', resExport);
-        },
-
-        updateUI: (cardEl, profitClass, roiClass, data) => {
-            const profitEl = cardEl.querySelector(profitClass);
-            const roiEl = cardEl.querySelector(roiClass);
-
-            profitEl.innerText = Calculator.utils.formatMoney(data.netProfit);
-            roiEl.innerText = '% ' + data.roi.toFixed(2);
-
-            if (data.netProfit > 0) {
-                profitEl.className = `fw-bolder fs-6 ${profitClass.replace('.', '')} text-gray-800`;
-                roiEl.className = `badge badge-light-success fw-bold fs-9 ${roiClass.replace('.', '')}`;
-            } else {
-                profitEl.className = `fw-bolder fs-6 ${profitClass.replace('.', '')} text-danger`;
-                roiEl.className = `badge badge-light-danger fw-bold fs-9 ${roiClass.replace('.', '')}`;
-            }
-        },
-
-        computeScenario: (i, type) => {
-            const isExport = (type === 'EXPORT');
-            const isSameDay = (type === 'SAMEDAY');
-
-            let salesExclVat, salesVat;
-            if (isExport) {
-                salesExclVat = i.sp;
-                salesVat = 0;
-            } else {
-                salesExclVat = Calculator.utils.calculateBase(i.sp, i.productVatRate);
-                salesVat = Calculator.utils.calculateVat(i.sp, i.productVatRate);
-            }
-
-            const withholdingBase = Calculator.utils.calculateBase(i.sp, i.productVatRate);
-            const withholding = withholdingBase * CONFIG.RATES.WITHHOLDING;
-
-            const serviceFeeTotal = isSameDay ? CONFIG.FEES.SAME_DAY_SERVICE : i.serviceFee;
-            const serviceFeeVat = Calculator.utils.calculateVat(serviceFeeTotal, CONFIG.RATES.VAT_SERVICE);
-
-            const commTotal = i.sp * (i.cr / 100);
-            const commVat = Calculator.utils.calculateVat(commTotal, CONFIG.RATES.VAT_COMMISSION);
-
-            const shippingVat = Calculator.utils.calculateVat(i.sc, CONFIG.RATES.VAT_SHIPPING);
-
-            let exportTotal = 0, exportVat = 0;
-            if (isExport) {
-                exportTotal = i.sp * CONFIG.RATES.EXPORT_FEE_RATE;
-                exportVat = Calculator.utils.calculateVat(exportTotal, CONFIG.RATES.VAT_EXPORT);
-            }
-
-            const costVat = Calculator.utils.calculateVat(i.pp, i.productVatRate);
-            const deductibleVat = costVat + shippingVat + commVat + serviceFeeVat + exportVat;
-            const netVatBalance = salesVat - deductibleVat;
-            const payableVat = Math.max(0, netVatBalance);
-            const totalOutflow = i.pp + commTotal + i.sc + serviceFeeTotal + exportTotal + withholding + payableVat;
-            const netProfit = i.sp - totalOutflow;
-            const roi = i.pp > 0 ? (netProfit / i.pp) * 100 : 0;
-
-            return { netProfit, roi };
-        },
-
-        init: () => {
-            document.querySelectorAll('.profit-card').forEach(card => Calculator.calculateCard(card));
-
-            const handleInput = (e) => {
-                if (e.target.classList.contains('calc-input')) {
-                    Calculator.calculateCard(e.target.closest('.profit-card'));
-                }
-            };
-
-            document.addEventListener('keyup', handleInput);
-            document.addEventListener('change', handleInput);
-        }
-    };
-
-    document.addEventListener('DOMContentLoaded', () => Calculator.init());
-</script>

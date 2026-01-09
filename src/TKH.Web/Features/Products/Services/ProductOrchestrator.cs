@@ -6,11 +6,13 @@ using TKH.Business.Features.ProductExpenses.Services;
 using TKH.Business.Features.ProductPrices.Models;
 using TKH.Business.Features.ProductPrices.Services;
 using TKH.Business.Features.Products.Dtos;
+using TKH.Business.Features.Products.Enums;
 using TKH.Business.Features.Products.Services;
 using TKH.Core.Utilities.Paging;
 using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;
 using TKH.Web.Features.Products.Models;
+using TKH.Web.Configuration.Extensions;
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Web.Features.Products.Services
@@ -76,14 +78,7 @@ namespace TKH.Web.Features.Products.Services
             IDataResult<List<CategoryLookupDto>> usedCategoriesResult = await _productService.GetUsedCategoriesAsync();
 
             if (usedCategoriesResult.Success)
-            {
-                productCostListFilterViewModel.Categories = usedCategoriesResult.Data.Select(c => new SelectListItem
-                {
-                    Value = c.Id.ToString(),
-                    Text = c.Name,
-                    Selected = productCostListFilterViewModel.CategoryId == c.Id
-                }).ToList();
-            }
+                productCostListFilterViewModel.Categories = usedCategoriesResult.Data.ToSelectList(category => category.Id.ToString(), category => category.Name, productCostListFilterViewModel.CategoryId?.ToString());
 
             ProductCostListViewModel productCostListViewModel = new ProductCostListViewModel
             {

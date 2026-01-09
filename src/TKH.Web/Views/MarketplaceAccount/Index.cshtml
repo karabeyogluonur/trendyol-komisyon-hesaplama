@@ -1,42 +1,9 @@
 @model List<MarketplaceAccountListViewModel>
 
-<div class="card mb-5">
-    <div class="card-body py-4">
-        <div id="kt_app_toolbar" class="app-toolbar">
-            <div class="d-flex flex-stack w-100">
-                <div class="page-title d-flex flex-column justify-content-center gap-2">
-                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0">
-                        Pazaryeri Hesap Yönetimi
-                    </h1>
-
-                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="bullet bg-gray-400 w-5px h-2px"></span>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <span class="text-gray-600">Pazaryeri Hesapları</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="d-flex align-items-center">
-                    <a href="@Url.Action("Add", "MarketplaceAccount")"
-                        class="btn btn-sm btn-primary d-flex align-items-center px-4">
-                        <i class="ki-outline ki-plus fs-2 me-2"></i>
-                        Yeni Hesap Ekle
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Pazaryeri Hesap Yönetimi", "Pazaryeri Hesapları"))
 
 <div class="card mb-5">
     <div class="card-body">
-
         <table class="table table-row-dashed table-hover align-middle gs-0 gy-4">
             <thead>
                 <tr class="text-start text-muted fw-bold fs-7 text-uppercase">
@@ -150,8 +117,9 @@
                                 {
                                     <button class="btn btn-icon btn-light-primary w-30px h-30px me-3 opacity-50" disabled
                                         title="İşlem sırasında düzenlenemez">
-                                        <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span
-                                                class="path2"></span></i>
+                                        <i class="ki-duotone ki-pencil fs-3">
+                                            <span class="path1"></span><span class="path2"></span>
+                                        </i>
                                     </button>
 
                                     <button class="btn btn-icon btn-light-danger w-30px h-30px me-3 opacity-50" disabled
@@ -167,8 +135,9 @@
                                     <a asp-controller="MarketplaceAccount" asp-action="Edit" asp-route-id="@account.Id"
                                         class="btn btn-icon btn-light-primary w-30px h-30px me-3">
                                         <span data-bs-toggle="tooltip" data-bs-trigger="hover" title="Düzenle / İncele">
-                                            <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span
-                                                    class="path2"></span></i>
+                                            <i class="ki-duotone ki-pencil fs-3">
+                                                <span class="path1"></span><span class="path2"></span>
+                                            </i>
                                         </span>
                                     </a>
 
@@ -215,50 +184,15 @@
     </div>
 </div>
 
-<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Hesabı Sil</h5>
-                <button type="button" class="btn btn-sm btn-icon" data-bs-dismiss="modal">
-                    <i class="ki-outline ki-cross fs-2"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <p class="fs-6 text-gray-700">
-                    <strong id="deleteStoreNameDisplay" class="text-dark"></strong> mağazasını silmek istediğinize emin
-                    misiniz?
-                </p>
-                <div class="alert alert-warning d-flex align-items-center p-5 mb-0">
-                    <i class="ki-outline ki-shield-cross fs-2hx text-warning me-4"></i>
-                    <div class="d-flex flex-column">
-                        <span class="fw-bold">Uyarı</span>
-                        <span>Bu işlem geri alınamaz ve ilgili entegrasyonu durdurur.</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
-
-                <form id="deleteAccountForm" asp-controller="MarketplaceAccount" asp-action="Delete" method="post">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" id="deleteAccountId" name="id" />
-                    <button type="submit" class="btn btn-danger">Evet, Sil</button>
-                </form>
-            </div>
-
-        </div>
-    </div>
-</div>
+<app-delete-modal id="deleteAccountModal" title="Hesabı Sil"
+    description="<strong id='deleteStoreNameDisplay' class='text-dark'></strong> mağazasını silmek istediğinize emin misiniz?"
+    controller="MarketplaceAccount" action="Delete" input-id="deleteAccountId">
+</app-delete-modal>
 
 @section Scripts {
     <script>
         const deleteModal = document.getElementById('deleteAccountModal');
         deleteModal.addEventListener('show.bs.modal', event => {
-
             const button = event.relatedTarget;
             const accountId = button.getAttribute('data-id');
             const storeName = button.getAttribute('data-name');

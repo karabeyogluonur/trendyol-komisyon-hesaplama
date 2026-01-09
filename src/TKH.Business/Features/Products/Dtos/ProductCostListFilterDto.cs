@@ -10,6 +10,7 @@ namespace TKH.Business.Features.Products.Dtos
         public bool? IsOnSale { get; set; }
         public bool? HasStock { get; set; }
         public int? CategoryId { get; set; }
-        public ProductCostFilterType CostStatus { get; set; } = ProductCostFilterType.All;
+        public ProductCostFilterType? CostStatus { get; set; }
+
     }
 }

@@ -1,341 +1,267 @@
-<div class="card mb-5">
-    <div class="card-body py-4">
-        <div id="kt_app_toolbar" class="app-toolbar">
-            <div class="d-flex flex-stack w-100">
-                <div class="page-title d-flex flex-column justify-content-center gap-2">
-                    <h1 class="page-heading fw-bold fs-4 text-gray-900 mb-0"> Komisyon Hesaplama </h1>
-                    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 text-gray-600 mb-0">
-                        <li class="breadcrumb-item"> <a href="/" class="text-gray-600 text-hover-primary">Anasayfa</a>
-                        </li>
-                        <li class="breadcrumb-item"> <span class="bullet bg-gray-400 w-5px h-2px"></span> </li>
-                        <li class="breadcrumb-item text-gray-800 fw-semibold"> Araçlar </li>
-                    </ul>
+@await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Komisyon Hesaplama", "Araçlar", "Komisyon Hesaplama"))
+
+<form id="kt_calculator_form" data-rate-withholding="@TaxSettings.WithholdingRate.ToPercentageRate()"
+    data-rate-shipping-vat="@TaxSettings.ShippingVatRate.ToPercentageRate()"
+    data-rate-commission-vat="@TrendyolSettings.ProductCommissionVatRate.ToPercentageRate()"
+    data-rate-export="@TrendyolSettings.ExportServiceFeeRate.ToPercentageRate()"
+    data-rate-export-vat="@TrendyolSettings.ExportServiceFeeVatRate.ToPercentageRate()"
+    data-rate-service-fee-vat="@TrendyolSettings.ServiceFeeVatRate.ToPercentageRate()"
+    data-fee-standard="@TrendyolSettings.ServiceFeeAmount.ToJsFormat()"
+    data-fee-sameday="@TrendyolSettings.SameDayServiceFeeAmount.ToJsFormat()" onsubmit="return false;">
+
+    <div class="card mb-5 shadow-sm">
+        <div class="card-body">
+            <div class="row g-5 g-lg-9 mb-8">
+                <div class="col-md-6">
+                    <label class="required form-label fs-7 fw-bold mb-2">Satış Fiyatı (KDV Dahil)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="text" class="form-control money-input" id="salesPrice" value="500,00" />
+                        <span class="input-group-text">₺</span>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div
-    class="alert alert-dismissible bg-light-info border border-info border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-5">
-    <i class="ki-duotone ki-chart-line-star fs-2hx text-info me-4 mb-5 mb-sm-0 flex-shrink-0"> <span
-            class="path1"></span><span class="path2"></span><span class="path3"></span> </i>
-    <div class="d-flex flex-column pe-0 pe-sm-10 flex-grow-1"> <span class="fw-bold text-gray-900 fs-6 mb-2">Hesaplama
-            Aracı Hakkında</span>
-        <div class="text-gray-700 fs-7"> Gireceğiniz maliyet ve satış verileri üzerinden; <strong>Net Kâr</strong>,
-            <strong>ROI (Yatırım Getirisi)</strong> ve <strong>Vergi Yükümlülükleri</strong> anlık olarak hesaplanır.
-        </div>
-    </div>
-</div>
-<div class="card mb-5 shadow-sm">
-    <div class="card-body">
-        <form id="kt_calculator_form" class="form">
-            <div class="row g-9 mb-8">
-                <div class="col-md-6 fv-row"> <label class="required form-label fs-7 fw-semibold mb-2"
-                        for="salesPrice">Satış Fiyatı (KDV Dahil)</label>
-                    <div class="position-relative d-flex align-items-center"> <input type="text"
-                            class="form-control form-control-sm money-input" id="salesPrice" name="salesPrice"
-                            placeholder="0,00" value="500,00" /> <span
-                            class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">₺</span> </div>
-                </div>
-                <div class="col-md-6 fv-row"> <label class="required form-label fs-7 fw-semibold mb-2"
-                        for="purchasePrice">Alış Fiyatı (KDV Dahil)</label>
-                    <div class="position-relative d-flex align-items-center"> <input type="text"
-                            class="form-control form-control-sm money-input" id="purchasePrice" name="purchasePrice"
-                            placeholder="0,00" value="100,00" /> <span
-                            class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">₺</span> </div>
+                <div class="col-md-6">
+                    <label class="required form-label fs-7 fw-bold mb-2">Alış Fiyatı (KDV Dahil)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="text" class="form-control money-input" id="purchasePrice" value="100,00" />
+                        <span class="input-group-text">₺</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="row g-9 mb-8">
-                <div class="col-md-4 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="commissionRate">Komisyon Oranı</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="number" class="form-control form-control-sm" id="commissionRate"
-                            name="commissionRate" value="20" min="0" max="100" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">%</span>
+            <div class="row g-5 g-lg-9 mb-8">
+                <div class="col-md-4">
+                    <label class="required form-label fs-7 fw-bold mb-2">Komisyon Oranı</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="number" class="form-control" id="commissionRate" value="20" />
+                        <span class="input-group-text">%</span>
                     </div>
                 </div>
-                <div class="col-md-4 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="vatRate">Ürün KDV Oranı</label>
-                    <select class="form-select form-select-sm" id="vatRate" name="vatRate" data-control="select2"
-                        data-placeholder="Seçiniz">
+                <div class="col-md-4">
+                    <label class="required form-label fs-7 fw-bold mb-2">Ürün KDV Oranı</label>
+                    <select class="form-select form-select-sm form-select-solid fs-7" id="vatRate"
+                        data-control="select2" data-hide-search="true">
                         <option value="1">1%</option>
                         <option value="10">10%</option>
                         <option value="20" selected>20%</option>
                     </select>
                 </div>
-                <div class="col-md-4 fv-row">
-                    <label class="required form-label fs-7 fw-semibold mb-2" for="shippingCost">Kargo Ücreti (KDV
-                        Dahil)</label>
-                    <div class="position-relative d-flex align-items-center">
-                        <input type="text" class="form-control form-control-sm money-input" id="shippingCost"
-                            name="shippingCost" value="50,00" />
-                        <span class="position-absolute end-0 me-3 fs-7 fw-bold text-gray-500">₺</span>
+                <div class="col-md-4">
+                    <label class="required form-label fs-7 fw-bold mb-2">Kargo Ücreti (KDV Dahil)</label>
+                    <div class="input-group input-group-sm input-group-solid">
+                        <input type="text" class="form-control money-input" id="shippingCost" value="50,00" />
+                        <span class="input-group-text">₺</span>
                     </div>
                 </div>
             </div>
 
-            <div class="row g-9 mb-8">
+            <div class="row mb-8">
                 <div class="col-12">
-                    <div class="d-flex align-items-center gap-10 p-5 rounded border border-dashed border-gray-300">
-                        <div class="form-check form-check-custom">
-                            <input class="form-check-input" type="checkbox" value="" id="chkExport" name="chkExport" />
-                            <label class="form-check-label fw-semibold text-gray-800 fs-7" for="chkExport">
-                                E-İhracat (KDV İstisnası)
-                            </label>
+                    <div
+                        class="d-flex align-items-center gap-10 p-5 rounded border border-dashed border-gray-300 bg-light-secondary">
+                        <div class="form-check form-check-custom form-check-solid">
+                            <input class="form-check-input h-20px w-20px" type="checkbox" id="chkExport" />
+                            <label class="form-check-label fw-bold text-gray-800 fs-7" for="chkExport">E-İhracat</label>
                         </div>
-
-                        <div class="form-check form-check-custom">
-                            <input class="form-check-input" type="checkbox" value="" id="chkSameDayShipping"
-                                name="chkSameDayShipping" />
-                            <label class="form-check-label fw-semibold text-gray-800 fs-7" for="chkSameDayShipping">
-                                Aynı Gün Teslimat (6,59 ₺)
-                            </label>
+                        <div class="form-check form-check-custom form-check-solid">
+                            <input class="form-check-input h-20px w-20px" type="checkbox" id="chkSameDayShipping" />
+                            <label class="form-check-label fw-bold text-gray-800 fs-7" for="chkSameDayShipping">Aynı Gün
+                                Teslimat</label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="separator separator-dashed my-8"></div>
-
-            <div class="notice d-flex bg-light-primary rounded border-primary border border-dashed mb-9 p-6">
-                <i class="ki-duotone ki-shield-tick fs-2tx text-primary me-4">
-                    <span class="path1"></span><span class="path2"></span>
-                </i>
-                <div class="d-flex flex-stack flex-grow-1">
-                    <div class="fw-semibold">
-                        <div class="fs-7 text-gray-700">
-                            <strong>Stopaj, İhracat Bedeli</strong> ve <strong>Hizmet Bedelleri</strong> (standart veya
-                            aynı gün) seçimlerinize göre arka planda otomatik güncellenir.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-end pt-5">
-                <button type="button" class="btn btn-primary" id="btnCalculate">
-                    <i class="ki-duotone ki-calculator fs-2 me-2">
-                        <span class="path1"></span><span class="path2"></span>
-                    </i>
-                    <span class="indicator-label">Komisyon Hesapla</span>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-sm btn-primary" id="btnCalculate">
+                    <span class="indicator-label"><i class="ki-outline ki-calculator fs-4 me-1"></i> Hesapla</span>
                 </button>
             </div>
-        </form>
+        </div>
     </div>
-</div>
+</form>
+
 <div id="resultSection" class="d-none">
-    <div class="row g-5 g-xl-8 mb-5">
-        <div class="col-xl-4">
-            <div class="card bg-success hoverable card-xl-stretch mb-xl-8">
-                <div class="card-body"> <i class="ki-duotone ki-chart-simple fs-2x text-white ms-n1"><span
-                            class="path1"></span><span class="path2"></span><span class="path3"></span><span
-                            class="path4"></span></i>
-                    <div class="text-white fw-bold fs-2 mb-2 mt-5" id="lblNetProfit">0,00 ₺</div>
-                    <div class="fw-semibold text-white">Net Kâr</div>
+    <div class="row g-5 mb-5">
+        <div class="col-xl-4 col-md-4">
+            <div class="card bg-success card-xl-stretch mb-xl-8 py-5">
+                <div class="card-body">
+                    <div class="text-white fw-bold fs-1 mb-1" id="lblNetProfit" data-calc-result="netProfit">0,00 ₺
+                    </div>
+                    <div class="fw-semibold text-white fs-7">Net Kâr</div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-4">
-            <div class="card bg-dark hoverable card-xl-stretch mb-xl-8">
-                <div class="card-body"> <i class="ki-duotone ki-percentage fs-2x text-white ms-n1"><span
-                            class="path1"></span><span class="path2"></span></i>
-                    <div class="text-white fw-bold fs-2 mb-2 mt-5" id="lblRoiRate">% 0</div>
-                    <div class="fw-semibold text-white">Kâr Oranı (ROI)</div>
+        <div class="col-xl-4 col-md-4">
+            <div class="card bg-dark card-xl-stretch mb-xl-8 py-5">
+                <div class="card-body">
+                    <div class="text-white fw-bold fs-1 mb-1" id="lblRoiRate" data-calc-result="roi">% 0</div>
+                    <div class="fw-semibold text-white fs-7">Kâr Oranı (ROI)</div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-4">
-            <div class="card bg-warning hoverable card-xl-stretch mb-xl-8">
-                <div class="card-body"> <i class="ki-duotone ki-bill fs-2x text-white ms-n1"><span
-                            class="path1"></span><span class="path2"></span><span class="path3"></span><span
-                            class="path4"></span><span class="path5"></span><span class="path6"></span></i>
-                    <div class="text-white fw-bold fs-2 mb-2 mt-5" id="lblPayableVat">0,00 ₺</div>
-                    <div class="fw-semibold text-white" id="lblVatTitle">Ödenecek KDV</div>
+        <div class="col-xl-4 col-md-4">
+            <div class="card bg-warning card-xl-stretch mb-xl-8 py-5">
+                <div class="card-body">
+                    <div class="text-white fw-bold fs-1 mb-1" id="lblPayableVat" data-calc-result="netVatBalance">0,00 ₺
+                    </div>
+                    <div class="fw-semibold text-white fs-7" id="lblVatTitle">Ödenecek KDV</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-5 g-xl-8 mb-5 d-none" id="chartsSection">
+    <div class="row g-5 mb-5 d-none" id="chartsSection">
         <div class="col-xl-6">
-            <div class="card card-xl-stretch mb-xl-8">
-                <div class="card-header border-0 pt-5">
-                    <h3 class="card-title align-items-start flex-column">
-                        <span class="card-label fw-bold fs-3 mb-1">Gelir Dağılımı</span>
-                        <span class="text-muted fw-semibold fs-7">Satış fiyatının oransal dağılımı</span>
-                    </h3>
-                </div>
+            <div class="card card-flush h-md-100">
                 <div class="card-body">
-                    <div id="kt_charts_revenue_distribution" style="height: 350px;"></div>
+                    <div id="kt_charts_revenue_distribution" style="height: 300px;"></div>
                 </div>
             </div>
         </div>
         <div class="col-xl-6">
-            <div class="card card-xl-stretch mb-xl-8">
-                <div class="card-header border-0 pt-5">
-                    <h3 class="card-title align-items-start flex-column">
-                        <span class="card-label fw-bold fs-3 mb-1">Gider Analizi</span>
-                        <span class="text-muted fw-semibold fs-7">Gider kalemlerinin TL bazlı karşılaştırması</span>
-                    </h3>
-                </div>
+            <div class="card card-flush h-md-100">
                 <div class="card-body">
-                    <div id="kt_charts_expense_breakdown" style="height: 350px;"></div>
+                    <div id="kt_charts_expense_breakdown" style="height: 300px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card card-flush">
-        <div class="card-header pt-5">
+    <div class="card card-flush shadow-sm">
+        <div class="card-header pt-5 min-h-auto">
             <h3 class="card-title align-items-start flex-column">
-                <span class="card-label fw-bold text-gray-900">Hesaplama Detayları</span>
-                <span class="text-muted mt-1 fw-semibold fs-7">Gelir ve Gider Dağılımı</span>
+                <span class="card-label fw-bold text-gray-900 fs-6">Hesaplama Detayları</span>
+                <span class="text-muted mt-1 fw-semibold fs-8">Gelir ve Gider Dağılımı</span>
             </h3>
         </div>
-        <div class="card-body pt-0">
+        <div class="card-body pt-3">
             <div class="table-responsive">
                 <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
                     <thead>
-                        <tr class="fw-bold text-muted">
-                            <th class="min-w-150px">Kalem</th>
+                        <tr class="fw-bold text-muted bg-light fs-8 text-uppercase">
+                            <th class="ps-4 min-w-150px rounded-start">Kalem</th>
                             <th class="min-w-100px text-end">Tutar (KDV Dahil)</th>
                             <th class="min-w-100px text-end">İçindeki KDV</th>
-                            <th class="min-w-100px text-end">Net Tutar</th>
+                            <th class="min-w-100px text-end rounded-end pe-4">Net Tutar</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-primary">
-                                            <i class="ki-duotone ki-basket fs-2x text-primary"><span
-                                                    class="path1"></span><span class="path2"></span><span
-                                                    class="path3"></span><span class="path4"></span></i>
+                                            <i class="ki-outline ki-basket fs-2 text-primary"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Satış Geliri</span>
-                                    </div>
+                                    <span class="text-gray-900 fw-bold fs-7">Satış Geliri</span>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowSalesTotal"></td>
-                            <td class="text-end text-danger" id="rowSalesVat"></td>
-                            <td class="text-end fw-bold text-primary" id="rowSalesNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="salesPrice"></td>
+                            <td class="text-end text-danger" data-calc-result="salesVat"></td>
+                            <td class="text-end fw-bold text-primary" data-calc-result="salesExclVat"></td>
                         </tr>
+
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-danger">
-                                            <i class="ki-duotone ki-tag fs-2x text-danger"><span
-                                                    class="path1"></span><span class="path2"></span><span
-                                                    class="path3"></span></i>
+                                            <i class="ki-outline ki-tag fs-2 text-danger"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Ürün Maliyeti</span>
-                                    </div>
+                                    <span class="text-gray-900 fw-bold fs-7">Ürün Maliyeti</span>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowCostTotal"></td>
-                            <td class="text-end text-success" id="rowCostVat"></td>
-                            <td class="text-end text-gray-600" id="rowCostNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="purchasePrice"></td>
+                            <td class="text-end text-success" data-calc-result="costVat"></td>
+                            <td class="text-end text-gray-600" data-calc-result="costBase"></td>
                         </tr>
+
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-info">
-                                            <i class="ki-duotone ki-discount fs-2x text-info"><span
-                                                    class="path1"></span><span class="path2"></span></i>
+                                            <i class="ki-outline ki-discount fs-2 text-info"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Pazaryeri Komisyonu</span>
-                                    </div>
+                                    <span class="text-gray-900 fw-bold fs-7">Pazaryeri Komisyonu</span>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowCommissionTotal"></td>
-                            <td class="text-end text-success" id="rowCommissionVat"></td>
-                            <td class="text-end text-gray-600" id="rowCommissionNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="commissionTotal"></td>
+                            <td class="text-end text-success" data-calc-result="commissionVat"></td>
+                            <td class="text-end text-gray-600" data-calc-result="commissionBase"></td>
                         </tr>
+
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-warning">
-                                            <i class="ki-duotone ki-truck fs-2x text-warning"><span
-                                                    class="path1"></span><span class="path2"></span><span
-                                                    class="path3"></span><span class="path4"></span><span
-                                                    class="path5"></span></i>
+                                            <i class="ki-outline ki-truck fs-2 text-warning"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Kargo Gideri</span>
-                                    </div>
+                                    <span class="text-gray-900 fw-bold fs-7">Kargo Gideri</span>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowShippingTotal"></td>
-                            <td class="text-end text-success" id="rowShippingVat"></td>
-                            <td class="text-end text-gray-600" id="rowShippingNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="shippingCost"></td>
+                            <td class="text-end text-success" data-calc-result="shippingVat"></td>
+                            <td class="text-end text-gray-600" data-calc-result="shippingBase"></td>
                         </tr>
+
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-secondary">
-                                            <i class="ki-duotone ki-bank fs-2x text-gray-600"><span
-                                                    class="path1"></span><span class="path2"></span></i>
+                                            <i class="ki-outline ki-bank fs-2 text-gray-600"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Hizmet Bedeli</span>
-                                        <span class="text-muted fs-8" id="lblServiceFeeDesc">KDV Dahil</span>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-900 fw-bold fs-7">Hizmet Bedeli</span>
+                                        <span id="lblServiceFeeDesc" class="fs-9 text-muted fw-normal"></span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowServiceFeeTotal"></td>
-                            <td class="text-end text-success" id="rowServiceFeeVat"></td>
-                            <td class="text-end text-gray-600" id="rowServiceFeeNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="serviceFeeTotal"></td>
+                            <td class="text-end text-success" data-calc-result="serviceFeeVat"></td>
+                            <td class="text-end text-gray-600" data-calc-result="serviceFeeBase"></td>
                         </tr>
+
                         <tr id="rowExport" class="d-none">
-                            <td>
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-success">
-                                            <i class="ki-duotone ki-airplane fs-2x text-success"><span
-                                                    class="path1"></span><span class="path2"></span></i>
+                                            <i class="ki-outline ki-airplane fs-2 text-success"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">İhracat Bedeli</span>
-                                        <span class="text-muted fs-8">Uluslararası Gönderim Ek Bedeli</span>
-                                    </div>
+                                    <span class="text-gray-900 fw-bold fs-7 text-success">İhracat Bedeli</span>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowExportTotal"></td>
-                            <td class="text-end text-success" id="rowExportVat"></td>
-                            <td class="text-end text-gray-600" id="rowExportNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="exportTotal"></td>
+                            <td class="text-end text-success" data-calc-result="exportVat"></td>
+                            <td class="text-end text-gray-600" data-calc-result="exportBase"></td>
                         </tr>
+
                         <tr>
-                            <td>
+                            <td class="ps-4 pe-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-5">
+                                    <div class="symbol symbol-35px me-4">
                                         <span class="symbol-label bg-light-danger">
-                                            <i class="ki-duotone ki-graph-up fs-2x text-danger"><span
-                                                    class="path1"></span><span class="path2"></span></i>
+                                            <i class="ki-outline ki-graph-up fs-2 text-danger"></i>
                                         </span>
                                     </div>
-                                    <div class="d-flex justify-content-start flex-column">
-                                        <span class="text-gray-900 fw-bold fs-6">Stopaj</span>
-                                        <span class="text-muted fs-8">Tahmini (Matrah Üzerinden)</span>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-900 fw-bold fs-7">Stopaj (Tahmini)</span>
+                                        <span class="fs-9 text-muted fw-normal">Gelir Vergisi Tevkifatı</span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-end fw-bold text-gray-800" id="rowWithholdingTotal"></td>
-                            <td class="text-end text-muted">-</td>
-                            <td class="text-end text-gray-600" id="rowWithholdingNet"></td>
+                            <td class="text-end fw-bold text-gray-800" data-calc-result="withholdingTax"></td>
+                            <td class="text-end text-muted pe-4">-</td>
+                            <td class="text-end text-gray-600 pe-4" data-calc-result="withholdingTax"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -345,363 +271,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        const CommissionCalculator = (() => {
-            'use strict';
-
-            const CONFIG = Object.freeze({
-                RATES: {
-                    WITHHOLDING: 0.01,
-                    SHIPPING_VAT: 0.20,
-                    COMMISSION_VAT: 0.20,
-                    EXPORT: 0.05,
-                    EXPORT_VAT: 0.20,
-                    SERVICE_FEE_VAT: 0.20
-                },
-                FEES: {
-                    SERVICE_STANDARD: 10.19,
-                    SERVICE_SAMEDAY: 6.59
-                }
-            });
-
-            const CHART_CONFIG = {
-                COMMON: {
-                    fontFamily: 'Inter, sans-serif',
-                    toolbar: { show: false }
-                },
-                COLORS: ['#50cd89', '#f1416c', '#009ef7', '#ffc700', '#7239ea', '#181C32']
-            };
-
-            const STATE = {
-                charts: {
-                    revenue: null,
-                    expense: null
-                }
-            };
-
-            const ELEMENTS = {
-                inputs: {},
-                outputs: {},
-                charts: {}
-            };
-
-            const Utils = {
-                parseMoney: (val) => {
-                    if (!val) return 0;
-                    if (typeof val === 'number') return val;
-                    const cleaned = val.toString().replace(/\./g, '').replace(',', '.');
-                    return parseFloat(cleaned) || 0;
-                },
-                formatMoney: (amount) => {
-                    return new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: 'TRY',
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }).format(amount);
-                },
-                calculateBase: (amount, vatRate) => amount / (1 + vatRate),
-                calculateVat: (amount, vatRate) => amount - (amount / (1 + vatRate))
-            };
-
-            const Logic = {
-                calculate: (inputs) => {
-                    const { salesPrice, purchasePrice, commissionRate, productVatRate, shippingCost, isExport, isSameDay } = inputs;
-
-                    const productVatPercent = productVatRate / 100;
-                    const commissionPercent = commissionRate / 100;
-
-                    let salesExclVat, salesVat;
-
-                    if (isExport) {
-                        salesExclVat = salesPrice;
-                        salesVat = 0;
-                    } else {
-                        salesExclVat = Utils.calculateBase(salesPrice, productVatPercent);
-                        salesVat = Utils.calculateVat(salesPrice, productVatPercent);
-                    }
-
-                    const withholdingTax = Utils.calculateBase(salesPrice, productVatPercent) * CONFIG.RATES.WITHHOLDING;
-
-                    const serviceFeeTotal = isSameDay ? CONFIG.FEES.SERVICE_SAMEDAY : CONFIG.FEES.SERVICE_STANDARD;
-                    const serviceFeeBase = Utils.calculateBase(serviceFeeTotal, CONFIG.RATES.SERVICE_FEE_VAT);
-                    const serviceFeeVat = Utils.calculateVat(serviceFeeTotal, CONFIG.RATES.SERVICE_FEE_VAT);
-
-                    const shippingBase = Utils.calculateBase(shippingCost, CONFIG.RATES.SHIPPING_VAT);
-                    const shippingVat = Utils.calculateVat(shippingCost, CONFIG.RATES.SHIPPING_VAT);
-
-                    const commissionTotal = salesPrice * commissionPercent;
-                    const commissionBase = Utils.calculateBase(commissionTotal, CONFIG.RATES.COMMISSION_VAT);
-                    const commissionVat = Utils.calculateVat(commissionTotal, CONFIG.RATES.COMMISSION_VAT);
-
-                    let exportTotal = 0, exportBase = 0, exportVat = 0;
-                    if (isExport) {
-                        exportTotal = salesPrice * CONFIG.RATES.EXPORT;
-                        exportBase = Utils.calculateBase(exportTotal, CONFIG.RATES.EXPORT_VAT);
-                        exportVat = Utils.calculateVat(exportTotal, CONFIG.RATES.EXPORT_VAT);
-                    }
-
-                    const costBase = Utils.calculateBase(purchasePrice, productVatPercent);
-                    const costVat = Utils.calculateVat(purchasePrice, productVatPercent);
-
-                    const deductibleVat = costVat + shippingVat + commissionVat + serviceFeeVat + exportVat;
-                    const netVatBalance = salesVat - deductibleVat;
-                    const payableVatExpense = Math.max(0, netVatBalance);
-
-                    const platformExpenses = commissionTotal + shippingCost + serviceFeeTotal + exportTotal;
-                    const taxExpenses = withholdingTax + payableVatExpense;
-                    const totalExpenses = purchasePrice + platformExpenses + taxExpenses;
-
-                    const netProfit = salesPrice - totalExpenses;
-                    const roi = purchasePrice > 0 ? (netProfit / purchasePrice) * 100 : 0;
-
-                    return {
-                        financials: {
-                            salesPrice, salesVat, salesExclVat,
-                            purchasePrice, costVat, costBase,
-                            commissionTotal, commissionVat, commissionBase,
-                            shippingCost, shippingVat, shippingBase,
-                            serviceFeeTotal, serviceFeeVat, serviceFeeBase,
-                            exportTotal, exportVat, exportBase,
-                            withholdingTax,
-                            netVatBalance,
-                            netProfit,
-                            roi
-                        },
-                        charts: {
-                            netProfit: Math.max(0, netProfit),
-                            purchasePrice,
-                            platformExpenses,
-                            taxExpenses
-                        }
-                    };
-                }
-            };
-
-            const Charts = {
-                initRevenue: (data, totalSales) => {
-                    const el = ELEMENTS.charts.revenue;
-                    if (!el) return;
-
-                    const options = {
-                        series: [
-                            data.netProfit,
-                            data.purchasePrice,
-                            data.platformExpenses,
-                            data.taxExpenses
-                        ].map(val => parseFloat(val.toFixed(2))),
-                        labels: ['Net Kâr', 'Ürün Maliyeti', 'Pazaryeri Giderleri', 'Vergiler'],
-                        chart: { type: 'donut', height: 350, ...CHART_CONFIG.COMMON },
-                        plotOptions: {
-                            pie: {
-                                donut: {
-                                    size: '65%',
-                                    labels: {
-                                        show: true,
-                                        total: {
-                                            show: true,
-                                            label: 'Ciro',
-                                            formatter: () => Utils.formatMoney(totalSales)
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        colors: CHART_CONFIG.COLORS.slice(0, 4),
-                        legend: { position: 'bottom' },
-                        dataLabels: { enabled: false },
-                        tooltip: { y: { formatter: (val) => Utils.formatMoney(val) } }
-                    };
-
-                    if (STATE.charts.revenue) STATE.charts.revenue.destroy();
-                    STATE.charts.revenue = new ApexCharts(el, options);
-                    STATE.charts.revenue.render();
-                },
-                initExpense: (data) => {
-                    const el = ELEMENTS.charts.expense;
-                    if (!el) return;
-
-                    const options = {
-                        series: [{
-                            name: 'Tutar',
-                            data: [
-                                data.purchasePrice,
-                                data.financials.commissionTotal,
-                                data.financials.shippingCost,
-                                data.financials.serviceFeeTotal,
-                                data.taxExpenses
-                            ].map(val => parseFloat(val.toFixed(2)))
-                        }],
-                        chart: { type: 'bar', height: 350, ...CHART_CONFIG.COMMON },
-                        plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '40%' } },
-                        xaxis: {
-                            categories: ['Ürün', 'Komisyon', 'Kargo', 'Hizmet', 'Vergi'],
-                            labels: { style: { fontSize: '12px', fontWeight: 600, colors: '#A1A5B7' } }
-                        },
-                        yaxis: { labels: { formatter: (val) => Utils.formatMoney(val) } },
-                        colors: [CHART_CONFIG.COLORS[1], CHART_CONFIG.COLORS[2], CHART_CONFIG.COLORS[3], CHART_CONFIG.COLORS[4], CHART_CONFIG.COLORS[5]],
-                        legend: { show: false },
-                        tooltip: { y: { formatter: (val) => Utils.formatMoney(val) } },
-                        grid: { borderColor: '#eff2f5', strokeDashArray: 4, yaxis: { lines: { show: true } } }
-                    };
-
-                    if (STATE.charts.expense) STATE.charts.expense.destroy();
-                    STATE.charts.expense = new ApexCharts(el, options);
-                    STATE.charts.expense.render();
-                }
-            };
-
-            const UI = {
-                cacheDOM: () => {
-                    ELEMENTS.inputs = {
-                        salesPrice: $('#salesPrice'),
-                        purchasePrice: $('#purchasePrice'),
-                        commissionRate: $('#commissionRate'),
-                        vatRate: $('#vatRate'),
-                        shippingCost: $('#shippingCost'),
-                        isExport: $('#chkExport'),
-                        isSameDay: $('#chkSameDayShipping'),
-                        calcBtn: $('#btnCalculate'),
-                        moneyInputs: $('.money-input')
-                    };
-
-                    ELEMENTS.outputs = {
-                        netProfit: $('#lblNetProfit'),
-                        roi: $('#lblRoiRate'),
-                        payableVat: $('#lblPayableVat'),
-                        vatTitle: $('#lblVatTitle'),
-                        salesTotal: $('#rowSalesTotal'),
-                        salesVat: $('#rowSalesVat'),
-                        salesNet: $('#rowSalesNet'),
-                        costTotal: $('#rowCostTotal'),
-                        costVat: $('#rowCostVat'),
-                        costNet: $('#rowCostNet'),
-                        commTotal: $('#rowCommissionTotal'),
-                        commVat: $('#rowCommissionVat'),
-                        commNet: $('#rowCommissionNet'),
-                        shipTotal: $('#rowShippingTotal'),
-                        shipVat: $('#rowShippingVat'),
-                        shipNet: $('#rowShippingNet'),
-                        serviceTotal: $('#rowServiceFeeTotal'),
-                        serviceVat: $('#rowServiceFeeVat'),
-                        serviceNet: $('#rowServiceFeeNet'),
-                        serviceDesc: $('#lblServiceFeeDesc'),
-                        exportRow: $('#rowExport'),
-                        exportTotal: $('#rowExportTotal'),
-                        exportVat: $('#rowExportVat'),
-                        exportNet: $('#rowExportNet'),
-                        withholdingTotal: $('#rowWithholdingTotal'),
-                        withholdingNet: $('#rowWithholdingNet'),
-                        resultSection: $('#resultSection'),
-                        chartsSection: $('#chartsSection')
-                    };
-
-                    ELEMENTS.charts = {
-                        revenue: document.querySelector('#kt_charts_revenue_distribution'),
-                        expense: document.querySelector('#kt_charts_expense_breakdown')
-                    };
-                },
-
-                getValues: () => ({
-                    salesPrice: Utils.parseMoney(ELEMENTS.inputs.salesPrice.val()),
-                    purchasePrice: Utils.parseMoney(ELEMENTS.inputs.purchasePrice.val()),
-                    commissionRate: parseFloat(ELEMENTS.inputs.commissionRate.val()) || 0,
-                    productVatRate: parseFloat(ELEMENTS.inputs.vatRate.val()) || 0,
-                    shippingCost: Utils.parseMoney(ELEMENTS.inputs.shippingCost.val()),
-                    isExport: ELEMENTS.inputs.isExport.is(':checked'),
-                    isSameDay: ELEMENTS.inputs.isSameDay.is(':checked')
-                }),
-
-                update: (result, flags) => {
-                    const f = result.financials;
-                    const o = ELEMENTS.outputs;
-
-                    o.netProfit.text(Utils.formatMoney(f.netProfit));
-                    o.roi.text(`% ${f.roi.toFixed(2)}`);
-
-                    const vatCardEl = o.payableVat.closest('.card');
-                    if (f.netVatBalance < 0) {
-                        o.payableVat.text(Utils.formatMoney(Math.abs(f.netVatBalance)));
-                        o.vatTitle.text('Alınacak (Devreden) KDV');
-                        vatCardEl.removeClass('bg-warning').addClass('bg-info');
-                    } else {
-                        o.payableVat.text(Utils.formatMoney(f.netVatBalance));
-                        o.vatTitle.text('Devlete Ödenecek KDV');
-                        vatCardEl.removeClass('bg-info').addClass('bg-warning');
-                    }
-
-                    o.salesTotal.text(Utils.formatMoney(f.salesPrice));
-                    o.salesVat.text(Utils.formatMoney(f.salesVat));
-                    o.salesNet.text(Utils.formatMoney(f.salesExclVat));
-
-                    o.costTotal.text(Utils.formatMoney(f.purchasePrice));
-                    o.costVat.text(Utils.formatMoney(f.costVat));
-                    o.costNet.text(Utils.formatMoney(f.costBase));
-
-                    o.commTotal.text(Utils.formatMoney(f.commissionTotal));
-                    o.commVat.text(Utils.formatMoney(f.commissionVat));
-                    o.commNet.text(Utils.formatMoney(f.commissionBase));
-
-                    o.shipTotal.text(Utils.formatMoney(f.shippingCost));
-                    o.shipVat.text(Utils.formatMoney(f.shippingVat));
-                    o.shipNet.text(Utils.formatMoney(f.shippingBase));
-
-                    o.serviceTotal.text(Utils.formatMoney(f.serviceFeeTotal));
-                    o.serviceVat.text(Utils.formatMoney(f.serviceFeeVat));
-                    o.serviceNet.text(Utils.formatMoney(f.serviceFeeBase));
-                    o.serviceDesc.text(flags.isSameDay ? 'Aynı Gün Teslimat' : 'Standart Kesinti');
-
-                    if (flags.isExport) {
-                        o.exportRow.removeClass('d-none');
-                        o.exportTotal.text(Utils.formatMoney(f.exportTotal));
-                        o.exportVat.text(Utils.formatMoney(f.exportVat));
-                        o.exportNet.text(Utils.formatMoney(f.exportBase));
-                    } else {
-                        o.exportRow.addClass('d-none');
-                    }
-
-                    o.withholdingTotal.text(Utils.formatMoney(f.withholdingTax));
-                    o.withholdingNet.text(Utils.formatMoney(f.withholdingTax));
-
-                    o.resultSection.removeClass('d-none');
-                    o.chartsSection.removeClass('d-none');
-
-                    $('html, body').animate({ scrollTop: o.resultSection.offset().top - 100 }, 500);
-
-                    Charts.initRevenue(result.charts, f.salesPrice);
-                    Charts.initExpense({ ...result.charts, financials: f });
-                }
-            };
-
-            const bindEvents = () => {
-                ELEMENTS.inputs.moneyInputs.on('blur', function () {
-                    const val = Utils.parseMoney($(this).val());
-                    $(this).val(val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                });
-
-                ELEMENTS.inputs.isExport.on('change', function () {
-                    const checked = $(this).is(':checked');
-                    ELEMENTS.inputs.isSameDay.prop('checked', false).prop('disabled', checked);
-                });
-
-                ELEMENTS.inputs.calcBtn.on('click', (e) => {
-                    e.preventDefault();
-                    const inputs = UI.getValues();
-                    const results = Logic.calculate(inputs);
-                    UI.update(results, { isExport: inputs.isExport, isSameDay: inputs.isSameDay });
-                });
-            };
-
-            return {
-                init: () => {
-                    UI.cacheDOM();
-                    bindEvents();
-                }
-            };
-        })();
-
-        $(document).ready(() => {
-            CommissionCalculator.init();
-        });
-    </script>
+    <script src="~/assets/js/pages/tools/product-profit-calculator.js"></script>
 }

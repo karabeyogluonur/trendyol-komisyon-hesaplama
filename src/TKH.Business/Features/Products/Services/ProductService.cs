@@ -97,36 +97,44 @@ namespace TKH.Business.Features.Products.Services
                 query = query.Where(product => product.CategoryId == productCostListFilterDto.CategoryId);
 
             if (productCostListFilterDto.HasStock.HasValue)
-                query = query.Where(product => product.StockQuantity > 0);
+            {
+                if (productCostListFilterDto.HasStock.Value)
+                    query = query.Where(product => product.StockQuantity > 0);
+                else
+                    query = query.Where(product => product.StockQuantity < 1);
+            }
 
             if (productCostListFilterDto.IsOnSale.HasValue)
                 query = query.Where(product => product.IsOnSale == productCostListFilterDto.IsOnSale);
 
-            switch (productCostListFilterDto.CostStatus)
+            if (productCostListFilterDto.CostStatus.HasValue)
             {
-                case ProductCostFilterType.MissingPurchasePrice:
-                    query = query.Where(product => !product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0));
-                    break;
+                switch (productCostListFilterDto.CostStatus)
+                {
+                    case ProductCostFilterType.MissingPurchasePrice:
+                        query = query.Where(product => !product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0));
+                        break;
 
-                case ProductCostFilterType.MissingShippingCost:
-                    query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0));
-                    break;
+                    case ProductCostFilterType.MissingShippingCost:
+                        query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0));
+                        break;
 
-                case ProductCostFilterType.MissingCommission:
-                    query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0));
-                    break;
+                    case ProductCostFilterType.MissingCommission:
+                        query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0));
+                        break;
 
-                case ProductCostFilterType.Completed:
-                    query = query.Where(product =>
-                        product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0) &&
-                        product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0) &&
-                        product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0)
-                    );
-                    break;
+                    case ProductCostFilterType.Completed:
+                        query = query.Where(product =>
+                            product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0) &&
+                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0) &&
+                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0)
+                        );
+                        break;
 
-                case ProductCostFilterType.All:
-                default:
-                    break;
+                    default:
+                        break;
+                }
+
             }
 
             IQueryable<ProductCostSummaryDto> productCostSummaryDtos = query.ProjectTo<ProductCostSummaryDto>(_mapper.ConfigurationProvider);
@@ -134,8 +142,6 @@ namespace TKH.Business.Features.Products.Services
             IPagedList<ProductCostSummaryDto> pagedProductProfitSummaryDto = await productCostSummaryDtos.OrderBy(product => product.ModelCode).ToPagedListAsync(productCostListFilterDto.PageIndex, productCostListFilterDto.PageSize);
 
             return new SuccessDataResult<IPagedList<ProductCostSummaryDto>>(pagedProductProfitSummaryDto);
-
-
         }
 
         public async Task<IDataResult<ProductSummaryDto>> GetByIdAsync(int productId)

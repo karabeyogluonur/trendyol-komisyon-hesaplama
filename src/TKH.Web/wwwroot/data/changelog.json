@@ -1,4 +1,30 @@
-[
+[{
+  "title": "Mobil Görünüm Optimizasyonu",
+  "description": "Kârlılık analiz kartları ve maliyet yönetim tabloları tüm mobil cihazlar için optimize edildi.",
+  "date": "2026-01-09T11:45:00",
+  "category": "UX & Mobile",
+  "badge": "UI FIX",
+  "type": "info",
+  "icon": "ki-phone"
+},
+    {
+    "title": "Kârlılık ve E-İhracat Motoru",
+    "description": "Kârlılık analiz motoru, E-İhracat senaryolarındaki KDV iadesi (mahsup) ve stopaj matrahı hataları giderilerek güncellendi. Artık daha uyumlu sonuçlar üretilmektedir.",
+    "date": "2026-01-09T14:30:00",
+    "category": "Financial Engine",
+    "badge": "MAJOR FIX",
+    "type": "success",
+    "icon": "ki-calculator"
+  },
+  {
+    "title": "Maliyet Yönetimi & UX",
+    "description": "Maliyet yönetim sayfası yeniden yazıldı. Manuel veri girişlerinde 0.00 temizleme özelliği ve toplu kaydetme modülü entegre edilerek veri giriş hızı optimize edildi.",
+    "date": "2026-01-08T17:20:00",
+    "category": "UX & Management",
+    "badge": "REFACTOR",
+    "type": "primary",
+    "icon": "ki-update-file"
+  },
   {
     "title": "Geliştirici Konsolu",
     "description": "Sağ panelde çalışan Geliştirici Konsolu (Dev Drawer) entegre edildi. Sürüm takibi ve sistem bildirimleri artık bu alandan yönetiliyor.",
