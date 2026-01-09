@@ -13,147 +13,127 @@
         </div>
     </div>
     <div class="card-body">
-        <table class="table table-row-dashed table-hover align-middle gs-0 gy-4">
-            <thead>
-                <tr class="text-start text-muted fw-bold fs-7 text-uppercase">
-                    <th class="min-w-200px">Pazaryeri</th>
-                    <th class="min-w-200px">Mağaza Adı</th>
-                    <th class="min-w-125px">Satıcı ID</th>
-                    <th class="min-w-150px">Durum</th>
-                    <th class="text-end min-w-100px">İşlemler</th>
-                </tr>
-            </thead>
+        <div class="table-responsive">
+            <table class="table table-row-dashed table-hover align-middle gs-0 gy-4">
+                <thead>
+                    <tr class="text-start text-muted fw-bold fs-7 text-uppercase">
+                        <th class="min-w-200px">Pazaryeri</th>
+                        <th class="min-w-200px">Mağaza Adı</th>
+                        <th class="min-w-125px">Satıcı ID</th>
+                        <th class="min-w-150px">Durum</th>
+                        <th class="text-end min-w-100px">İşlemler</th>
+                    </tr>
+                </thead>
 
-            <tbody class="fw-semibold text-gray-700">
-                @if (Model != null && Model.Any())
-                {
-                    @foreach (MarketplaceAccountListViewModel account in Model)
+                <tbody class="fw-semibold text-gray-700">
+                    @if (Model != null && Model.Any())
                     {
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3">
-                                        <div class="symbol symbol-35px">
-                                            <marketplace-logo type="@account.MarketplaceType" class="symbol-label p-1" />
+                        @foreach (MarketplaceAccountListViewModel account in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="symbol symbol-35px">
+                                                <marketplace-logo type="@account.MarketplaceType" class="symbol-label p-1" />
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-column justify-content-center">
+                                            <span class="fw-bold fs-7 mb-1">@account.MarketplaceType</span>
                                         </div>
                                     </div>
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <span class="fw-bold fs-7 mb-1">@account.MarketplaceType</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="d-block fs-7">@account.StoreName</span>
+
+                                        @if (account.IsDemo)
+                                        {
+                                            <span
+                                                class="badge badge-light-warning fw-bold fs-9 ms-2 border border-warning border-dashed"
+                                                data-bs-toggle="tooltip" title="Bu bir demo hesaptır, işlem yapılamaz.">
+                                                Demo
+                                            </span>
+                                        }
                                     </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="d-block fs-7">@account.StoreName</span>
+                                <td>
+                                    <span class="text-muted d-block fs-7">@account.MerchantId</span>
+                                </td>
 
-                                    @if (account.IsDemo)
+                                <td>
+                                    @if (!account.IsActive)
                                     {
-                                        <span
-                                            class="badge badge-light-warning fw-bold fs-9 ms-2 border border-warning border-dashed"
-                                            data-bs-toggle="tooltip" title="Bu bir demo hesaptır, işlem yapılamaz.">
-                                            Demo
+                                        <span class="badge badge-light-secondary fw-bold px-3 py-2">Pasif</span>
+                                    }
+                                    else if (account.SyncState == MarketplaceSyncState.Queued)
+                                    {
+                                        <span class="badge badge-light-info fw-bold px-3 py-2" data-bs-toggle="tooltip"
+                                            title="İşlem sıraya alındı, birazdan başlayacak.">
+                                            <i class="ki-outline ki-time fs-5 text-info me-1"></i> Sırada Bekliyor
                                         </span>
                                     }
-                                </div>
-                            </td>
-
-                            <td>
-                                <span class="text-muted d-block fs-7">@account.MerchantId</span>
-                            </td>
-
-                            <td>
-                                @if (!account.IsActive)
-                                {
-                                    <span class="badge badge-light-secondary fw-bold px-3 py-2">Pasif</span>
-                                }
-                                else if (account.SyncState == MarketplaceSyncState.Queued)
-                                {
-                                    <span class="badge badge-light-info fw-bold px-3 py-2" data-bs-toggle="tooltip"
-                                        title="İşlem sıraya alındı, birazdan başlayacak.">
-                                        <i class="ki-outline ki-time fs-5 text-info me-1"></i> Sırada Bekliyor
-                                    </span>
-                                }
-                                else if (account.SyncState == MarketplaceSyncState.Syncing)
-                                {
-                                    <span class="badge badge-light-primary fw-bold px-3 py-2">
-                                        <span class="spinner-border spinner-border-sm align-middle me-1"></span>
-                                        Veri Eşitleniyor...
-                                    </span>
-                                }
-                                else if (account.SyncState == MarketplaceSyncState.Stopping)
-                                {
-                                    <span class="badge badge-light-warning fw-bold px-3 py-2">Durduruluyor...</span>
-                                }
-                                else
-                                {
-                                    @switch (account.ConnectionState)
+                                    else if (account.SyncState == MarketplaceSyncState.Syncing)
                                     {
-                                        case MarketplaceConnectionState.Connected:
-                                            <span class="badge badge-light-success fw-bold px-3 py-2">
-                                                <i class="ki-outline ki-check-circle fs-8 text-success me-1"></i> Bağlı
-                                            </span>
-                                            break;
-
-                                        case MarketplaceConnectionState.Initializing:
-                                            <span class="badge badge-light-warning fw-bold px-3 py-2">
-                                                <i class="ki-outline ki-arrows-circle fs-8 text-warning me-1"></i> Kurulum Bekliyor
-                                            </span>
-                                            break;
-
-                                        case MarketplaceConnectionState.AuthError:
-                                            <span class="badge badge-light-danger fw-bold px-3 py-2 cursor-pointer" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true"
-                                                title="<b>Hata:</b> @account.LastErrorMessage<br/><small>@account.LastErrorDate</small>">
-                                                <i class="ki-outline ki-cross-circle fs-8 text-danger me-1"></i> Yetki Hatası
-                                            </span>
-                                            break;
-
-                                        case MarketplaceConnectionState.SystemError:
-                                            <span class="badge badge-light-danger fw-bold px-3 py-2"
-                                                title="@account.LastErrorMessage">Sistem Hatası</span>
-                                            break;
-
-                                        default:
-                                            <span class="badge badge-light fw-bold px-3 py-2">Bilinmiyor</span>
-                                            break;
+                                        <span class="badge badge-light-primary fw-bold px-3 py-2">
+                                            <span class="spinner-border spinner-border-sm align-middle me-1"></span>
+                                            Veri Eşitleniyor...
+                                        </span>
                                     }
-                                }
-                            </td>
+                                    else if (account.SyncState == MarketplaceSyncState.Stopping)
+                                    {
+                                        <span class="badge badge-light-warning fw-bold px-3 py-2">Durduruluyor...</span>
+                                    }
+                                    else
+                                    {
+                                        @switch (account.ConnectionState)
+                                        {
+                                            case MarketplaceConnectionState.Connected:
+                                                <span class="badge badge-light-success fw-bold px-3 py-2">
+                                                    <i class="ki-outline ki-check-circle fs-8 text-success me-1"></i> Bağlı
+                                                </span>
+                                                break;
 
-                            <td class="text-end">
-                                @if (account.SyncState != MarketplaceSyncState.Idle)
-                                {
-                                    <button class="btn btn-icon btn-light-primary w-30px h-30px me-3 opacity-50" disabled
-                                        title="İşlem sırasında düzenlenemez">
-                                        <i class="ki-duotone ki-pencil fs-3">
-                                            <span class="path1"></span><span class="path2"></span>
-                                        </i>
-                                    </button>
+                                            case MarketplaceConnectionState.Initializing:
+                                                <span class="badge badge-light-warning fw-bold px-3 py-2">
+                                                    <i class="ki-outline ki-arrows-circle fs-8 text-warning me-1"></i> Kurulum Bekliyor
+                                                </span>
+                                                break;
 
-                                    <button class="btn btn-icon btn-light-danger w-30px h-30px me-3 opacity-50" disabled
-                                        title="İşlem sırasında silinemez">
-                                        <i class="ki-duotone ki-trash fs-2">
-                                            <span class="path1"></span><span class="path2"></span>
-                                            <span class="path3"></span><span class="path4"></span><span class="path5"></span>
-                                        </i>
-                                    </button>
-                                }
-                                else
-                                {
-                                    <a asp-controller="MarketplaceAccount" asp-action="Edit" asp-route-id="@account.Id"
-                                        class="btn btn-icon btn-light-primary w-30px h-30px me-3">
-                                        <span data-bs-toggle="tooltip" data-bs-trigger="hover" title="Düzenle / İncele">
+                                            case MarketplaceConnectionState.AuthError:
+                                                <span class="badge badge-light-danger fw-bold px-3 py-2 cursor-pointer"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                                                    title="<b>Hata:</b> @account.LastErrorMessage<br/><small>@account.LastErrorDate</small>">
+                                                    <i class="ki-outline ki-cross-circle fs-8 text-danger me-1"></i> Yetki Hatası
+                                                </span>
+                                                break;
+
+                                            case MarketplaceConnectionState.SystemError:
+                                                <span class="badge badge-light-danger fw-bold px-3 py-2"
+                                                    title="@account.LastErrorMessage">Sistem Hatası</span>
+                                                break;
+
+                                            default:
+                                                <span class="badge badge-light fw-bold px-3 py-2">Bilinmiyor</span>
+                                                break;
+                                        }
+                                    }
+                                </td>
+
+                                <td class="text-end">
+                                    @if (account.SyncState != MarketplaceSyncState.Idle)
+                                    {
+                                        <button class="btn btn-icon btn-light-primary w-30px h-30px me-3 opacity-50" disabled
+                                            title="İşlem sırasında düzenlenemez">
                                             <i class="ki-duotone ki-pencil fs-3">
                                                 <span class="path1"></span><span class="path2"></span>
                                             </i>
-                                        </span>
-                                    </a>
+                                        </button>
 
-                                    @if (account.IsDemo)
-                                    {
-                                        <button type="button" class="btn btn-icon btn-light-danger w-30px h-30px me-3 opacity-50"
-                                            disabled data-bs-toggle="tooltip" title="Demo hesap silinemez">
+                                        <button class="btn btn-icon btn-light-danger w-30px h-30px me-3 opacity-50" disabled
+                                            title="İşlem sırasında silinemez">
                                             <i class="ki-duotone ki-trash fs-2">
                                                 <span class="path1"></span><span class="path2"></span>
                                                 <span class="path3"></span><span class="path4"></span><span class="path5"></span>
@@ -162,34 +142,56 @@
                                     }
                                     else
                                     {
-                                        <a href="javascript:void(0);" class="btn btn-icon btn-light-danger w-30px h-30px me-3"
-                                            data-bs-toggle="modal" data-bs-target="#deleteAccountModal" data-id="@account.Id"
-                                            data-name="@account.StoreName">
-                                            <i class="ki-duotone ki-trash fs-2">
-                                                <span class="path1"></span><span class="path2"></span>
-                                                <span class="path3"></span><span class="path4"></span><span class="path5"></span>
-                                            </i>
+                                        <a asp-controller="MarketplaceAccount" asp-action="Edit" asp-route-id="@account.Id"
+                                            class="btn btn-icon btn-light-primary w-30px h-30px me-3">
+                                            <span data-bs-toggle="tooltip" data-bs-trigger="hover" title="Düzenle / İncele">
+                                                <i class="ki-duotone ki-pencil fs-3">
+                                                    <span class="path1"></span><span class="path2"></span>
+                                                </i>
+                                            </span>
                                         </a>
+
+                                        @if (account.IsDemo)
+                                        {
+                                            <button type="button" class="btn btn-icon btn-light-danger w-30px h-30px me-3 opacity-50"
+                                                disabled data-bs-toggle="tooltip" title="Demo hesap silinemez">
+                                                <i class="ki-duotone ki-trash fs-2">
+                                                    <span class="path1"></span><span class="path2"></span>
+                                                    <span class="path3"></span><span class="path4"></span><span class="path5"></span>
+                                                </i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <a href="javascript:void(0);" class="btn btn-icon btn-light-danger w-30px h-30px me-3"
+                                                data-bs-toggle="modal" data-bs-target="#deleteAccountModal" data-id="@account.Id"
+                                                data-name="@account.StoreName">
+                                                <i class="ki-duotone ki-trash fs-2">
+                                                    <span class="path1"></span><span class="path2"></span>
+                                                    <span class="path3"></span><span class="path4"></span><span class="path5"></span>
+                                                </i>
+                                            </a>
+                                        }
                                     }
-                                }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-10">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="ki-outline ki-shop fs-2x text-muted mb-3"></i>
+                                    <span class="fs-6 fw-semibold">Henüz hiç hesap eklenmemiş.</span>
+                                    <span class="fs-7">Yeni bir pazar yeri entegrasyonu ekleyerek başlayın.</span>
+                                </div>
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-10">
-                            <div class="d-flex flex-column align-items-center">
-                                <i class="ki-outline ki-shop fs-2x text-muted mb-3"></i>
-                                <span class="fs-6 fw-semibold">Henüz hiç hesap eklenmemiş.</span>
-                                <span class="fs-7">Yeni bir pazar yeri entegrasyonu ekleyerek başlayın.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
