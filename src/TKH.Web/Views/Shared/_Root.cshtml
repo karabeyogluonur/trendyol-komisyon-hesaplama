@@ -2,9 +2,28 @@
 <html lang="tr">
 
 <head>
-    <title>Trendyol Komisyon Hesaplama</title>
+    <title>Trendyol Komisyon Hesaplama | Satıcı Kar Analiz Paneli</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="description"
+        content="Trendyol satıcıları için geliştirilmiş gelişmiş komisyon hesaplama, desi maliyeti ve ürün karlılık analiz aracı." />
+    <meta name="keywords"
+        content="trendyol, komisyon hesaplama, e-ticaret, kar analizi, desi hesaplama, satıcı paneli" />
+    <meta name="author" content="Onur Karabeyoğlu" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tkh.onurkarabeyoglu.online.com/" />
+    <meta property="og:title" content="Trendyol Komisyon Hesaplama & Kar Analiz Paneli" />
+    <meta property="og:description"
+        content="Kuruşu kuruşuna komisyon ve kargo maliyeti hesaplayın, karlılığınızı anlık takip edin." />
+    <meta property="og:image"
+        content="https://tkh.onurkarabeyoglu.com/themes/metronic/assets/media/logos/logo-white.png" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Trendyol Komisyon Hesaplama & Kar Analiz Paneli" />
+    <meta property="twitter:description" content="E-ticaret operasyonunuzu profesyonel araçlarla yönetin." />
+    <meta property="twitter:image"
+        content="https://tkh.onurkarabeyoglu.com/themes/metronic/assets/media/logos/logo-white.png" />
 
     <link rel="shortcut icon" href="~/themes/metronic/assets/media/logos/favicon-light.ico" />
     <link rel="icon" href="~/themes/metronic/assets/media/logos/favicon-light.ico"
@@ -13,7 +32,6 @@
         media="(prefers-color-scheme: dark)" />
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
-
     <link href="~/themes/metronic/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="~/themes/metronic/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <link href="~/assets/css/style.css" rel="stylesheet" type="text/css" />
@@ -22,18 +40,32 @@
 </head>
 
 <!body id="kt_app_body" @Html.Raw(ViewData["BodyAttributes"]) class="@ViewData["BodyClass"]">
-
-    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
+    <script>
+        var defaultThemeMode = "light";
+        var themeMode;
+        if (document.documentElement) {
+            if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+                themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+            } else {
+                if (localStorage.getItem("data-bs-theme") !== null) {
+                    themeMode = localStorage.getItem("data-bs-theme");
+                } else {
+                    themeMode = defaultThemeMode;
+                }
+            }
+            if (themeMode === "system") {
+                themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-bs-theme", themeMode);
+        }
+    </script>
 
     @RenderBody()
 
     @await Html.PartialAsync("_DevelopmentDrawer")
 
     <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
-        <i class="ki-duotone ki-arrow-up">
-            <span class="path1"></span>
-            <span class="path2"></span>
-        </i>
+        <i class="ki-outline ki-arrow-up"></i>
     </div>
 
     <script>var hostUrl = "/themes/metronic/assets/";</script>
