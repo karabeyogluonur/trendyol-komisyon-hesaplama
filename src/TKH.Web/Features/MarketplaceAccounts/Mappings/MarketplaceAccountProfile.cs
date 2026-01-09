@@ -1,4 +1,5 @@
 using AutoMapper;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Core.Common.Constants;
 using TKH.Web.Features.MarketplaceAccounts.Models;
@@ -9,7 +10,7 @@ namespace TKH.Web.Features.MarketplaceAccounts.Mappings
     {
         public MarketplaceAccountProfile()
         {
-            CreateMap<MarketplaceAccountAddViewModel, MarketplaceAccountAddDto>();
+            CreateMap<MarketplaceAccountAddViewModel, MarketplaceAccountCreateDto>();
 
             CreateMap<MarketplaceAccountSummaryDto, MarketplaceAccountListViewModel>()
                 .ForMember(dest => dest.IsDemo, opt => opt.MapFrom(src => src.MerchantId == ApplicationDefaults.DemoAccountMerchantId ? true : false));

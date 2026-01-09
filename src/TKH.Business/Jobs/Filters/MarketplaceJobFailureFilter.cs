@@ -42,7 +42,7 @@ namespace TKH.Business.Jobs.Filters
             using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
                 var service = scope.ServiceProvider.GetRequiredService<IMarketplaceAccountService>();
-                service.MarkSyncFailedAsync(accountId, actualException).GetAwaiter().GetResult();
+                service.MarkMarketplaceAccountSyncFailedAsync(accountId, actualException).GetAwaiter().GetResult();
             }
         }
     }

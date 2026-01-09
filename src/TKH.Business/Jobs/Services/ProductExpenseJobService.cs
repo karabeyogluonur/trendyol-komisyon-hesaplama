@@ -22,7 +22,7 @@ namespace TKH.Business.Jobs.Services
 
         public async Task DispatchScheduledAllAccountsExpenseAnalysisAsync()
         {
-            IDataResult<IList<int>> activeAccountsResult = await _marketplaceAccountService.GetActiveConnectedAccountIdsAsync();
+            IDataResult<IList<int>> activeAccountsResult = await _marketplaceAccountService.GetActiveConnectedMarketplaceAccountIdsAsync();
 
             if (!activeAccountsResult.Success || activeAccountsResult.Data is null)
                 return;

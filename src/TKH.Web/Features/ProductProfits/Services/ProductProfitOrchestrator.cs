@@ -38,7 +38,7 @@ namespace TKH.Web.Features.ProductProfits.Services
 
         public async Task<IDataResult<ProductProfitListViewModel>> PrepareProductProfitListViewModelAsync(ProductProfitListFilterViewModel productProfitListFilterViewModel)
         {
-            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(_workContext.CurrentMarketplaceAccountId.Value);
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetMarketplaceAccountByIdAsync(_workContext.CurrentMarketplaceAccountId.Value);
 
             if (!getMarketplaceAccountResult.Success)
                 return new ErrorDataResult<ProductProfitListViewModel>(getMarketplaceAccountResult.Message);

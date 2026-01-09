@@ -6,7 +6,7 @@ namespace TKH.Core.DataAccess
 {
     public interface IUnitOfWork : IAsyncDisposable, IDisposable
     {
-        IRepository<T> GetRepository<T>() where T : class, IEntity, new();
+        IRepository<T> GetRepository<T>() where T : class, IEntity;
         int SaveChanges();
         Task<int> SaveChangesAsync();
         int ExecuteSqlCommand(string sql, params object[] parameters);

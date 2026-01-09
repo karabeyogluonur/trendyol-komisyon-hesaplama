@@ -11,12 +11,32 @@
     "editor.detectIndentation": false,
     "editor.wordWrap": "on",
     "editor.formatOnSave": true,
+    "editor.minimap.enabled": false,
+
     "editor.codeActionsOnSave": {
         "source.fixAll": "explicit",
         "source.organizeImports": "explicit"
     },
+
     "editor.defaultFormatter": "ms-dotnettools.csharp",
-    "editor.minimap.enabled": false,
+
+    "[csharp]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+
+    "[razor]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp",
+        "editor.formatOnSave": true
+    },
+
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+
+    "html.format.indentInnerHtml": true,
+    "html.format.wrapLineLength": 120,
+    "html.format.preserveNewLines": true,
 
     "explorer.compactFolders": false,
 
@@ -41,7 +61,6 @@
 
     "csharp.format.enable": true,
     "omnisharp.useModernNet": true,
-    "omnisharp.path": "latest",
 
     "files.exclude": {
         "**/bin": true,

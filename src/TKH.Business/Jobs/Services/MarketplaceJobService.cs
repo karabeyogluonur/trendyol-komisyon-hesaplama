@@ -25,7 +25,7 @@ namespace TKH.Business.Jobs.Services
 
         public async Task DispatchScheduledAllAccountsDataSyncAsync()
         {
-            IDataResult<IList<int>> activeAccountsResult = await _marketplaceAccountService.GetActiveConnectedAccountIdsAsync();
+            IDataResult<IList<int>> activeAccountsResult = await _marketplaceAccountService.GetActiveConnectedMarketplaceAccountIdsAsync();
 
             if (!activeAccountsResult.Success || activeAccountsResult.Data is null)
                 return;
@@ -62,7 +62,7 @@ namespace TKH.Business.Jobs.Services
 
         private async Task ExecuteAccountSyncChainAsync(int marketplaceAccountId, EnqueuedState? enqueuedState)
         {
-            bool isLockAcquired = await _marketplaceAccountService.TryMarkAsSyncingAsync(marketplaceAccountId);
+            bool isLockAcquired = await _marketplaceAccountService.TryMarkMarketplaceAccountAsSyncingAsync(marketplaceAccountId);
 
             if (!isLockAcquired)
                 return;
@@ -100,7 +100,7 @@ namespace TKH.Business.Jobs.Services
             }
             catch (Exception ex)
             {
-                await _marketplaceAccountService.MarkSyncFailedAsync(marketplaceAccountId, ex);
+                await _marketplaceAccountService.MarkMarketplaceAccountSyncFailedAsync(marketplaceAccountId, ex);
             }
         }
     }

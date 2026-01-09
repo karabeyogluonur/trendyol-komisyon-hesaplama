@@ -21,7 +21,7 @@ namespace TKH.DataAccess.Concrete
 
         public TKHDbContext DbContext => _context;
 
-        public IRepository<T> GetRepository<T>() where T : class, IEntity, new()
+        public IRepository<T> GetRepository<T>()where T : class, IEntity
         {
             if (_repositories == null)
                 _repositories = new Dictionary<Type, object>();

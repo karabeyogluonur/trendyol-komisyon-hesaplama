@@ -30,7 +30,7 @@ namespace TKH.Web.Controllers
             if (_workContext.CurrentMarketplaceAccountId == accountId)
                 return RedirectToLocal(returnUrl);
 
-            IDataResult<MarketplaceAccountDetailsDto> marketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(accountId);
+            IDataResult<MarketplaceAccountDetailsDto> marketplaceAccountResult = await _marketplaceAccountService.GetMarketplaceAccountByIdAsync(accountId);
 
             if (!marketplaceAccountResult.Success || marketplaceAccountResult.Data is null)
             {

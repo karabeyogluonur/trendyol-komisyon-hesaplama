@@ -3,7 +3,7 @@ using TKH.Entities.Enums;
 
 namespace TKH.Business.Features.MarketplaceAccounts.Dtos
 {
-    public class MarketplaceAccountAddDto : IDto
+    public class MarketplaceAccountCreateDto : IDto
     {
         public MarketplaceType MarketplaceType { get; set; }
         public string StoreName { get; set; } = string.Empty;

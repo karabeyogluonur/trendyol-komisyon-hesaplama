@@ -94,7 +94,7 @@ namespace TKH.Business.Jobs.Workers
         [DisplayName("Synchronization Finalization | Account: {0}")]
         public async Task FinalizeSyncStep(int marketplaceAccountId)
         {
-            await _marketplaceAccountService.MarkSyncCompletedAsync(marketplaceAccountId);
+            await _marketplaceAccountService.MarkMarketplaceAccountSyncCompletedAsync(marketplaceAccountId);
         }
 
         [DisableConcurrentExecution(timeoutInSeconds: 1800)]

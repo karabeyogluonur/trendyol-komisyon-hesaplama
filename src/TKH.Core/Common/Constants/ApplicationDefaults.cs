@@ -3,6 +3,7 @@ namespace TKH.Core.Common.Constants
     public class ApplicationDefaults
     {
         public const string DemoAccountMerchantId = "633709";
+        public const int ZombieSyncThreshold = 2;
         public const string BaseUploadsPath = "uploads";
         public const int DefaultPageSize = 20;
         public const int DefaultMaxPageSize = 100;

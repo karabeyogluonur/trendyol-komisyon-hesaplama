@@ -26,7 +26,7 @@ namespace TKH.Web.Infrastructure.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            IDataResult<List<MarketplaceAccountSummaryDto>> activeMarketplaceAccountResult = await _marketplaceService.GetActiveAccountsAsync();
+            IDataResult<List<MarketplaceAccountSummaryDto>> activeMarketplaceAccountResult = await _marketplaceService.GetActiveMarketplaceAccountsAsync();
 
             List<MarketplaceAccountSummaryDto> marketplaceAccountSummaryDtos = activeMarketplaceAccountResult.Success ? activeMarketplaceAccountResult.Data : new List<MarketplaceAccountSummaryDto>();
 

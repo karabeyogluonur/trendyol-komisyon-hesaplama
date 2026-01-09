@@ -1,5 +1,7 @@
 using AutoMapper;
+
 using Microsoft.Extensions.Logging;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Core.Common.Constants;
 using TKH.Core.Common.Exceptions;
@@ -14,6 +16,7 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
 {
     public class MarketplaceAccountService : IMarketplaceAccountService
     {
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<MarketplaceAccount> _marketplaceAccountRepository;
         private readonly IMapper _mapper;
@@ -31,20 +34,28 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             _unitOfWork = unitOfWork;
             _marketplaceAccountRepository = _unitOfWork.GetRepository<MarketplaceAccount>();
             _mapper = mapper;
-            _cipherService = cipherService;
             _workContext = workContext;
+            _cipherService = cipherService;
             _logger = logger;
         }
 
-        public async Task<IDataResult<int>> AddAsync(MarketplaceAccountAddDto marketplaceAccountAddDto)
+        public async Task<IDataResult<int>> CreateMarketplaceAccountAsync(MarketplaceAccountCreateDto marketplaceAccountCreateDto)
         {
-            MarketplaceAccount marketplaceAccountEntity = _mapper.Map<MarketplaceAccount>(marketplaceAccountAddDto);
+            bool isAlreadyExists = await _marketplaceAccountRepository.ExistsAsync(marketplaceAccount =>
+                    marketplaceAccount.MarketplaceType == marketplaceAccountCreateDto.MarketplaceType &&
+                    marketplaceAccount.MerchantId == marketplaceAccountCreateDto.MerchantId
+            );
 
-            marketplaceAccountEntity.ApiSecretKey = _cipherService.Encrypt(marketplaceAccountAddDto.ApiSecretKey);
-            marketplaceAccountEntity.ConnectionState = MarketplaceConnectionState.Initializing;
-            marketplaceAccountEntity.SyncState = MarketplaceSyncState.Queued;
-            marketplaceAccountEntity.IsActive = true;
-            marketplaceAccountEntity.LastErrorMessage = null;
+            if (isAlreadyExists)
+                return new ErrorDataResult<int>("Bu pazar yeri için bu satıcı zaten eklenmiş.");
+
+            MarketplaceAccount marketplaceAccountEntity = MarketplaceAccount.Create(
+                marketplaceAccountCreateDto.MarketplaceType,
+                marketplaceAccountCreateDto.StoreName,
+                marketplaceAccountCreateDto.MerchantId,
+                marketplaceAccountCreateDto.ApiKey,
+                _cipherService.Encrypt(marketplaceAccountCreateDto.ApiSecretKey)
+            );
 
             await _marketplaceAccountRepository.InsertAsync(marketplaceAccountEntity);
             await _unitOfWork.SaveChangesAsync();
@@ -54,18 +65,21 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             return new SuccessDataResult<int>(marketplaceAccountEntity.Id, "Pazar yeri hesabı başarıyla eklendi ve kurulum kuyruğuna alındı.");
         }
 
-        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllAsync()
+        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetAllMarketplaceAccountsAsync()
         {
             IList<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync();
 
-            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
+            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos =
+                _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
 
             return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Hesaplar listelendi.");
         }
 
-        public async Task<IDataResult<MarketplaceAccountDetailsDto>> GetByIdAsync(int id)
+        public async Task<IDataResult<MarketplaceAccountDetailsDto>> GetMarketplaceAccountByIdAsync(int marketplaceAccountId)
         {
-            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
+            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                );
 
             if (marketplaceAccountEntity is null)
                 return new ErrorDataResult<MarketplaceAccountDetailsDto>("Kayıt bulunamadı.");
@@ -74,128 +88,96 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
 
             marketplaceAccountDetailsDto.ApiSecretKey = string.Empty;
 
-            return new SuccessDataResult<MarketplaceAccountDetailsDto>(marketplaceAccountDetailsDto);
+            return new SuccessDataResult<MarketplaceAccountDetailsDto>(
+                marketplaceAccountDetailsDto
+            );
         }
 
-        public async Task<IResult> UpdateAsync(MarketplaceAccountUpdateDto updateDto)
+        public async Task<IResult> UpdateMarketplaceAccountAsync(MarketplaceAccountUpdateDto marketplaceAccountUpdateDto)
         {
-            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == updateDto.Id);
+            MarketplaceAccount marketplaceAccountEntity = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountUpdateDto.Id);
 
             if (marketplaceAccountEntity is null)
                 return new ErrorResult("Düzenlenecek kayıt bulunamadı.");
 
-            if (marketplaceAccountEntity.MerchantId is ApplicationDefaults.DemoAccountMerchantId)
-                return new ErrorResult("Demo hesap güncellenemez.");
+            bool isDuplicateExists = await _marketplaceAccountRepository.ExistsAsync(marketplaceAccount =>
+                    marketplaceAccount.Id != marketplaceAccountUpdateDto.Id &&
+                    marketplaceAccount.MarketplaceType == marketplaceAccountUpdateDto.MarketplaceType &&
+                    marketplaceAccount.MerchantId == marketplaceAccountUpdateDto.MerchantId
+            );
 
-            if (marketplaceAccountEntity.SyncState == MarketplaceSyncState.Syncing)
+            if (isDuplicateExists)
+                return new ErrorResult("Bu pazar yeri için bu satıcı zaten tanımlı.");
+
+            if (marketplaceAccountEntity.SyncState == MarketplaceSyncState.Syncing && !marketplaceAccountEntity.CanStartSync(DateTime.UtcNow, TimeSpan.FromHours(ApplicationDefaults.ZombieSyncThreshold)))
             {
-                bool isZombieLock = marketplaceAccountEntity.LastSyncStartTime.HasValue &&
-                                    marketplaceAccountEntity.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
+                _logger.LogWarning("Update attempt blocked for Account {AccountId}. Sync is in progress.", marketplaceAccountUpdateDto.Id);
 
-                if (!isZombieLock)
-                {
-                    _logger.LogWarning("Update attempt blocked for Account {AccountId}. Sync is in progress.", updateDto.Id);
-                    return new ErrorResult("Bu mağaza şu anda veri eşitleme işlemi yaptığı için düzenlenemez. Lütfen işlem bitince tekrar deneyin.");
-                }
+                return new ErrorResult("Bu mağaza şu anda veri eşitleme işlemi yaptığı için düzenlenemez. Lütfen işlem bitince tekrar deneyin.");
             }
 
-            bool isCredentialsChanged = marketplaceAccountEntity.ApiKey != updateDto.ApiKey ||
-                                    marketplaceAccountEntity.MerchantId != updateDto.MerchantId ||
-                                    (!string.IsNullOrEmpty(updateDto.ApiSecretKey));
+            _logger.LogInformation("Updating Marketplace Account {AccountId}", marketplaceAccountUpdateDto.Id);
 
-            marketplaceAccountEntity.StoreName = updateDto.StoreName;
-            marketplaceAccountEntity.MerchantId = updateDto.MerchantId;
-            marketplaceAccountEntity.ApiKey = updateDto.ApiKey;
-            marketplaceAccountEntity.MarketplaceType = updateDto.MarketplaceType;
-            marketplaceAccountEntity.IsActive = updateDto.IsActive;
+            marketplaceAccountEntity.UpdateGeneralInfo(marketplaceAccountUpdateDto.StoreName, marketplaceAccountUpdateDto.MarketplaceType, marketplaceAccountUpdateDto.IsActive);
+            marketplaceAccountEntity.UpdateCredentials(marketplaceAccountUpdateDto.ApiKey, marketplaceAccountUpdateDto.MerchantId, string.IsNullOrWhiteSpace(marketplaceAccountUpdateDto.ApiSecretKey) ? null : _cipherService.Encrypt(marketplaceAccountUpdateDto.ApiSecretKey));
 
-            if (!string.IsNullOrEmpty(updateDto.ApiSecretKey))
-                marketplaceAccountEntity.ApiSecretKey = _cipherService.Encrypt(updateDto.ApiSecretKey);
-
-
-            if (isCredentialsChanged)
-            {
-                marketplaceAccountEntity.ConnectionState = MarketplaceConnectionState.Initializing;
-                marketplaceAccountEntity.LastErrorMessage = null;
-                marketplaceAccountEntity.LastErrorDate = null;
-                _logger.LogInformation("Credentials changed for Account {AccountId}. Connection state reset to Initializing.", updateDto.Id);
-            }
-
-            _marketplaceAccountRepository.Update(marketplaceAccountEntity);
             await _unitOfWork.SaveChangesAsync();
 
-            string resultMessage = isCredentialsChanged
-                ? "Hesap güncellendi ve bağlantı ayarları değiştiği için yeniden doğrulama kuyruğuna alındı."
-                : "Hesap başarıyla güncellendi.";
+            _logger.LogInformation("Marketplace Account {AccountId} updated successfully", marketplaceAccountUpdateDto.Id);
 
-            return new SuccessResult(resultMessage);
+            return new SuccessResult("Hesap başarıyla güncellendi.");
         }
 
-        public async Task<IResult> DeleteAsync(int id)
+        public async Task<IResult> DeleteMarketplaceAccountByIdAsync(int marketplaceAccountId)
         {
-            if (_workContext.CurrentMarketplaceAccountId == id)
+            if (_workContext.CurrentMarketplaceAccountId == marketplaceAccountId)
                 return new ErrorResult("Şu anda aktif olarak seçili olan mağazayı silemezsiniz. Lütfen önce başka bir mağazaya geçiş yapın.");
 
-            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == id);
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                );
 
             if (marketplaceAccount is null)
                 return new ErrorResult("Silinecek hesap bulunamadı.");
 
-            if (marketplaceAccount.MerchantId is ApplicationDefaults.DemoAccountMerchantId)
-                return new ErrorResult("Demo hesap silinemez.");
-
-            if (marketplaceAccount.SyncState == MarketplaceSyncState.Syncing)
+            try
             {
-                bool isZombieLock = marketplaceAccount.LastSyncStartTime.HasValue && marketplaceAccount.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
-
-                if (!isZombieLock)
-                {
-                    _logger.LogWarning("Delete attempt blocked for Account {AccountId}. Sync is in progress.", id);
-                    return new ErrorResult("Veri eşitlemesi devam eden bir mağazayı silemezsiniz. Lütfen işlemin bitmesini bekleyin.");
-                }
+                marketplaceAccount.EnsureDeletable(ApplicationDefaults.DemoAccountMerchantId);
+            }
+            catch (DomainException domainException)
+            {
+                _logger.LogWarning("Delete blocked for Marketplace Account {AccountId} - Reason: {Reason}", marketplaceAccountId, domainException.Message);
+                return new ErrorResult(domainException.Message);
             }
 
             _marketplaceAccountRepository.Delete(marketplaceAccount);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Marketplace Account deleted. Id: {AccountId}", id);
+            _logger.LogInformation("Marketplace Account deleted. Id: {AccountId}", marketplaceAccountId);
 
             return new SuccessResult("Pazar yeri hesabı başarıyla silindi.");
         }
 
-        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetActiveAccountsAsync()
+        public async Task<bool> TryMarkMarketplaceAccountAsSyncingAsync(int marketplaceAccountId)
         {
-            IList<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync(predicate: marketplaceAccount => marketplaceAccount.IsActive);
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
+                    disableTracking: false
+                );
 
-            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
-
-            return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Aktif Hesaplar listelendi.");
-        }
-
-        public async Task<bool> TryMarkAsSyncingAsync(int marketplaceAccountId)
-        {
-            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId, disableTracking: false);
-
-            if (marketplaceAccount is null) return false;
-
-            bool isStuck = marketplaceAccount.SyncState == MarketplaceSyncState.Syncing &&
-                           marketplaceAccount.LastSyncStartTime.HasValue &&
-                           marketplaceAccount.LastSyncStartTime.Value < DateTime.UtcNow.AddHours(-2);
-
-            if (isStuck)
-                _logger.LogWarning("Zombie lock detected for Account {AccountId}. Breaking lock and restarting sync.", marketplaceAccountId);
-
-            bool isAvailable = marketplaceAccount.SyncState == MarketplaceSyncState.Idle || marketplaceAccount.SyncState == MarketplaceSyncState.Queued;
-
-            if (!isAvailable && !isStuck)
+            if (marketplaceAccount is null)
+            {
+                _logger.LogWarning("Sync attempt failed: Account not found. Id: {AccountId}", marketplaceAccountId);
                 return false;
+            }
 
-            marketplaceAccount.SyncState = MarketplaceSyncState.Syncing;
-            marketplaceAccount.LastSyncStartTime = DateTime.UtcNow;
+            if (!marketplaceAccount.CanStartSync(DateTime.UtcNow, TimeSpan.FromHours(ApplicationDefaults.ZombieSyncThreshold)))
+            {
+                _logger.LogInformation("Sync attempt skipped for Account {AccountId} - Account not ready or locked", marketplaceAccountId);
+                return false;
+            }
 
-            if (marketplaceAccount.ConnectionState == MarketplaceConnectionState.AuthError || marketplaceAccount.ConnectionState == MarketplaceConnectionState.SystemError)
-                marketplaceAccount.ConnectionState = MarketplaceConnectionState.Initializing;
-
+            marketplaceAccount.MarkAsSyncing(DateTime.UtcNow);
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Sync lock acquired for Account {AccountId}. Sync initiated.", marketplaceAccountId);
@@ -203,76 +185,93 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
             return true;
         }
 
-        public async Task MarkSyncCompletedAsync(int marketplaceAccountId)
+        public async Task MarkMarketplaceAccountSyncCompletedAsync(int marketplaceAccountId)
         {
-            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId);
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                );
 
-            if (marketplaceAccount is null) return;
+            if (marketplaceAccount is null)
+            {
+                _logger.LogWarning("Sync completed skipped: Account not found. Id: {AccountId}", marketplaceAccountId);
+                return;
+            }
 
-            marketplaceAccount.SyncState = MarketplaceSyncState.Idle;
-            marketplaceAccount.ConnectionState = MarketplaceConnectionState.Connected;
-            marketplaceAccount.LastErrorMessage = null;
-            marketplaceAccount.LastErrorDate = null;
-
-            _marketplaceAccountRepository.Update(marketplaceAccount);
+            marketplaceAccount.MarkSyncCompleted();
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation("Sync cycle finished successfully for Account {AccountId}.", marketplaceAccountId);
         }
 
-        public async Task MarkSyncFailedAsync(int marketplaceAccountId, Exception exception)
+        public async Task MarkMarketplaceAccountSyncFailedAsync(int marketplaceAccountId, Exception exception)
         {
-            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId);
+            MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                );
 
-            if (marketplaceAccount == null) return;
+            if (marketplaceAccount is null)
+            {
+                _logger.LogWarning("Sync failed logging skipped: Account not found. Id: {AccountId}", marketplaceAccountId);
+                return;
+            }
 
-            marketplaceAccount.SyncState = MarketplaceSyncState.Idle;
-            marketplaceAccount.LastErrorMessage = exception.Message;
-            marketplaceAccount.LastErrorDate = DateTime.UtcNow;
+            bool isAuthError = exception is IntegrationAuthException;
 
-            if (exception is IntegrationAuthException)
-                marketplaceAccount.ConnectionState = MarketplaceConnectionState.AuthError;
-            else
-                marketplaceAccount.ConnectionState = MarketplaceConnectionState.SystemError;
-
-            _marketplaceAccountRepository.Update(marketplaceAccount);
+            marketplaceAccount.MarkSyncFailed(exception.Message, isAuthError);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogError(exception, "Sync cycle failed for Account {AccountId}. ConnectionState set to {ConnectionState}.", marketplaceAccountId, marketplaceAccount.ConnectionState);
+            _logger.LogError(exception, "Sync cycle failed for Account {AccountId}.", marketplaceAccountId);
+        }
+
+        public async Task<IDataResult<List<MarketplaceAccountSummaryDto>>> GetActiveMarketplaceAccountsAsync()
+        {
+            IList<MarketplaceAccount> marketplaceAccountEntities = await _marketplaceAccountRepository.GetAllAsync(
+                    predicate: marketplaceAccount => marketplaceAccount.IsActive,
+                    disableTracking: true
+                );
+
+            List<MarketplaceAccountSummaryDto> marketplaceAccountListDtos = _mapper.Map<List<MarketplaceAccountSummaryDto>>(marketplaceAccountEntities);
+
+            return new SuccessDataResult<List<MarketplaceAccountSummaryDto>>(marketplaceAccountListDtos, "Aktif pazar yeri hesapları listelendi.");
         }
 
         public async Task<IDataResult<MarketplaceAccountConnectionDetailsDto>> GetConnectionDetailsByIdAsync(int marketplaceAccountId)
         {
             MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
-                predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
-                disableTracking: true
-            );
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
+                    disableTracking: true
+                );
 
             if (marketplaceAccount is null)
-                return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>(null, "Hesap bulunamadı");
+                return new ErrorDataResult<MarketplaceAccountConnectionDetailsDto>(
+                    "Hesap bulunamadı."
+                );
 
-            MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccount);
+            MarketplaceAccountConnectionDetailsDto connectionDetailsDto = _mapper.Map<MarketplaceAccountConnectionDetailsDto>(marketplaceAccount);
 
-            if (!string.IsNullOrEmpty(marketplaceAccount.ApiSecretKey))
+            if (!string.IsNullOrWhiteSpace(marketplaceAccount.ApiSecretKey))
             {
-                marketplaceAccountConnectionDetailsDto = marketplaceAccountConnectionDetailsDto with
+                connectionDetailsDto = connectionDetailsDto with
                 {
                     ApiSecretKey = _cipherService.Decrypt(marketplaceAccount.ApiSecretKey)
                 };
             }
 
-            return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(marketplaceAccountConnectionDetailsDto);
-        }
-
-        public async Task<IDataResult<IList<int>>> GetActiveConnectedAccountIdsAsync()
-        {
-            IList<int> accountIds = await _marketplaceAccountRepository.GetAllAsync(
-                selector: marketplaceAccount => marketplaceAccount.Id,
-                predicate: marketplaceAccount => marketplaceAccount.IsActive && marketplaceAccount.ConnectionState == MarketplaceConnectionState.Connected,
-                disableTracking: true
+            return new SuccessDataResult<MarketplaceAccountConnectionDetailsDto>(
+                connectionDetailsDto
             );
-
-            return new SuccessDataResult<IList<int>>(accountIds);
         }
+
+        public async Task<IDataResult<IList<int>>> GetActiveConnectedMarketplaceAccountIdsAsync()
+        {
+            IList<int> acticeConnectedMarketplaceAccountIds = await _marketplaceAccountRepository.GetAllAsync(
+                    selector: marketplaceAccount => marketplaceAccount.Id,
+                    predicate: marketplaceAccount => marketplaceAccount.IsActive && marketplaceAccount.ConnectionState == MarketplaceConnectionState.Connected,
+                    disableTracking: true
+                );
+
+            return new SuccessDataResult<IList<int>>(acticeConnectedMarketplaceAccountIds);
+        }
+
     }
 }

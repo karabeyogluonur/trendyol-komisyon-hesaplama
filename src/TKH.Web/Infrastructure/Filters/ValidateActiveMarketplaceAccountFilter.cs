@@ -35,7 +35,7 @@ namespace TKH.Web.Infrastructure.Filters
 
             int accountId = _workContext.CurrentMarketplaceAccountId.Value;
 
-            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(accountId);
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetMarketplaceAccountByIdAsync(accountId);
 
             if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data == null)
             {

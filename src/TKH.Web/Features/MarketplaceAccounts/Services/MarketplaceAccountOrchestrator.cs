@@ -1,10 +1,12 @@
 using AutoMapper;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Jobs.Services;
 using TKH.Core.Common.Constants;
 using TKH.Core.Utilities.Results;
 using TKH.Web.Features.MarketplaceAccounts.Models;
+
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Web.Features.MarketplaceAccounts.Services
@@ -27,7 +29,7 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
 
         public async Task<IDataResult<List<MarketplaceAccountListViewModel>>> PrepareMarketplaceAccountListViewModelAsync()
         {
-            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountSummaryDtoResult = await _marketplaceAccountService.GetAllAsync();
+            IDataResult<List<MarketplaceAccountSummaryDto>> marketplaceAccountSummaryDtoResult = await _marketplaceAccountService.GetAllMarketplaceAccountsAsync();
 
             if (!marketplaceAccountSummaryDtoResult.Success)
                 return new ErrorDataResult<List<MarketplaceAccountListViewModel>>(marketplaceAccountSummaryDtoResult.Message);
@@ -42,8 +44,8 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
 
         public async Task<IResult> CreateMarketplaceAccountAsync(MarketplaceAccountAddViewModel marketplaceAccountAddViewModel)
         {
-            MarketplaceAccountAddDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountAddDto>(marketplaceAccountAddViewModel);
-            IDataResult<int> addMarketplaceAccountResult = await _marketplaceAccountService.AddAsync(marketplaceAccountAddDto);
+            MarketplaceAccountCreateDto marketplaceAccountAddDto = _mapper.Map<MarketplaceAccountCreateDto>(marketplaceAccountAddViewModel);
+            IDataResult<int> addMarketplaceAccountResult = await _marketplaceAccountService.CreateMarketplaceAccountAsync(marketplaceAccountAddDto);
 
             if (!addMarketplaceAccountResult.Success)
                 return new ErrorResult(addMarketplaceAccountResult.Message);
@@ -55,7 +57,7 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
 
         public async Task<IDataResult<MarketplaceAccountUpdateViewModel>> PrepareMarketplaceAccountUpdateViewModelAsync(int marketplaceAccountId)
         {
-            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountId);
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetMarketplaceAccountByIdAsync(marketplaceAccountId);
 
             if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data == null)
                 return new ErrorDataResult<MarketplaceAccountUpdateViewModel>(getMarketplaceAccountResult.Message);
@@ -76,7 +78,7 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
                 return new ErrorResult("Demo hesap düzenlenemez!");
 
             MarketplaceAccountUpdateDto marketplaceAccountUpdateDto = _mapper.Map<MarketplaceAccountUpdateDto>(marketplaceAccountUpdateViewModel);
-            IResult updateMarketplaceAccountResult = await _marketplaceAccountService.UpdateAsync(marketplaceAccountUpdateDto);
+            IResult updateMarketplaceAccountResult = await _marketplaceAccountService.UpdateMarketplaceAccountAsync(marketplaceAccountUpdateDto);
 
             if (!updateMarketplaceAccountResult.Success)
             {
@@ -91,12 +93,12 @@ namespace TKH.Web.Features.MarketplaceAccounts.Services
 
         public async Task<IResult> DeleteMarketplaceAccountAsync(int marketplaceAccountId)
         {
-            return await _marketplaceAccountService.DeleteAsync(marketplaceAccountId);
+            return await _marketplaceAccountService.DeleteMarketplaceAccountByIdAsync(marketplaceAccountId);
         }
 
         private async Task ReloadStatusFieldsAsync(MarketplaceAccountUpdateViewModel marketplaceAccountUpdateViewModel)
         {
-            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetByIdAsync(marketplaceAccountUpdateViewModel.Id);
+            IDataResult<MarketplaceAccountDetailsDto> getMarketplaceAccountResult = await _marketplaceAccountService.GetMarketplaceAccountByIdAsync(marketplaceAccountUpdateViewModel.Id);
 
             if (!getMarketplaceAccountResult.Success || getMarketplaceAccountResult.Data is null)
                 return;
