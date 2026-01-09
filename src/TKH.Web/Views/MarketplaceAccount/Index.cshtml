@@ -3,6 +3,15 @@
 @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel("Pazaryeri Hesap Yönetimi", "Pazaryeri Hesapları"))
 
 <div class="card mb-5">
+    <div class="card-header border-0 pt-6">
+        <div class="card-title">
+        </div>
+        <div class="card-toolbar">
+            <a asp-controller="MarketplaceAccount" asp-action="Add" class="btn btn-sm btn-primary">
+                <i class="ki-outline ki-plus fs-4 me-1"></i> Yeni Hesap Ekle
+            </a>
+        </div>
+    </div>
     <div class="card-body">
         <table class="table table-row-dashed table-hover align-middle gs-0 gy-4">
             <thead>
