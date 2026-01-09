@@ -36,7 +36,14 @@ namespace TKH.Business.Features.Products.Services
                 query = query.Where(product => product.CategoryId == productListFilterDto.CategoryId);
 
             if (productListFilterDto.HasStock.HasValue)
-                query = query.Where(product => product.StockQuantity > 0);
+            {
+                if (productListFilterDto.HasStock.Value)
+                    query = query.Where(product => product.StockQuantity > 0);
+                else
+                    query = query.Where(product => product.StockQuantity < 1);
+            }
+
+            query = query.Where(product => product.StockQuantity > 0);
 
             if (productListFilterDto.IsOnSale.HasValue)
                 query = query.Where(product => product.IsOnSale == productListFilterDto.IsOnSale);
@@ -74,7 +81,12 @@ namespace TKH.Business.Features.Products.Services
                 query = query.Where(product => product.CategoryId == productProfitListFilterDto.CategoryId);
 
             if (productProfitListFilterDto.HasStock.HasValue)
-                query = query.Where(product => product.StockQuantity > 0);
+            {
+                if (productProfitListFilterDto.HasStock.Value)
+                    query = query.Where(product => product.StockQuantity > 0);
+                else
+                    query = query.Where(product => product.StockQuantity < 1);
+            }
 
             if (productProfitListFilterDto.IsOnSale.HasValue)
                 query = query.Where(product => product.IsOnSale == productProfitListFilterDto.IsOnSale);
