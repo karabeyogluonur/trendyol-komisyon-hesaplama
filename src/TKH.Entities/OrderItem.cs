@@ -56,7 +56,7 @@ namespace TKH.Entities
             {
                 ProductId = productId,
                 Barcode = barcode,
-                Sku = sku,
+                Sku = sku ?? "",
                 Quantity = quantity,
                 UnitPrice = unitPrice,
                 VatRate = vatRate,
