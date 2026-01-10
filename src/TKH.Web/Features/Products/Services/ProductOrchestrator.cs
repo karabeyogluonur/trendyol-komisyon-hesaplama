@@ -1,5 +1,7 @@
 using AutoMapper;
+
 using Microsoft.AspNetCore.Mvc.Rendering;
+
 using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Features.ProductExpenses.Dtos;
 using TKH.Business.Features.ProductExpenses.Services;
@@ -13,6 +15,7 @@ using TKH.Core.Utilities.Results;
 using TKH.Entities.Enums;
 using TKH.Web.Features.Products.Models;
 using TKH.Web.Configuration.Extensions;
+
 using IResult = TKH.Core.Utilities.Results.IResult;
 
 namespace TKH.Web.Features.Products.Services
@@ -40,7 +43,7 @@ namespace TKH.Web.Features.Products.Services
         {
             ProductListFilterDto productListFilterDto = _mapper.Map<ProductListFilterDto>(productListFilterViewModel);
 
-            IDataResult<IPagedList<ProductSummaryDto>> productPagedListResult = await _productService.GetPagedListAsync(productListFilterDto);
+            IDataResult<IPagedList<ProductSummaryDto>> productPagedListResult = await _productService.GetPagedProductListAsync(productListFilterDto);
 
             if (!productPagedListResult.Success)
                 return new ErrorDataResult<ProductListViewModel>(productPagedListResult.Message);
@@ -95,23 +98,23 @@ namespace TKH.Web.Features.Products.Services
                 return new ErrorResult("Güncellenecek veri bulunamadı.");
 
 
-            List<ProductPriceAddDto> priceUpdates = productCostBatchViewModels.Select(item => new ProductPriceAddDto
+            List<ProductPriceCreateDto> priceUpdates = productCostBatchViewModels.Select(item => new ProductPriceCreateDto
             {
                 ProductId = item.Id,
                 Type = ProductPriceType.PurchasePrice,
                 Amount = item.PurchasePrice
             }).ToList();
 
-            IResult addPriceResult = await _productPriceService.AddRangeAsync(priceUpdates);
+            IResult addPriceResult = await _productPriceService.CreateProductPricesAsync(priceUpdates);
 
             if (!addPriceResult.Success)
                 return new ErrorResult($"Fiyat güncelleme hatası: {addPriceResult.Message}");
 
-            List<ProductExpenseAddDto> expenseUpdates = new List<ProductExpenseAddDto>();
+            List<ProductExpenseCreateDto> expenseUpdates = new List<ProductExpenseCreateDto>();
 
             foreach (var productCostBatchViewModel in productCostBatchViewModels)
             {
-                expenseUpdates.Add(new ProductExpenseAddDto
+                expenseUpdates.Add(new ProductExpenseCreateDto
                 {
                     ProductId = productCostBatchViewModel.Id,
                     Type = ProductExpenseType.CommissionRate,
@@ -119,7 +122,7 @@ namespace TKH.Web.Features.Products.Services
                     GenerationType = GenerationType.Manual
                 });
 
-                expenseUpdates.Add(new ProductExpenseAddDto
+                expenseUpdates.Add(new ProductExpenseCreateDto
                 {
                     ProductId = productCostBatchViewModel.Id,
                     Type = ProductExpenseType.ShippingCost,
@@ -128,7 +131,7 @@ namespace TKH.Web.Features.Products.Services
                 });
             }
 
-            IResult addProductExpenseResult = await _productExpenseService.AddRangeAsync(expenseUpdates);
+            IResult addProductExpenseResult = await _productExpenseService.CreateProductExpensesAsync(expenseUpdates);
 
             if (!addProductExpenseResult.Success)
                 return new ErrorResult($"Gider güncelleme hatası: {addProductExpenseResult.Message}");

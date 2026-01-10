@@ -1,6 +1,7 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
@@ -15,56 +16,60 @@ namespace TKH.Business.Features.Orders.Services
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
-        private readonly IMapper _mapper;
+        private readonly ILogger<OrderSyncService> _logger;
 
         public OrderSyncService(
             IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
-            IMapper mapper)
+            ILogger<OrderSyncService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
-            _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task SyncOrdersFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
+            _logger.LogInformation("Starting order sync for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
+
             IMarketplaceOrderProvider marketplaceOrderProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceOrderProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
-            List<MarketplaceOrderDto> marketplaceOrderDtoBuffer = new List<MarketplaceOrderDto>(ApplicationDefaults.OrderBatchSize);
+            List<MarketplaceOrderDto> marketplaceOrderDtoBufferList = new List<MarketplaceOrderDto>(ApplicationDefaults.OrderBatchSize);
 
             await foreach (MarketplaceOrderDto incomingMarketplaceOrderDto in marketplaceOrderProvider.GetOrdersStreamAsync(marketplaceAccountConnectionDetailsDto))
             {
-                marketplaceOrderDtoBuffer.Add(incomingMarketplaceOrderDto);
+                marketplaceOrderDtoBufferList.Add(incomingMarketplaceOrderDto);
 
-                if (marketplaceOrderDtoBuffer.Count >= ApplicationDefaults.OrderBatchSize)
+                if (marketplaceOrderDtoBufferList.Count >= ApplicationDefaults.OrderBatchSize)
                 {
-                    await ProcessOrderBatchAsync(marketplaceOrderDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
-                    marketplaceOrderDtoBuffer.Clear();
+                    await ProcessOrderBatchAsync(marketplaceOrderDtoBufferList, marketplaceAccountConnectionDetailsDto.Id);
+                    marketplaceOrderDtoBufferList.Clear();
                 }
             }
 
-            if (marketplaceOrderDtoBuffer.Count > 0)
-                await ProcessOrderBatchAsync(marketplaceOrderDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
+            if (marketplaceOrderDtoBufferList.Count > 0)
+                await ProcessOrderBatchAsync(marketplaceOrderDtoBufferList, marketplaceAccountConnectionDetailsDto.Id);
+
+            _logger.LogInformation("Order sync completed for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
         }
 
         private async Task ProcessOrderBatchAsync(List<MarketplaceOrderDto> marketplaceOrderDtoList, int marketplaceAccountId)
         {
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
             {
-                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IUnitOfWork scopedUnitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 IRepository<Order> scopedOrderRepository = scopedUnitOfWork.GetRepository<Order>();
                 IRepository<Product> scopedProductRepository = scopedUnitOfWork.GetRepository<Product>();
 
                 List<string> incomingShipmentIdList = marketplaceOrderDtoList
-                    .Select(dto => dto.ExternalShipmentId)
-                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(marketplaceOrderDto => marketplaceOrderDto.ExternalShipmentId)
+                    .Where(externalShipmentId => !string.IsNullOrEmpty(externalShipmentId))
                     .ToList();
 
                 List<string> allMarketplaceProductCodes = marketplaceOrderDtoList
-                    .SelectMany(dto => dto.Items)
-                    .Select(item => item.ExternalProductCode)
-                    .Where(code => !string.IsNullOrEmpty(code))
+                    .SelectMany(marketplaceOrderDto => marketplaceOrderDto.Items)
+                    .Select(marketplaceOrderItemDto => marketplaceOrderItemDto.ExternalProductCode)
+                    .Where(externalProductCode => !string.IsNullOrEmpty(externalProductCode))
                     .Distinct()
                     .ToList();
 
@@ -75,68 +80,108 @@ namespace TKH.Business.Features.Orders.Services
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, int> codeToLocalIdMap = relatedProductList
+                Dictionary<string, int> productCodeToLocalIdMapDictionary = relatedProductList
                     .GroupBy(product => product.ExternalProductCode)
                     .ToDictionary(group => group.Key, group => group.First().Id);
 
                 IList<Order> existingOrderList = await scopedOrderRepository.GetAllAsync(
-                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId && incomingShipmentIdList.Contains(order.ExternalShipmentId),
+                    predicate: order => order.MarketplaceAccountId == marketplaceAccountId &&
+                                        incomingShipmentIdList.Contains(order.ExternalShipmentId),
                     include: source => source.Include(order => order.OrderItems),
                     disableTracking: false,
                     ignoreQueryFilters: true
                 );
 
-                List<Order> newOrdersToAdd = new List<Order>();
+                List<Order> newOrdersToAddList = new List<Order>();
 
                 foreach (MarketplaceOrderDto marketplaceOrderDto in marketplaceOrderDtoList)
                 {
-                    Order? existingOrder = existingOrderList.FirstOrDefault(order => order.ExternalShipmentId == marketplaceOrderDto.ExternalShipmentId);
+                    Order? existingOrderEntity = existingOrderList.FirstOrDefault(order => order.ExternalShipmentId == marketplaceOrderDto.ExternalShipmentId);
 
-                    if (existingOrder is not null)
+                    DateTime orderDateUtc = marketplaceOrderDto.OrderDate.Kind == DateTimeKind.Utc ? marketplaceOrderDto.OrderDate : DateTime.SpecifyKind(marketplaceOrderDto.OrderDate, DateTimeKind.Utc);
+
+                    List<OrderItem> orderItemsForSync = CreateOrderItemsFromDto(marketplaceOrderDto.Items, productCodeToLocalIdMapDictionary);
+
+                    if (existingOrderEntity is not null)
                     {
-                        _mapper.Map(marketplaceOrderDto, existingOrder);
-                        existingOrder.LastUpdateDateTime = DateTime.UtcNow;
-                        SyncOrderItems(existingOrder, marketplaceOrderDto.Items, codeToLocalIdMap);
+                        existingOrderEntity.UpdateDetails(
+                            marketplaceOrderDto.GrossAmount,
+                            marketplaceOrderDto.TotalDiscount,
+                            marketplaceOrderDto.PlatformCoveredDiscount,
+                            marketplaceOrderDto.Status,
+                            marketplaceOrderDto.CargoTrackingNumber,
+                            marketplaceOrderDto.CargoProviderName,
+                            marketplaceOrderDto.Deci,
+                            marketplaceOrderDto.IsShipmentPaidBySeller,
+                            marketplaceOrderDto.IsMicroExport,
+                            DateTime.UtcNow
+                        );
+
+                        existingOrderEntity.SyncOrderItems(orderItemsForSync);
                     }
                     else
                     {
-                        Order newOrder = _mapper.Map<Order>(marketplaceOrderDto);
-                        newOrder.MarketplaceAccountId = marketplaceAccountId;
-                        newOrder.LastUpdateDateTime = DateTime.UtcNow;
-                        SyncOrderItems(newOrder, marketplaceOrderDto.Items, codeToLocalIdMap);
+                        Order newOrderEntity = Order.Create(
+                            marketplaceAccountId,
+                            marketplaceOrderDto.ExternalOrderNumber,
+                            marketplaceOrderDto.ExternalShipmentId,
+                            marketplaceOrderDto.GrossAmount,
+                            marketplaceOrderDto.TotalDiscount,
+                            marketplaceOrderDto.PlatformCoveredDiscount,
+                            marketplaceOrderDto.CurrencyCode,
+                            marketplaceOrderDto.Status,
+                            orderDateUtc,
+                            marketplaceOrderDto.CargoTrackingNumber,
+                            marketplaceOrderDto.CargoProviderName,
+                            marketplaceOrderDto.Deci,
+                            marketplaceOrderDto.IsShipmentPaidBySeller,
+                            marketplaceOrderDto.IsMicroExport
+                        );
 
-                        newOrdersToAdd.Add(newOrder);
+                        newOrderEntity.SyncOrderItems(orderItemsForSync);
+
+                        newOrdersToAddList.Add(newOrderEntity);
                     }
                 }
 
-                if (newOrdersToAdd.Count > 0)
-                    await scopedOrderRepository.InsertAsync(newOrdersToAdd);
+                if (newOrdersToAddList.Count > 0)
+                    await scopedOrderRepository.InsertAsync(newOrdersToAddList);
 
                 await scopedUnitOfWork.SaveChangesAsync();
             }
         }
 
-        private void SyncOrderItems(Order order, List<MarketplaceOrderItemDto> marketplaceItems, Dictionary<string, int> codeToLocalIdMap)
+        private List<OrderItem> CreateOrderItemsFromDto(List<MarketplaceOrderItemDto> marketplaceOrderItemDtos, Dictionary<string, int> productCodeToLocalIdMapDictionary)
         {
-            if (marketplaceItems is null || !marketplaceItems.Any())
-                return;
+            List<OrderItem> orderItemEntities = new List<OrderItem>();
 
-            if (order.OrderItems is null)
-                order.OrderItems = new List<OrderItem>();
-            else
-                order.OrderItems.Clear();
+            if (marketplaceOrderItemDtos is null || !marketplaceOrderItemDtos.Any())
+                return orderItemEntities;
 
-            foreach (MarketplaceOrderItemDto itemDto in marketplaceItems)
+            foreach (MarketplaceOrderItemDto marketplaceOrderItemDto in marketplaceOrderItemDtos)
             {
-                OrderItem orderItem = _mapper.Map<OrderItem>(itemDto);
+                int? matchedProductId = null;
 
-                if (!string.IsNullOrEmpty(itemDto.ExternalProductCode) && codeToLocalIdMap.TryGetValue(itemDto.ExternalProductCode, out int productId))
-                    orderItem.ProductId = productId;
-                else
-                    orderItem.ProductId = null;
+                if (!string.IsNullOrEmpty(marketplaceOrderItemDto.ExternalProductCode) && productCodeToLocalIdMapDictionary.TryGetValue(marketplaceOrderItemDto.ExternalProductCode, out int productId))
+                    matchedProductId = productId;
 
-                order.OrderItems.Add(orderItem);
+                OrderItem orderItemEntity = OrderItem.Create(
+                    matchedProductId,
+                    marketplaceOrderItemDto.Barcode,
+                    marketplaceOrderItemDto.Sku,
+                    marketplaceOrderItemDto.Quantity,
+                    marketplaceOrderItemDto.UnitPrice,
+                    marketplaceOrderItemDto.VatRate,
+                    marketplaceOrderItemDto.CommissionRate.GetValueOrDefault(),
+                    marketplaceOrderItemDto.PlatformCoveredDiscount,
+                    marketplaceOrderItemDto.SellerCoveredDiscount,
+                    marketplaceOrderItemDto.OrderItemStatus
+                );
+
+                orderItemEntities.Add(orderItemEntity);
             }
+
+            return orderItemEntities;
         }
     }
 }

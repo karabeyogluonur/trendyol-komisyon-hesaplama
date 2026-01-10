@@ -6,24 +6,88 @@ namespace TKH.Entities
 {
     public class ClaimItem : BaseEntity, IEntity
     {
-        public int ClaimId { get; set; }
-        public int? ProductId { get; set; }
-        public string ExternalId { get; set; } = string.Empty;
-        public string ExternalOrderLineItemId { get; set; } = string.Empty;
-        public string Barcode { get; set; } = string.Empty;
-        public string Sku { get; set; } = string.Empty;
-        public string ProductName { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public decimal VatRate { get; set; }
-        public ClaimStatus Status { get; set; }
-        public string CustomerNote { get; set; } = string.Empty;
-        public ClaimReasonType ReasonType { get; set; }
-        public string ReasonName { get; set; } = string.Empty;
-        public string ReasonCode { get; set; } = string.Empty;
-        public bool IsResolved { get; set; }
-        public bool IsAutoAccepted { get; set; }
-        public bool IsAcceptedBySeller { get; set; }
-        public virtual Claim Claim { get; set; }
-        public virtual Product? Product { get; set; }
+        #region Properties
+
+        public int ClaimId { get; private set; }
+        public int? ProductId { get; private set; }
+
+        public string ExternalId { get; private set; } = string.Empty;
+        public string ExternalOrderLineItemId { get; private set; } = string.Empty;
+
+        public string Barcode { get; private set; } = string.Empty;
+        public string Sku { get; private set; } = string.Empty;
+        public string ProductName { get; private set; } = string.Empty;
+
+        public decimal Price { get; private set; }
+        public decimal VatRate { get; private set; }
+
+        public ClaimStatus Status { get; private set; }
+
+        public string CustomerNote { get; private set; } = string.Empty;
+        public ClaimReasonType ReasonType { get; private set; }
+        public string ReasonName { get; private set; } = string.Empty;
+        public string ReasonCode { get; private set; } = string.Empty;
+
+        public bool IsResolved { get; private set; }
+        public bool IsAutoAccepted { get; private set; }
+        public bool IsAcceptedBySeller { get; private set; }
+
+        public virtual Claim Claim { get; private set; }
+        public virtual Product? Product { get; private set; }
+
+        #endregion
+
+        #region Ctor
+
+        protected ClaimItem()
+        {
+        }
+
+        #endregion
+
+        #region Factory
+
+        public static ClaimItem Create(
+            int claimId,
+            int? productId,
+            string externalId,
+            string externalOrderLineItemId,
+            string barcode,
+            string sku,
+            string productName,
+            decimal price,
+            decimal vatRate,
+            ClaimStatus status,
+            string customerNote,
+            ClaimReasonType reasonType,
+            string reasonName,
+            string reasonCode,
+            bool isResolved,
+            bool isAutoAccepted,
+            bool isAcceptedBySeller)
+        {
+            return new ClaimItem
+            {
+                ClaimId = claimId,
+                ProductId = productId,
+                ExternalId = externalId,
+                ExternalOrderLineItemId = externalOrderLineItemId,
+                Barcode = barcode,
+                Sku = sku,
+                ProductName = productName,
+                Price = price,
+                VatRate = vatRate,
+                Status = status,
+                CustomerNote = customerNote,
+                ReasonType = reasonType,
+                ReasonName = reasonName,
+                ReasonCode = reasonCode,
+                IsResolved = isResolved,
+                IsAutoAccepted = isAutoAccepted,
+                IsAcceptedBySeller = isAcceptedBySeller
+            };
+        }
+
+        #endregion
     }
 }

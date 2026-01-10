@@ -5,7 +5,7 @@ namespace TKH.Business.Features.ProductPrices.Services
 {
     public interface IProductPriceService
     {
-        Task<IResult> AddAsync(ProductPriceAddDto productPriceAddDto);
-        Task<IResult> AddRangeAsync(List<ProductPriceAddDto> productPriceAddDtos);
+        Task<IResult> CreateProductPriceAsync(ProductPriceCreateDto productPriceCreateDto);
+        Task<IResult> CreateProductPricesAsync(List<ProductPriceCreateDto> productPriceCreateDtos);
     }
 }

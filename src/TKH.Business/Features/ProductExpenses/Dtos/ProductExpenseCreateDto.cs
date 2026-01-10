@@ -3,7 +3,7 @@ using TKH.Entities.Enums;
 
 namespace TKH.Business.Features.ProductExpenses.Dtos
 {
-    public class ProductExpenseAddDto : IDto
+    public class ProductExpenseCreateDto : IDto
     {
         public int ProductId { get; set; }
         public ProductExpenseType Type { get; set; }

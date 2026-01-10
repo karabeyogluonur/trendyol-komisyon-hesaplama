@@ -188,7 +188,8 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
         public async Task MarkMarketplaceAccountSyncCompletedAsync(int marketplaceAccountId)
         {
             MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
-                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
+                    disableTracking: false
                 );
 
             if (marketplaceAccount is null)
@@ -206,7 +207,8 @@ namespace TKH.Business.Features.MarketplaceAccounts.Services
         public async Task MarkMarketplaceAccountSyncFailedAsync(int marketplaceAccountId, Exception exception)
         {
             MarketplaceAccount marketplaceAccount = await _marketplaceAccountRepository.GetFirstOrDefaultAsync(
-                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId
+                    predicate: marketplaceAccount => marketplaceAccount.Id == marketplaceAccountId,
+                    disableTracking: false
                 );
 
             if (marketplaceAccount is null)

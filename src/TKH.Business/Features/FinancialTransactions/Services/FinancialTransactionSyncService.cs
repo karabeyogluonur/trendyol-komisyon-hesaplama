@@ -1,10 +1,13 @@
 using AutoMapper;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Integrations.Marketplaces.Factories;
 using TKH.Core.Common.Constants;
+using TKH.Core.Common.Extensions;
 using TKH.Core.DataAccess;
 using TKH.Entities;
 
@@ -49,9 +52,12 @@ namespace TKH.Business.Features.FinancialTransactions.Services
 
         private async Task ProcessFinancialTransactionBatchAsync(List<MarketplaceFinancialTransactionDto> marketplaceFinancialTransactionDtoList, int marketplaceAccountId)
         {
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            if (marketplaceFinancialTransactionDtoList is null || !marketplaceFinancialTransactionDtoList.Any())
+                return;
+
+            using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
             {
-                IUnitOfWork scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IUnitOfWork scopedUnitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 IRepository<FinancialTransaction> scopedFinancialTransactionRepository = scopedUnitOfWork.GetRepository<FinancialTransaction>();
 
                 List<string> incomingMarketplaceTransactionIdList = marketplaceFinancialTransactionDtoList
@@ -60,34 +66,54 @@ namespace TKH.Business.Features.FinancialTransactions.Services
                     .ToList();
 
                 IList<FinancialTransaction> existingFinancialTransactionList = await scopedFinancialTransactionRepository.GetAllAsync(
-                    predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId && incomingMarketplaceTransactionIdList.Contains(financialTransaction.ExternalTransactionId),
+                    predicate: financialTransaction => financialTransaction.MarketplaceAccountId == marketplaceAccountId &&
+                                                       incomingMarketplaceTransactionIdList.Contains(financialTransaction.ExternalTransactionId),
                     disableTracking: false,
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, FinancialTransaction> existingTransactionMap = existingFinancialTransactionList
+                Dictionary<string, FinancialTransaction> existingTransactionMapDictionary = existingFinancialTransactionList
                     .GroupBy(transaction => transaction.ExternalTransactionId)
                     .ToDictionary(group => group.Key, group => group.First());
 
-                List<FinancialTransaction> newFinancialTransactionsToAdd = new List<FinancialTransaction>();
+                List<FinancialTransaction> newFinancialTransactionsToAddList = new List<FinancialTransaction>();
 
                 foreach (MarketplaceFinancialTransactionDto marketplaceFinancialTransactionDto in marketplaceFinancialTransactionDtoList)
                 {
-                    if (existingTransactionMap.TryGetValue(marketplaceFinancialTransactionDto.ExternalTransactionId, out FinancialTransaction? existingFinancialTransaction))
+                    if (existingTransactionMapDictionary.TryGetValue(marketplaceFinancialTransactionDto.ExternalTransactionId, out FinancialTransaction? existingFinancialTransaction))
                     {
-                        _mapper.Map(marketplaceFinancialTransactionDto, existingFinancialTransaction);
-                        existingFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
+                        existingFinancialTransaction.UpdateDetails(
+                            marketplaceFinancialTransactionDto.ExternalOrderNumber,
+                            marketplaceFinancialTransactionDto.TransactionType,
+                            marketplaceFinancialTransactionDto.ExternalTransactionType,
+                            marketplaceFinancialTransactionDto.TransactionDate.EnsureUtc(),
+                            marketplaceFinancialTransactionDto.Amount,
+                            marketplaceFinancialTransactionDto.Description,
+                            marketplaceFinancialTransactionDto.Title,
+                            marketplaceFinancialTransactionDto.CommissionRate
+                        );
                     }
                     else
                     {
-                        FinancialTransaction newFinancialTransaction = _mapper.Map<FinancialTransaction>(marketplaceFinancialTransactionDto);
-                        newFinancialTransaction.MarketplaceAccountId = marketplaceAccountId;
-                        newFinancialTransactionsToAdd.Add(newFinancialTransaction);
+                        FinancialTransaction newFinancialTransaction = FinancialTransaction.Create(
+                            marketplaceAccountId,
+                            marketplaceFinancialTransactionDto.ExternalTransactionId,
+                            marketplaceFinancialTransactionDto.ExternalOrderNumber,
+                            marketplaceFinancialTransactionDto.TransactionType,
+                            marketplaceFinancialTransactionDto.ExternalTransactionType,
+                            marketplaceFinancialTransactionDto.TransactionDate.EnsureUtc(),
+                            marketplaceFinancialTransactionDto.Amount,
+                            marketplaceFinancialTransactionDto.Description,
+                            marketplaceFinancialTransactionDto.Title,
+                            marketplaceFinancialTransactionDto.CommissionRate
+                        );
+
+                        newFinancialTransactionsToAddList.Add(newFinancialTransaction);
                     }
                 }
 
-                if (newFinancialTransactionsToAdd.Count > 0)
-                    await scopedFinancialTransactionRepository.InsertAsync(newFinancialTransactionsToAdd);
+                if (newFinancialTransactionsToAddList.Count > 0)
+                    await scopedFinancialTransactionRepository.InsertAsync(newFinancialTransactionsToAddList);
 
                 await scopedUnitOfWork.SaveChangesAsync();
             }

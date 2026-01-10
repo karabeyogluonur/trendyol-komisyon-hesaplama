@@ -5,6 +5,6 @@ namespace TKH.Business.Features.FinancialTransactions.Services
     public interface IFinancialTransactionService
     {
         Task<IList<string>> GetPendingShipmentSyncTransactionIdsAsync(int marketplaceAccountId);
-        Task BulkUpdateShipmentSyncStatusAsync(int marketplaceAccountId, List<ShipmentSyncStatusUpdateDto> shipmentSyncStatusUpdateDtos);
+        Task UpdateShipmentSyncStatusesAsync(int marketplaceAccountId, List<ShipmentSyncStatusUpdateDto> shipmentSyncStatusUpdateDtos);
     }
 }

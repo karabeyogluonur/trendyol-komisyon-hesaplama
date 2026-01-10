@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 using TKH.Business.Common.Services;
 using TKH.Business.Features.ProductExpenses.Dtos;
 using TKH.Business.Features.Products.Dtos;
@@ -13,151 +16,132 @@ namespace TKH.Business.Features.ProductExpenses.Services
     public class ProductExpenseService : IProductExpenseService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<ProductExpense> _productExpenseRepository;
+        private readonly IRepository<Product> _productRepository;
         private readonly IProductService _productService;
         private readonly IMarketplaceTaxService _marketplaceTaxService;
         private readonly TaxSettings _taxSettings;
+        private readonly ILogger<ProductExpenseService> _logger;
 
         public ProductExpenseService(
             IUnitOfWork unitOfWork,
             IProductService productService,
             IMarketplaceTaxService marketplaceTaxService,
-            TaxSettings taxSettings)
+            TaxSettings taxSettings,
+            ILogger<ProductExpenseService> logger)
         {
             _unitOfWork = unitOfWork;
-            _productExpenseRepository = _unitOfWork.GetRepository<ProductExpense>();
+            _productRepository = _unitOfWork.GetRepository<Product>();
             _productService = productService;
             _marketplaceTaxService = marketplaceTaxService;
             _taxSettings = taxSettings;
+            _logger = logger;
         }
 
-        public async Task<IResult> AddAsync(ProductExpenseAddDto productExpenseAddDto)
+        public async Task<IResult> CreateProductExpenseAsync(ProductExpenseCreateDto productExpenseCreateDto)
         {
-            IDataResult<ProductSummaryDto> getProductResult = await _productService.GetByIdAsync(productExpenseAddDto.ProductId);
+            _logger.LogInformation("Creating product expense started for ProductId: {ProductId}, Type: {Type}", productExpenseCreateDto.ProductId, productExpenseCreateDto.Type);
 
-            if (!getProductResult.Success)
-                return new ErrorResult(getProductResult.Message);
-
-            ProductExpense? activeExpense = await _productExpenseRepository.GetFirstOrDefaultAsync(
-                predicate: productExpense => productExpense.ProductId == productExpenseAddDto.ProductId &&
-                                          productExpense.Type == productExpenseAddDto.Type &&
-                                          productExpense.GenerationType == productExpenseAddDto.GenerationType &&
-                                          productExpense.EndDate == null
+            Product? productEntity = await _productRepository.GetFirstOrDefaultAsync(
+                predicate: product => product.Id == productExpenseCreateDto.ProductId,
+                include: source => source.Include(product => product.Expenses),
+                disableTracking: false
             );
 
-            if (activeExpense is not null)
+            if (productEntity is null)
             {
-                if (activeExpense.Amount == productExpenseAddDto.Amount)
-                    return new SuccessResult("Girilen gider tutarı mevcut aktif tutar ile aynı, işlem yapılmadı.");
-
-                activeExpense.EndDate = DateTime.UtcNow;
-                _productExpenseRepository.Update(activeExpense);
+                _logger.LogWarning("CreateProductExpenseAsync failed. Product not found. ProductId: {ProductId}", productExpenseCreateDto.ProductId);
+                return new ErrorResult("Ürün bulunamadı.");
             }
 
-            ProductExpense newExpense = new ProductExpense
-            {
-                ProductId = productExpenseAddDto.ProductId,
-                Type = productExpenseAddDto.Type,
-                Amount = productExpenseAddDto.Amount,
-                StartDate = DateTime.UtcNow,
-                EndDate = null,
-                GenerationType = productExpenseAddDto.GenerationType,
-                IsVatIncluded = true,
-                VatRate = ResolveVatRate(productExpenseAddDto.Type, getProductResult.Data.MarketplaceType)
-            };
+            IDataResult<ProductSummaryDto> getProductResult = await _productService.GetProductByIdAsync(productExpenseCreateDto.ProductId);
 
-            await _productExpenseRepository.InsertAsync(newExpense);
+            decimal calculatedVatRate = ResolveVatRate(productExpenseCreateDto.Type, getProductResult.Data.MarketplaceType);
+
+            productEntity.AddOrUpdateExpense(
+                productExpenseCreateDto.Type,
+                productExpenseCreateDto.Amount,
+                calculatedVatRate,
+                isVatIncluded: true
+            );
+
             await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("Product expense processed successfully for ProductId: {ProductId}", productExpenseCreateDto.ProductId);
 
             return new SuccessResult("Ürün gideri başarıyla güncellendi.");
         }
 
-        public async Task<IResult> AddRangeAsync(List<ProductExpenseAddDto> productExpenseAddDtos)
+        public async Task<IResult> CreateProductExpensesAsync(List<ProductExpenseCreateDto> productExpenseCreateDtos)
         {
-            if (productExpenseAddDtos == null || !productExpenseAddDtos.Any())
-                return new SuccessResult("İşlenecek kayıt bulunamadı.");
-
-            List<int> productIds = productExpenseAddDtos.Select(x => x.ProductId).Distinct().ToList();
-
-            IDataResult<List<ProductSummaryDto>> getProductsResult = await _productService.GetByIdsAsync(productIds);
-
-            if (!getProductsResult.Success)
-                return new ErrorResult(getProductsResult.Message);
-
-            List<ProductSummaryDto> products = getProductsResult.Data;
-            HashSet<int> foundedProductIds = products.Select(product => product.Id).ToHashSet();
-            List<ProductExpenseAddDto> foundedProductExpenseAddDtos = productExpenseAddDtos.Where(productExpense => foundedProductIds.Contains(productExpense.ProductId)).ToList();
-
-            if (!foundedProductExpenseAddDtos.Any())
-                return new ErrorResult("İşlenecek geçerli ürün bulunamadı.");
-
-            IList<ProductExpense> existingExpenses = await _productExpenseRepository.GetAllAsync(
-                predicate: productExpense => productIds.Contains(productExpense.ProductId) && productExpense.EndDate == null,
-                disableTracking: false);
-
-            Dictionary<(MarketplaceType, ProductExpenseType), decimal> vatRateCache = new Dictionary<(MarketplaceType, ProductExpenseType), decimal>();
-            bool anyChanges = false;
-
-            foreach (ProductExpenseAddDto dto in foundedProductExpenseAddDtos)
+            if (productExpenseCreateDtos is null || !productExpenseCreateDtos.Any())
             {
-                ProductExpense? existingExpense = existingExpenses.FirstOrDefault(productExpense =>
-                    productExpense.ProductId == dto.ProductId &&
-                    productExpense.Type == dto.Type &&
-                    productExpense.GenerationType == dto.GenerationType);
+                _logger.LogWarning("CreateProductExpensesAsync called with empty list.");
+                return new SuccessResult("İşlenecek kayıt bulunamadı.");
+            }
 
-                if (existingExpense is not null && existingExpense.Amount == dto.Amount)
+            _logger.LogInformation("Bulk creating product expenses. Count: {Count}", productExpenseCreateDtos.Count);
+
+            List<int> distinctProductIds = productExpenseCreateDtos.Select(productExpenseCreateDtos => productExpenseCreateDtos.ProductId).Distinct().ToList();
+
+            IList<Product> productEntities = await _productRepository.GetAllAsync(
+                predicate: product => distinctProductIds.Contains(product.Id),
+                include: source => source.Include(product => product.Expenses),
+                disableTracking: false
+            );
+
+            if (!productEntities.Any())
+            {
+                _logger.LogWarning("No valid products found matching the input list.");
+                return new ErrorResult("İşlenecek geçerli ürün bulunamadı.");
+            }
+
+            IDataResult<List<ProductSummaryDto>> getProductsResult = await _productService.GetProductsByIdsAsync(distinctProductIds);
+            var productMarketplaceMap = getProductsResult.Data.ToDictionary(product => product.Id, product => product.MarketplaceType);
+
+            Dictionary<(MarketplaceType, ProductExpenseType), decimal> vatRateCacheDictionary = new Dictionary<(MarketplaceType, ProductExpenseType), decimal>();
+            int processedCount = 0;
+
+            foreach (ProductExpenseCreateDto productExpenseCreateDto in productExpenseCreateDtos)
+            {
+                Product? productEntity = productEntities.FirstOrDefault(product => product.Id == productExpenseCreateDto.ProductId);
+                if (productEntity is null) continue;
+
+                if (!productMarketplaceMap.TryGetValue(productEntity.Id, out MarketplaceType marketplaceType))
                     continue;
 
-                if (existingExpense is not null)
+                (MarketplaceType, ProductExpenseType) vatRateCacheKey = (marketplaceType, productExpenseCreateDto.Type);
+
+                if (!vatRateCacheDictionary.TryGetValue(vatRateCacheKey, out decimal vatRate))
                 {
-                    existingExpense.EndDate = DateTime.UtcNow;
-                    _productExpenseRepository.Update(existingExpense);
+                    vatRate = ResolveVatRate(productExpenseCreateDto.Type, marketplaceType);
+                    vatRateCacheDictionary[vatRateCacheKey] = vatRate;
                 }
 
-                ProductSummaryDto product = products.First(product => product.Id == dto.ProductId);
+                productEntity.AddOrUpdateExpense(
+                    productExpenseCreateDto.Type,
+                    productExpenseCreateDto.Amount,
+                    vatRate,
+                    isVatIncluded: true
+                );
 
-                (MarketplaceType, ProductExpenseType) cacheKey = (product.MarketplaceType, dto.Type);
-
-                if (!vatRateCache.TryGetValue(cacheKey, out decimal vatRate))
-                {
-                    vatRate = ResolveVatRate(dto.Type, product.MarketplaceType);
-                    vatRateCache[cacheKey] = vatRate;
-                }
-
-                ProductExpense newExpense = new ProductExpense
-                {
-                    ProductId = dto.ProductId,
-                    Type = dto.Type,
-                    Amount = dto.Amount,
-                    StartDate = DateTime.UtcNow,
-                    EndDate = null,
-                    GenerationType = dto.GenerationType,
-                    IsVatIncluded = true,
-                    VatRate = vatRate
-                };
-
-                await _productExpenseRepository.InsertAsync(newExpense);
-                anyChanges = true;
+                processedCount++;
             }
 
-            if (anyChanges)
-            {
-                await _unitOfWork.SaveChangesAsync();
-                return new SuccessResult($"{foundedProductExpenseAddDtos.Count} adet gider kaydı güncellendi/eklendi.");
-            }
+            await _unitOfWork.SaveChangesAsync();
 
-            return new SuccessResult("Tüm kayıtlar zaten güncel, değişiklik yapılmadı.");
+            _logger.LogInformation("Bulk expense creation completed. Processed count: {ProcessedCount}", processedCount);
+            return new SuccessResult($"{processedCount} adet gider kaydı işlendi.");
         }
 
-        private decimal ResolveVatRate(ProductExpenseType expenseType, MarketplaceType marketplaceType)
+        private decimal ResolveVatRate(ProductExpenseType productExpenseType, MarketplaceType marketplaceType)
         {
-            switch (expenseType)
+            switch (productExpenseType)
             {
                 case ProductExpenseType.ShippingCost:
                     return _taxSettings.ShippingVatRate;
 
                 default:
-                    return _marketplaceTaxService.GetVatRateByExpenseType(marketplaceType, expenseType);
+                    return _marketplaceTaxService.GetVatRateByExpenseType(marketplaceType, productExpenseType);
             }
         }
     }

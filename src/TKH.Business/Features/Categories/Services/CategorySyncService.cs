@@ -1,6 +1,8 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+using TKH.Business.Features.Categories.Dtos;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Integrations.Marketplaces.Factories;
@@ -15,24 +17,27 @@ namespace TKH.Business.Features.Categories.Services
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
-        private readonly IMapper _mapper;
+        private readonly ILogger<CategorySyncService> _logger;
 
         public CategorySyncService(
             IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
-            IMapper mapper)
+            ILogger<CategorySyncService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
-            _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task SyncCategoriesAsync(MarketplaceType marketplaceType)
         {
+            _logger.LogInformation("Starting category sync for MarketplaceType: {MarketplaceType}", marketplaceType);
+
             IMarketplaceCategoryProvider marketplaceCategoryProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceCategoryProvider>(marketplaceType);
             List<MarketplaceCategoryDto> incomingMarketplaceCategoryDtos = await marketplaceCategoryProvider.GetCategoryTreeAsync();
 
-            if (incomingMarketplaceCategoryDtos is null || incomingMarketplaceCategoryDtos.Count is 0) return;
+            if (incomingMarketplaceCategoryDtos is null || incomingMarketplaceCategoryDtos.Count == 0)
+                return;
 
             List<MarketplaceCategoryDto> distinctIncomingMarketplaceCategoryDtos = incomingMarketplaceCategoryDtos
                 .DistinctBy(marketplaceCategoryDto => marketplaceCategoryDto.ExternalId)
@@ -49,37 +54,50 @@ namespace TKH.Business.Features.Categories.Services
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, Category> existingCategoryEntityMap = existingCategoryEntities.ToDictionary(categoryEntity => categoryEntity.ExternalId, categoryEntity => categoryEntity);
+                Dictionary<string, Category> existingCategoryEntityMapDictionary = existingCategoryEntities.ToDictionary(categoryEntity => categoryEntity.ExternalId, categoryEntity => categoryEntity);
 
-                List<Category> newCategoryEntitiesToAdd = new List<Category>();
+                List<Category> newCategoryEntitiesToAddList = new List<Category>();
 
                 foreach (MarketplaceCategoryDto incomingMarketplaceCategoryDto in distinctIncomingMarketplaceCategoryDtos)
                 {
-                    bool isCategoryExisting = existingCategoryEntityMap.TryGetValue(incomingMarketplaceCategoryDto.ExternalId, out Category? existingCategoryEntity);
+                    bool isCategoryExisting = existingCategoryEntityMapDictionary.TryGetValue(incomingMarketplaceCategoryDto.ExternalId, out Category? existingCategoryEntity);
 
                     if (isCategoryExisting && existingCategoryEntity is not null)
                     {
-                        int preservedCategoryId = existingCategoryEntity.Id;
-                        _mapper.Map(incomingMarketplaceCategoryDto, existingCategoryEntity);
-                        existingCategoryEntity.Id = preservedCategoryId;
+                        existingCategoryEntity.UpdateDetails(
+                            incomingMarketplaceCategoryDto.ParentExternalId,
+                            incomingMarketplaceCategoryDto.Name,
+                            incomingMarketplaceCategoryDto.IsLeaf
+                        );
                     }
                     else
                     {
-                        Category newCategoryEntity = _mapper.Map<Category>(incomingMarketplaceCategoryDto);
-                        newCategoryEntity.MarketplaceType = marketplaceType;
-                        newCategoryEntitiesToAdd.Add(newCategoryEntity);
+                        Category newCategoryEntity = Category.Create(
+                            marketplaceType,
+                            incomingMarketplaceCategoryDto.ExternalId,
+                            incomingMarketplaceCategoryDto.ParentExternalId,
+                            incomingMarketplaceCategoryDto.Name,
+                            incomingMarketplaceCategoryDto.IsLeaf
+                        );
+
+                        newCategoryEntitiesToAddList.Add(newCategoryEntity);
                     }
                 }
 
-                if (newCategoryEntitiesToAdd.Count > 0)
-                    await scopedCategoryRepository.InsertAsync(newCategoryEntitiesToAdd);
+                if (newCategoryEntitiesToAddList.Count > 0)
+                {
+                    await scopedCategoryRepository.InsertAsync(newCategoryEntitiesToAddList);
+                }
 
                 await scopedUnitOfWork.SaveChangesAsync();
+                _logger.LogInformation("Category sync completed.");
             }
         }
 
         public async Task SyncCategoryAttributesAsync(MarketplaceType marketplaceType)
         {
+            _logger.LogInformation("Starting category attribute sync for MarketplaceType: {MarketplaceType}", marketplaceType);
+
             IMarketplaceCategoryProvider marketplaceCategoryProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceCategoryProvider>(marketplaceType);
             IList<Category> leafCategoryEntities;
 
@@ -132,26 +150,26 @@ namespace TKH.Business.Features.Categories.Services
             using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
             {
                 IUnitOfWork scopedUnitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                IRepository<CategoryAttribute> scopedCategoryAttributeRepository = scopedUnitOfWork.GetRepository<CategoryAttribute>();
+                IRepository<Category> scopedCategoryRepository = scopedUnitOfWork.GetRepository<Category>();
 
-                List<int> categoryIdsInCurrentBatch = attributeDownloadResults.Select(downloadResult => (int)downloadResult.CategoryEntity.Id).ToList();
+                List<int> categoryIdsInCurrentBatchList = attributeDownloadResults.Select(downloadResult => (int)downloadResult.CategoryEntity.Id).ToList();
 
-                IList<CategoryAttribute> existingCategoryAttributeEntities = await scopedCategoryAttributeRepository.GetAllAsync(
-                    predicate: categoryAttribute => categoryIdsInCurrentBatch.Contains(categoryAttribute.CategoryId),
-                    include: source => source.Include(categoryAttribute => categoryAttribute.Values),
+                IList<Category> existingCategoryEntitiesWithAttributes = await scopedCategoryRepository.GetAllAsync(
+                    predicate: category => categoryIdsInCurrentBatchList.Contains(category.Id),
+                    include: source => source.Include(category => category.Attributes)
+                                             .ThenInclude(categoryAttribute => categoryAttribute.Values),
                     disableTracking: false,
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, CategoryAttribute> existingCategoryAttributeEntityMap = existingCategoryAttributeEntities
-                    .ToDictionary(categoryAttributeEntity => $"{categoryAttributeEntity.CategoryId}_{categoryAttributeEntity.ExternalId}", categoryAttributeEntity => categoryAttributeEntity);
-
-                List<CategoryAttribute> newCategoryAttributeEntitiesToAdd = new List<CategoryAttribute>();
-
                 foreach (var attributeDownloadResult in attributeDownloadResults)
                 {
-                    Category currentCategoryEntity = attributeDownloadResult.CategoryEntity;
+                    Category currentCategoryEntityProxy = attributeDownloadResult.CategoryEntity;
                     List<MarketplaceCategoryAttributeDto> incomingAttributeDtos = attributeDownloadResult.AttributeDtos;
+
+                    Category? managedCategoryEntity = existingCategoryEntitiesWithAttributes.FirstOrDefault(c => c.Id == currentCategoryEntityProxy.Id);
+
+                    if (managedCategoryEntity is null) continue;
 
                     var distinctIncomingAttributeDtos = incomingAttributeDtos
                         .DistinctBy(attributeDto => attributeDto.ExternalId)
@@ -159,73 +177,26 @@ namespace TKH.Business.Features.Categories.Services
 
                     foreach (MarketplaceCategoryAttributeDto incomingAttributeDto in distinctIncomingAttributeDtos)
                     {
-                        string attributeLookupKey = $"{currentCategoryEntity.Id}_{incomingAttributeDto.ExternalId}";
+                        CategoryAttribute processedCategoryAttributeEntity = managedCategoryEntity.AddOrUpdateAttribute(
+                            incomingAttributeDto.ExternalId,
+                            incomingAttributeDto.Name,
+                            incomingAttributeDto.IsVariant
+                        );
 
-                        bool isAttributeExisting = existingCategoryAttributeEntityMap.TryGetValue(attributeLookupKey, out CategoryAttribute? existingCategoryAttributeEntity);
-
-                        if (isAttributeExisting && existingCategoryAttributeEntity is not null)
+                        if (incomingAttributeDto.Values != null)
                         {
-                            int preservedCategoryAttributeId = existingCategoryAttributeEntity.Id;
-
-                            _mapper.Map(incomingAttributeDto, existingCategoryAttributeEntity);
-
-                            existingCategoryAttributeEntity.Id = preservedCategoryAttributeId;
-                            existingCategoryAttributeEntity.CategoryId = currentCategoryEntity.Id;
-
-                            SyncAttributeValuesSafe(existingCategoryAttributeEntity, incomingAttributeDto.Values);
-                        }
-                        else
-                        {
-                            CategoryAttribute newCategoryAttributeEntity = _mapper.Map<CategoryAttribute>(incomingAttributeDto);
-
-                            newCategoryAttributeEntity.Id = 0;
-                            newCategoryAttributeEntity.CategoryId = currentCategoryEntity.Id;
-
-                            SyncAttributeValuesSafe(newCategoryAttributeEntity, incomingAttributeDto.Values);
-
-                            newCategoryAttributeEntitiesToAdd.Add(newCategoryAttributeEntity);
+                            foreach (MarketplaceAttributeValueDto incomingValueDto in incomingAttributeDto.Values)
+                            {
+                                processedCategoryAttributeEntity.AddOrUpdateValue(
+                                    incomingValueDto.ExternalId,
+                                    incomingValueDto.Value
+                                );
+                            }
                         }
                     }
                 }
 
-                if (newCategoryAttributeEntitiesToAdd.Count > 0)
-                    await scopedCategoryAttributeRepository.InsertAsync(newCategoryAttributeEntitiesToAdd);
-
                 await scopedUnitOfWork.SaveChangesAsync();
-            }
-        }
-
-        private void SyncAttributeValuesSafe(CategoryAttribute parentCategoryAttributeEntity, List<MarketplaceAttributeValueDto> incomingAttributeValueDtos)
-        {
-            if (incomingAttributeValueDtos is null || incomingAttributeValueDtos.Count == 0) return;
-
-            if (parentCategoryAttributeEntity.Values == null)
-                parentCategoryAttributeEntity.Values = new List<AttributeValue>();
-
-            Dictionary<string, AttributeValue> existingAttributeValueEntityMap = parentCategoryAttributeEntity.Values
-                .ToDictionary(attributeValueEntity => attributeValueEntity.ExternalId, attributeValueEntity => attributeValueEntity);
-
-            List<MarketplaceAttributeValueDto> distinctIncomingAttributeValueDtos = incomingAttributeValueDtos
-                .DistinctBy(attributeValueDto => attributeValueDto.ExternalId)
-                .ToList();
-
-            foreach (MarketplaceAttributeValueDto incomingAttributeValueDto in distinctIncomingAttributeValueDtos)
-            {
-                if (existingAttributeValueEntityMap.TryGetValue(incomingAttributeValueDto.ExternalId, out AttributeValue? existingAttributeValueEntity))
-                {
-                    existingAttributeValueEntity.Value = incomingAttributeValueDto.Value;
-                }
-                else
-                {
-                    AttributeValue newAttributeValueEntity = new AttributeValue
-                    {
-                        ExternalId = incomingAttributeValueDto.ExternalId,
-                        Value = incomingAttributeValueDto.Value,
-                        CategoryAttributeId = parentCategoryAttributeEntity.Id
-                    };
-
-                    parentCategoryAttributeEntity.Values.Add(newAttributeValueEntity);
-                }
             }
         }
     }

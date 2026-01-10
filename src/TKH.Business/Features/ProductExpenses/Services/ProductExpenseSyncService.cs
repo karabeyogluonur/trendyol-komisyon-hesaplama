@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using TKH.Business.Common.Services;
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Core.Common.Constants;
@@ -13,22 +15,28 @@ namespace TKH.Business.Features.ProductExpenses.Services
     public class ProductExpenseSyncService : IProductExpenseSyncService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ILogger<ProductExpenseSyncService> _logger;
 
-        public ProductExpenseSyncService(IServiceScopeFactory serviceScopeFactory)
+        public ProductExpenseSyncService(
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<ProductExpenseSyncService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _logger = logger;
         }
 
         public async Task CalculateAndSyncShippingCostsAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
-            List<(int ProductId, decimal AverageCost)> calculatedCosts = new List<(int ProductId, decimal AverageCost)>();
+            _logger.LogInformation("Starting shipping cost analysis for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
+
+            List<(int ProductId, decimal AverageCost)> calculatedCostsList = new List<(int ProductId, decimal AverageCost)>();
 
             int marketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
             MarketplaceType marketplaceType = marketplaceAccountConnectionDetailsDto.MarketplaceType;
 
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
             {
-                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IUnitOfWork unitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
                 IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
                 IRepository<ShipmentTransaction> shipmentTransactionRepository = unitOfWork.GetRepository<ShipmentTransaction>();
@@ -36,7 +44,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
                 DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ShippingCostAnalysisLookbackDays);
 
-                IList<Order> orders = await orderRepository.GetAllAsync(
+                IList<Order> shippedOrders = await orderRepository.GetAllAsync(
                     predicate: order => order.MarketplaceAccountId == marketplaceAccountId
                                      && order.OrderDate >= analysisStartDate
                                      && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
@@ -45,10 +53,14 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     ignoreQueryFilters: true
                 );
 
-                if (!orders.Any()) return;
+                if (!shippedOrders.Any())
+                {
+                    _logger.LogInformation("No eligible orders found for shipping cost analysis. AccountId: {AccountId}", marketplaceAccountId);
+                    return;
+                }
 
-                List<int> orderIds = orders.Select(order => order.Id).ToList();
-                List<string> orderExternalNumbers = orders.Select(order => order.ExternalOrderNumber).ToList();
+                List<int> orderIds = shippedOrders.Select(order => order.Id).ToList();
+                List<string> orderExternalNumbers = shippedOrders.Select(order => order.ExternalOrderNumber).ToList();
 
                 IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
                     predicate: orderItem => orderIds.Contains(orderItem.OrderId),
@@ -56,44 +68,44 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     ignoreQueryFilters: true
                 );
 
-                IList<Claim> claims = await claimRepository.GetAllAsync(
+                IList<Claim> existingClaims = await claimRepository.GetAllAsync(
                     predicate: claim => orderExternalNumbers.Contains(claim.ExternalOrderNumber),
                     disableTracking: true,
                     ignoreQueryFilters: true
                 );
 
-                HashSet<string> claimedOrderNumbers = claims.Select(claim => claim.ExternalOrderNumber).ToHashSet();
+                HashSet<string> claimedOrderNumbersHashSet = existingClaims.Select(claim => claim.ExternalOrderNumber).ToHashSet();
 
                 IList<ShipmentTransaction> shipmentTransactions = await shipmentTransactionRepository.GetAllAsync(
-                    predicate: transaction => transaction.MarketplaceAccountId == marketplaceAccountId
-                                           && orderExternalNumbers.Contains(transaction.ExternalOrderNumber)
-                                           && transaction.Amount > ApplicationDefaults.MinimumShippingCostThreshold,
+                    predicate: shipmentTransaction => shipmentTransaction.MarketplaceAccountId == marketplaceAccountId
+                                                   && orderExternalNumbers.Contains(shipmentTransaction.ExternalOrderNumber)
+                                                   && shipmentTransaction.Amount > ApplicationDefaults.MinimumShippingCostThreshold,
                     disableTracking: true,
                     ignoreQueryFilters: true
                 );
 
-                HashSet<int> singleItemOrderIds = orderItems
+                HashSet<int> singleItemOrderIdsHashSet = orderItems
                     .GroupBy(orderItem => orderItem.OrderId)
-                    .Where(group => group.Select(item => item.ProductId).Distinct().Count() == 1 && group.Sum(item => item.Quantity) == 1)
+                    .Where(group => group.Select(orderItem => orderItem.ProductId).Distinct().Count() == 1 && group.Sum(orderItem => orderItem.Quantity) == 1)
                     .Select(group => group.Key)
                     .ToHashSet();
 
-                var analysisData = orders
+                var analysisDataList = shippedOrders
                     .Join(orderItems,
                         order => order.Id,
                         orderItem => orderItem.OrderId,
                         (order, orderItem) => new { Order = order, OrderItem = orderItem })
                     .Join(shipmentTransactions,
                         combined => combined.Order.ExternalOrderNumber,
-                        transaction => transaction.ExternalOrderNumber,
-                        (combined, transaction) => new
+                        shipmentTransaction => shipmentTransaction.ExternalOrderNumber,
+                        (combined, shipmentTransaction) => new
                         {
                             combined.Order,
                             combined.OrderItem,
-                            Transaction = transaction
+                            Transaction = shipmentTransaction
                         })
-                    .Where(data => singleItemOrderIds.Contains(data.Order.Id)
-                                && !claimedOrderNumbers.Contains(data.Order.ExternalOrderNumber)
+                    .Where(data => singleItemOrderIdsHashSet.Contains(data.Order.Id)
+                                && !claimedOrderNumbersHashSet.Contains(data.Order.ExternalOrderNumber)
                                 && data.OrderItem.ProductId != null)
                     .Select(data => new
                     {
@@ -102,38 +114,47 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     })
                     .ToList();
 
-                var groupedCosts = analysisData.GroupBy(data => data.ProductId).Select(group => new
-                {
-                    ProductId = group.Key,
-                    AverageCost = Math.Round(group.Average(item => item.Cost), 2)
-                }).ToList();
+                var groupedCostsList = analysisDataList
+                    .GroupBy(data => data.ProductId)
+                    .Select(group => new
+                    {
+                        ProductId = group.Key,
+                        AverageCost = Math.Round(group.Average(item => item.Cost), 2)
+                    }).ToList();
 
-                foreach (var item in groupedCosts)
-                    calculatedCosts.Add((item.ProductId, item.AverageCost));
+                foreach (var costItem in groupedCostsList)
+                    calculatedCostsList.Add((costItem.ProductId, costItem.AverageCost));
             }
 
-            if (calculatedCosts.Count > 0)
-                await ProcessExpenseUpdateBatchAsync(calculatedCosts, marketplaceType);
+            if (calculatedCostsList.Count > 0)
+            {
+                _logger.LogInformation("Analysis completed. Updating costs for {Count} products.", calculatedCostsList.Count);
+                await ProcessExpenseUpdateBatchAsync(calculatedCostsList, marketplaceType);
+            }
+            else
+                _logger.LogInformation("Analysis completed. No cost updates required.");
         }
 
         public async Task CalculateAndSyncCommissionRatesAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
-            List<(int ProductId, decimal LatestCommissionRate)> finalCommissionsToSync = new List<(int ProductId, decimal LatestCommissionRate)>();
+            _logger.LogInformation("Starting commission rate analysis for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
+
+            List<(int ProductId, decimal LatestCommissionRate)> finalCommissionsToSyncList = new List<(int ProductId, decimal LatestCommissionRate)>();
 
             int marketplaceAccountId = marketplaceAccountConnectionDetailsDto.Id;
             MarketplaceType marketplaceType = marketplaceAccountConnectionDetailsDto.MarketplaceType;
 
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
             {
-                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                IUnitOfWork unitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 IRepository<Order> orderRepository = unitOfWork.GetRepository<Order>();
                 IRepository<OrderItem> orderItemRepository = unitOfWork.GetRepository<OrderItem>();
                 IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
 
                 DateTime analysisStartDate = DateTime.UtcNow.AddDays(-ApplicationDefaults.ProductCommissionRateAnalysisLookbackDays);
-                Dictionary<int, decimal> orderBasedRates = new Dictionary<int, decimal>();
+                Dictionary<int, decimal> orderBasedRatesDictionary = new Dictionary<int, decimal>();
 
-                IList<Order> orders = await orderRepository.GetAllAsync(
+                IList<Order> shippedOrders = await orderRepository.GetAllAsync(
                     predicate: order => order.MarketplaceAccountId == marketplaceAccountId
                                      && order.OrderDate >= analysisStartDate
                                      && (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered),
@@ -141,9 +162,9 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     ignoreQueryFilters: true
                 );
 
-                if (orders.Any())
+                if (shippedOrders.Any())
                 {
-                    List<int> orderIds = orders.Select(order => order.Id).ToList();
+                    List<int> orderIds = shippedOrders.Select(order => order.Id).ToList();
 
                     IList<OrderItem> orderItems = await orderItemRepository.GetAllAsync(
                         predicate: orderItem => orderIds.Contains(orderItem.OrderId) && orderItem.ProductId.HasValue,
@@ -151,22 +172,22 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         ignoreQueryFilters: true
                     );
 
-                    var analysisData = orderItems
-                        .Join(orders, item => item.OrderId, order => order.Id, (item, order) => new { Item = item, Order = order })
-                        .GroupBy(order => order.Item.ProductId!.Value)
+                    var orderAnalysisDataList = orderItems
+                        .Join(shippedOrders, orderItem => orderItem.OrderId, order => order.Id, (orderItem, order) => new { Item = orderItem, Order = order })
+                        .GroupBy(combined => combined.Item.ProductId!.Value)
                         .Select(group => new
                         {
                             ProductId = group.Key,
                             LatestCommissionRate = group.OrderByDescending(g => g.Order.OrderDate)
-                                                    .Select(o => o.Item.CommissionRate)
-                                                    .FirstOrDefault()
+                                                        .Select(g => g.Item.CommissionRate)
+                                                        .FirstOrDefault()
                         })
                         .ToList();
 
-                    orderBasedRates = analysisData.ToDictionary(k => k.ProductId, v => v.LatestCommissionRate);
+                    orderBasedRatesDictionary = orderAnalysisDataList.ToDictionary(k => k.ProductId, v => v.LatestCommissionRate);
                 }
 
-                var productCategoryData = await productRepository.GetAllAsync(
+                var productCategoryDataList = await productRepository.GetAllAsync(
                     predicate: product => product.MarketplaceAccountId == marketplaceAccountId,
                     selector: product => new
                     {
@@ -178,43 +199,48 @@ namespace TKH.Business.Features.ProductExpenses.Services
                     ignoreQueryFilters: true
                 );
 
-                foreach (var productCategory in productCategoryData)
+                foreach (var productCategoryData in productCategoryDataList)
                 {
                     decimal rateToUse = 0;
-                    bool rateFound = false;
+                    bool isRateFound = false;
 
-                    if (orderBasedRates.TryGetValue(productCategory.ProductId, out decimal orderRate))
+                    if (orderBasedRatesDictionary.TryGetValue(productCategoryData.ProductId, out decimal orderRate))
                     {
                         rateToUse = orderRate;
-                        rateFound = true;
+                        isRateFound = true;
                     }
-                    else if (productCategory.CategoryDefaultRate.HasValue)
+                    else if (productCategoryData.CategoryDefaultRate.HasValue)
                     {
-                        rateToUse = productCategory.CategoryDefaultRate.Value;
-                        rateFound = true;
+                        rateToUse = productCategoryData.CategoryDefaultRate.Value;
+                        isRateFound = true;
                     }
 
-                    if (rateFound)
-                        finalCommissionsToSync.Add((productCategory.ProductId, rateToUse));
+                    if (isRateFound)
+                        finalCommissionsToSyncList.Add((productCategoryData.ProductId, rateToUse));
                 }
             }
 
-            if (finalCommissionsToSync.Count > 0)
-                await ProcessCommissionUpdateBatchAsync(finalCommissionsToSync, marketplaceType);
+            if (finalCommissionsToSyncList.Count > 0)
+            {
+                _logger.LogInformation("Commission analysis completed. Updating rates for {Count} products.", finalCommissionsToSyncList.Count);
+                await ProcessCommissionUpdateBatchAsync(finalCommissionsToSyncList, marketplaceType);
+            }
+            else
+                _logger.LogInformation("Commission analysis completed. No updates required.");
         }
 
-        private async Task ProcessExpenseUpdateBatchAsync(List<(int ProductId, decimal AverageCost)> costsToSync, MarketplaceType marketplaceType)
+        private async Task ProcessExpenseUpdateBatchAsync(List<(int ProductId, decimal AverageCost)> costsToSyncList, MarketplaceType marketplaceType)
         {
-            for (int i = 0; i < costsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
+            for (int index = 0; index < costsToSyncList.Count; index += ApplicationDefaults.ExpenseSyncBatchSize)
             {
-                var batch = costsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
-                var batchProductIds = batch.Select(item => item.ProductId).ToList();
+                var currentBatchList = costsToSyncList.Skip(index).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+                var batchProductIds = currentBatchList.Select(item => item.ProductId).ToList();
 
-                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
                 {
-                    IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    IUnitOfWork unitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
-                    TaxSettings taxSettings = scope.ServiceProvider.GetRequiredService<TaxSettings>();
+                    TaxSettings taxSettings = serviceScope.ServiceProvider.GetRequiredService<TaxSettings>();
 
                     IList<Product> products = await productRepository.GetAllAsync(
                         predicate: product => batchProductIds.Contains(product.Id),
@@ -223,34 +249,18 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         ignoreQueryFilters: true
                     );
 
-                    foreach ((int ProductId, decimal AverageCost) item in batch)
+                    foreach ((int productId, decimal averageCost) in currentBatchList)
                     {
-                        Product? product = products.FirstOrDefault(product => product.Id == item.ProductId);
+                        Product? product = products.FirstOrDefault(product => product.Id == productId);
 
                         if (product is null) continue;
 
-                        if (product.Expenses is null)
-                            product.Expenses = new List<ProductExpense>();
-
-                        ProductExpense? activeExpense = product.Expenses.FirstOrDefault(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null);
-
-                        if (activeExpense is not null && activeExpense.Amount == item.AverageCost)
-                            continue;
-
-                        if (activeExpense is not null)
-                            activeExpense.EndDate = DateTime.UtcNow;
-
-                        product.Expenses.Add(new ProductExpense
-                        {
-                            ProductId = product.Id,
-                            Type = ProductExpenseType.ShippingCost,
-                            GenerationType = GenerationType.Automated,
-                            Amount = item.AverageCost,
-                            IsVatIncluded = true,
-                            VatRate = taxSettings.ShippingVatRate,
-                            StartDate = DateTime.UtcNow,
-                            EndDate = null
-                        });
+                        product.AddOrUpdateExpense(
+                            ProductExpenseType.ShippingCost,
+                            averageCost,
+                            taxSettings.ShippingVatRate,
+                            isVatIncluded: true
+                        );
                     }
 
                     await unitOfWork.SaveChangesAsync();
@@ -258,18 +268,18 @@ namespace TKH.Business.Features.ProductExpenses.Services
             }
         }
 
-        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSync, MarketplaceType marketplaceType)
+        private async Task ProcessCommissionUpdateBatchAsync(List<(int ProductId, decimal LatestCommissionRate)> commissionsToSyncList, MarketplaceType marketplaceType)
         {
-            for (int i = 0; i < commissionsToSync.Count; i += ApplicationDefaults.ExpenseSyncBatchSize)
+            for (int index = 0; index < commissionsToSyncList.Count; index += ApplicationDefaults.ExpenseSyncBatchSize)
             {
-                var batch = commissionsToSync.Skip(i).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
-                var batchProductIds = batch.Select(item => item.ProductId).ToList();
+                var currentBatchList = commissionsToSyncList.Skip(index).Take(ApplicationDefaults.ExpenseSyncBatchSize).ToList();
+                var batchProductIds = currentBatchList.Select(item => item.ProductId).ToList();
 
-                using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+                using (IServiceScope serviceScope = _serviceScopeFactory.CreateScope())
                 {
-                    IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    IUnitOfWork unitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     IRepository<Product> productRepository = unitOfWork.GetRepository<Product>();
-                    IMarketplaceTaxService marketplaceTaxService = scope.ServiceProvider.GetRequiredService<IMarketplaceTaxService>();
+                    IMarketplaceTaxService marketplaceTaxService = serviceScope.ServiceProvider.GetRequiredService<IMarketplaceTaxService>();
 
                     IList<Product> products = await productRepository.GetAllAsync(
                         predicate: product => batchProductIds.Contains(product.Id),
@@ -278,35 +288,20 @@ namespace TKH.Business.Features.ProductExpenses.Services
                         ignoreQueryFilters: true
                     );
 
-                    foreach (var (productId, latestRate) in batch)
+                    foreach (var (productId, latestRate) in currentBatchList)
                     {
                         Product? product = products.FirstOrDefault(product => product.Id == productId);
 
                         if (product is null) continue;
 
-                        if (product.Expenses is null) product.Expenses = new List<ProductExpense>();
-
-                        ProductExpense? activeExpense = product.Expenses.FirstOrDefault(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate is null);
-
-                        if (activeExpense is not null && activeExpense.Amount == latestRate)
-                            continue;
-
-                        if (activeExpense is not null)
-                            activeExpense.EndDate = DateTime.UtcNow;
-
                         decimal vatRate = marketplaceTaxService.GetVatRateByExpenseType(marketplaceType, ProductExpenseType.CommissionRate);
 
-                        product.Expenses.Add(new ProductExpense
-                        {
-                            ProductId = product.Id,
-                            Type = ProductExpenseType.CommissionRate,
-                            GenerationType = GenerationType.Automated,
-                            Amount = latestRate,
-                            IsVatIncluded = true,
-                            VatRate = vatRate,
-                            StartDate = DateTime.UtcNow,
-                            EndDate = null
-                        });
+                        product.AddOrUpdateExpense(
+                            ProductExpenseType.CommissionRate,
+                            latestRate,
+                            vatRate,
+                            isVatIncluded: true
+                        );
                     }
 
                     await unitOfWork.SaveChangesAsync();

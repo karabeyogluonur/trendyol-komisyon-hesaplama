@@ -1,11 +1,13 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using TKH.Business.Features.MarketplaceAccounts.Dtos;
 using TKH.Business.Integrations.Marketplaces.Abstract;
 using TKH.Business.Integrations.Marketplaces.Dtos;
 using TKH.Business.Integrations.Marketplaces.Factories;
 using TKH.Core.Common.Constants;
+using TKH.Core.Common.Extensions;
 using TKH.Core.DataAccess;
 using TKH.Entities;
 
@@ -15,37 +17,41 @@ namespace TKH.Business.Features.Claims.Services
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly MarketplaceProviderFactory _marketplaceProviderFactory;
-        private readonly IMapper _mapper;
+        private readonly ILogger<ClaimSyncService> _logger;
 
         public ClaimSyncService(
             IServiceScopeFactory serviceScopeFactory,
             MarketplaceProviderFactory marketplaceProviderFactory,
-            IMapper mapper)
+            ILogger<ClaimSyncService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _marketplaceProviderFactory = marketplaceProviderFactory;
-            _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task SyncClaimsFromMarketplaceAsync(MarketplaceAccountConnectionDetailsDto marketplaceAccountConnectionDetailsDto)
         {
+            _logger.LogInformation("Starting claim sync for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
+
             IMarketplaceClaimProvider marketplaceClaimProvider = _marketplaceProviderFactory.GetProvider<IMarketplaceClaimProvider>(marketplaceAccountConnectionDetailsDto.MarketplaceType);
 
-            List<MarketplaceClaimDto> marketplaceClaimDtoBuffer = new List<MarketplaceClaimDto>(ApplicationDefaults.ClaimBatchSize);
+            List<MarketplaceClaimDto> marketplaceClaimDtoBufferList = new List<MarketplaceClaimDto>(ApplicationDefaults.ClaimBatchSize);
 
             await foreach (MarketplaceClaimDto incomingMarketplaceClaimDto in marketplaceClaimProvider.GetClaimsStreamAsync(marketplaceAccountConnectionDetailsDto))
             {
-                marketplaceClaimDtoBuffer.Add(incomingMarketplaceClaimDto);
+                marketplaceClaimDtoBufferList.Add(incomingMarketplaceClaimDto);
 
-                if (marketplaceClaimDtoBuffer.Count >= ApplicationDefaults.ClaimBatchSize)
+                if (marketplaceClaimDtoBufferList.Count >= ApplicationDefaults.ClaimBatchSize)
                 {
-                    await ProcessClaimBatchAsync(marketplaceClaimDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
-                    marketplaceClaimDtoBuffer.Clear();
+                    await ProcessClaimBatchAsync(marketplaceClaimDtoBufferList, marketplaceAccountConnectionDetailsDto.Id);
+                    marketplaceClaimDtoBufferList.Clear();
                 }
             }
 
-            if (marketplaceClaimDtoBuffer.Count > 0)
-                await ProcessClaimBatchAsync(marketplaceClaimDtoBuffer, marketplaceAccountConnectionDetailsDto.Id);
+            if (marketplaceClaimDtoBufferList.Count > 0)
+                await ProcessClaimBatchAsync(marketplaceClaimDtoBufferList, marketplaceAccountConnectionDetailsDto.Id);
+
+            _logger.LogInformation("Claim sync completed for MarketplaceAccount: {AccountId}", marketplaceAccountConnectionDetailsDto.Id);
         }
 
         private async Task ProcessClaimBatchAsync(List<MarketplaceClaimDto> marketplaceClaimDtoList, int marketplaceAccountId)
@@ -75,7 +81,7 @@ namespace TKH.Business.Features.Claims.Services
                     ignoreQueryFilters: true
                 );
 
-                Dictionary<string, int> barcodeToLocalIdMap = relatedProductList
+                Dictionary<string, int> barcodeToLocalIdMapDictionary = relatedProductList
                     .Where(product => !string.IsNullOrEmpty(product.Barcode))
                     .GroupBy(product => product.Barcode)
                     .ToDictionary(group => group.Key, group => group.First().Id);
@@ -88,62 +94,106 @@ namespace TKH.Business.Features.Claims.Services
                     ignoreQueryFilters: true
                 );
 
-                List<Claim> newClaimsToAdd = new List<Claim>();
+                List<Claim> newClaimsToAddList = new List<Claim>();
 
                 foreach (MarketplaceClaimDto marketplaceClaimDto in marketplaceClaimDtoList)
                 {
-                    Claim? existingClaim = existingClaimList.FirstOrDefault(claim => claim.ExternalId == marketplaceClaimDto.ExternalId);
+                    Claim? existingClaimEntity = existingClaimList.FirstOrDefault(claim => claim.ExternalId == marketplaceClaimDto.ExternalId);
 
-                    if (existingClaim is not null)
+                    List<ClaimItem> claimItemsForSync = CreateClaimItemsFromDto(
+                        existingClaimEntity?.Id ?? 0,
+                        marketplaceClaimDto.Items,
+                        barcodeToLocalIdMapDictionary
+                    );
+
+                    if (existingClaimEntity is not null)
                     {
-                        _mapper.Map(marketplaceClaimDto, existingClaim);
-                        existingClaim.LastUpdateDateTime = DateTime.UtcNow;
+                        existingClaimEntity.UpdateDetails(
+                            marketplaceClaimDto.CustomerFirstName,
+                            marketplaceClaimDto.CustomerLastName,
+                            marketplaceClaimDto.CargoTrackingNumber,
+                            marketplaceClaimDto.CargoProviderName,
+                            marketplaceClaimDto.CargoSenderNumber,
+                            marketplaceClaimDto.CargoTrackingLink,
+                            marketplaceClaimDto.RejectedExternalPackageId,
+                            marketplaceClaimDto.RejectedCargoTrackingNumber,
+                            marketplaceClaimDto.RejectedCargoProviderName,
+                            marketplaceClaimDto.RejectedCargoTrackingLink,
+                            DateTime.UtcNow
+                        );
 
-                        SyncClaimItems(existingClaim, marketplaceClaimDto.Items, barcodeToLocalIdMap);
+                        existingClaimEntity.SyncItems(claimItemsForSync);
                     }
                     else
                     {
-                        Claim newClaim = _mapper.Map<Claim>(marketplaceClaimDto);
-                        newClaim.MarketplaceAccountId = marketplaceAccountId;
-                        newClaim.LastUpdateDateTime = DateTime.UtcNow;
+                        Claim newClaimEntity = Claim.Create(
+                            marketplaceAccountId,
+                            marketplaceClaimDto.ExternalId,
+                            marketplaceClaimDto.ExternalOrderNumber,
+                            marketplaceClaimDto.ExternalShipmentPackageId,
+                            marketplaceClaimDto.ClaimDate.EnsureUtc(),
+                            marketplaceClaimDto.OrderDate.EnsureUtc(),
+                            marketplaceClaimDto.CustomerFirstName,
+                            marketplaceClaimDto.CustomerLastName,
+                            marketplaceClaimDto.CargoTrackingNumber,
+                            marketplaceClaimDto.CargoProviderName,
+                            marketplaceClaimDto.CargoSenderNumber,
+                            marketplaceClaimDto.CargoTrackingLink,
+                            marketplaceClaimDto.RejectedExternalPackageId,
+                            marketplaceClaimDto.RejectedCargoTrackingNumber,
+                            marketplaceClaimDto.RejectedCargoProviderName,
+                            marketplaceClaimDto.RejectedCargoTrackingLink
+                        );
 
-                        SyncClaimItems(newClaim, marketplaceClaimDto.Items, barcodeToLocalIdMap);
-
-                        newClaimsToAdd.Add(newClaim);
+                        newClaimEntity.SyncItems(claimItemsForSync);
+                        newClaimsToAddList.Add(newClaimEntity);
                     }
                 }
 
-                if (newClaimsToAdd.Count > 0)
-                    await scopedClaimRepository.InsertAsync(newClaimsToAdd);
+                if (newClaimsToAddList.Count > 0)
+                    await scopedClaimRepository.InsertAsync(newClaimsToAddList);
 
                 await scopedUnitOfWork.SaveChangesAsync();
             }
         }
 
-        private void SyncClaimItems(
-            Claim claim,
-            List<MarketplaceClaimItemDto> marketplaceItems,
-            Dictionary<string, int> barcodeToLocalIdMap)
+        private List<ClaimItem> CreateClaimItemsFromDto(int claimId, List<MarketplaceClaimItemDto> marketplaceClaimItemDtos, Dictionary<string, int> barcodeToLocalIdMapDictionary)
         {
-            if (marketplaceItems is null || !marketplaceItems.Any())
-                return;
+            List<ClaimItem> claimItemEntities = new List<ClaimItem>();
 
-            if (claim.ClaimItems is null)
-                claim.ClaimItems = new List<ClaimItem>();
-            else
-                claim.ClaimItems.Clear();
+            if (marketplaceClaimItemDtos is null || !marketplaceClaimItemDtos.Any())
+                return claimItemEntities;
 
-            foreach (MarketplaceClaimItemDto itemDto in marketplaceItems)
+            foreach (MarketplaceClaimItemDto marketplaceClaimItemDto in marketplaceClaimItemDtos)
             {
-                ClaimItem claimItem = _mapper.Map<ClaimItem>(itemDto);
+                int? matchedProductId = null;
+                if (!string.IsNullOrEmpty(marketplaceClaimItemDto.Barcode) && barcodeToLocalIdMapDictionary.TryGetValue(marketplaceClaimItemDto.Barcode, out int productId))
+                    matchedProductId = productId;
 
-                if (!string.IsNullOrEmpty(itemDto.Barcode) && barcodeToLocalIdMap.TryGetValue(itemDto.Barcode, out int productId))
-                    claimItem.ProductId = productId;
-                else
-                    claimItem.ProductId = null;
+                ClaimItem claimItemEntity = ClaimItem.Create(
+                    claimId,
+                    matchedProductId,
+                    marketplaceClaimItemDto.ExternalId,
+                    marketplaceClaimItemDto.ExternalOrderLineItemId,
+                    marketplaceClaimItemDto.Barcode,
+                    marketplaceClaimItemDto.Sku,
+                    marketplaceClaimItemDto.ProductName,
+                    marketplaceClaimItemDto.Price,
+                    marketplaceClaimItemDto.VatRate,
+                    marketplaceClaimItemDto.Status,
+                    marketplaceClaimItemDto.CustomerNote,
+                    marketplaceClaimItemDto.ReasonType,
+                    marketplaceClaimItemDto.ReasonName,
+                    marketplaceClaimItemDto.ReasonCode,
+                    marketplaceClaimItemDto.IsResolved,
+                    marketplaceClaimItemDto.IsAutoAccepted,
+                    marketplaceClaimItemDto.IsAcceptedBySeller
+                );
 
-                claim.ClaimItems.Add(claimItem);
+                claimItemEntities.Add(claimItemEntity);
             }
+
+            return claimItemEntities;
         }
     }
 }

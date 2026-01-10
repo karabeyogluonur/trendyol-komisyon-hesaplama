@@ -5,7 +5,11 @@ namespace TKH.Business.Features.ProductExpenses.Services
 {
     public interface IProductExpenseService
     {
-        Task<IResult> AddAsync(ProductExpenseAddDto productExpenseAddDto);
-        Task<IResult> AddRangeAsync(List<ProductExpenseAddDto> productExpenseAddDtos);
+        Task<IResult> CreateProductExpenseAsync(ProductExpenseCreateDto productExpenseCreateDto);
+        Task<IResult> CreateProductExpensesAsync(List<ProductExpenseCreateDto> productExpenseCreateDtos);
+
+
+
+
     }
 }
