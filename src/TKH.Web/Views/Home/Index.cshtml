@@ -1,3 +1,219 @@
-﻿@{
-    Layout = "_Layout";
+﻿@model DashboardViewModel
+
+@{
+    string cookieKey = "TKH_WorkContext_StoreId";
+    string? storeIdValue = Context.Request.Cookies[cookieKey];
+    bool isStoreSelected = !string.IsNullOrEmpty(storeIdValue) && int.TryParse(storeIdValue, out _);
 }
+
+<div class="row g-5 g-xl-10 mb-5 mb-xl-10">
+
+    @if (!isStoreSelected)
+    {
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="background: #f8f9fa;">
+                <div class="card-body d-flex flex-column flex-center py-10">
+                    <div class="mb-4">
+                        <i class="ki-duotone ki-shop fs-3x text-gray-400">
+                            <span class="path1"></span><span class="path2"></span><span class="path3"></span><span
+                                class="path4"></span><span class="path5"></span>
+                        </i>
+                    </div>
+                    <h4 class="text-gray-800 fw-bold fs-6 mb-1">Veri Analizi İçin Mağaza Seçin</h4>
+                    <p class="text-muted fw-semibold fs-8 mb-5 text-center">
+                        Dashboard verilerinin hesaplanabilmesi için aktif bir mağaza seçimi yapmanız gerekmektedir.
+                    </p>
+                    <a href="@Url.Action("Index", "MarketplaceAccount")"
+                        class="btn btn-sm btn-primary fw-bold fs-8 px-4 py-2">
+                        Mağazaları Yönet
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.ProductCostReadiness == null)
+    {
+        <div class="col-12 text-center py-20">
+            <span class="spinner-border spinner-border-sm text-primary"></span>
+            <span class="text-muted fs-7 fw-bold ms-2">Analiz verileri hazırlanıyor...</span>
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="card card-flush h-md-100" style="background: linear-gradient(90deg, #1C1C2D 0%, #22223D 100%);">
+                <div class="card-header pt-5">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bolder text-white fs-5 mb-1">Maliyet Veri Sağlığı</span>
+                        <span class="text-white opacity-50 mt-1 fw-bold fs-7">
+                            Toplam <span class="text-white opacity-100">@Model.ProductCostReadiness.TotalProductCount</span>
+                            ürün analiz edildi
+                        </span>
+                    </h3>
+                    <div class="card-toolbar">
+                        <span class="badge badge-@Model.ProductCostReadiness.HealthStatusColor fw-bolder fs-7 px-3 py-2">
+                            %@Model.ProductCostReadiness.ReadyPercent TAMAMLANDI
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body pt-3 pb-6">
+                    <div class="d-flex flex-column w-100">
+                        <div class="h-8px w-100 bg-white bg-opacity-10 rounded">
+                            <div class="bg-@Model.ProductCostReadiness.HealthStatusColor rounded h-8px transition-3s"
+                                role="progressbar" style="width: @Model.ProductCostReadiness.ReadyPercent%;">
+                            </div>
+                        </div>
+                        <div class="d-flex flex-stack mt-2">
+                            <span class="text-white opacity-50 fs-8 fw-bold italic">Doğru analiz için verileri
+                                tamamlayın.</span>
+                            <span class="text-white fs-8 fw-bolder">HEDEF: %100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 hover-elevate-up transition-3s">
+                <div class="card-body d-flex flex-column pt-6 pb-0">
+                    <div class="d-flex flex-stack mb-3">
+                        <div class="symbol symbol-35px">
+                            <span class="symbol-label bg-light-danger">
+                                <i class="ki-duotone ki-price-tag fs-3 text-danger">
+                                    <span class="path1"></span><span class="path2"></span><span class="path3"></span>
+                                </i>
+                            </span>
+                        </div>
+                        <span
+                            class="fs-4 fw-bolder text-gray-900">@Model.ProductCostReadiness.MissingPurchasePriceCount</span>
+                    </div>
+                    <div class="flex-grow-1 mb-4">
+                        <span class="text-gray-800 fs-7 fw-bolder d-block">Alış Fiyatı Eksik</span>
+                        <span class="text-muted fw-bold fs-8">Maliyet kaydı bulunmuyor.</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-5">
+                        <div class="progress h-4px w-100 bg-light-danger">
+                            <div class="progress-bar bg-danger"
+                                style="width: @Model.ProductCostReadiness.MissingPricePercent%"></div>
+                        </div>
+                        <span
+                            class="text-gray-500 fs-8 fw-bolder ms-2">%@Model.ProductCostReadiness.MissingPricePercent</span>
+                    </div>
+                    <a href="@Url.Action("Costs", "Product", new { CostStatus = (int)ProductCostFilterType.MissingPurchasePrice })"
+                        class="btn btn-sm btn-light-danger fw-bold fs-8 w-100 py-3 mb-5 mt-auto">
+                        Eksikleri Tamamla
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 hover-elevate-up transition-3s">
+                <div class="card-body d-flex flex-column pt-6 pb-0">
+                    <div class="d-flex flex-stack mb-3">
+                        <div class="symbol symbol-35px">
+                            <span class="symbol-label bg-light-warning">
+                                <i class="ki-duotone ki-delivery-3 fs-3 text-warning">
+                                    <span class="path1"></span><span class="path2"></span><span class="path3"></span>
+                                </i>
+                            </span>
+                        </div>
+                        <span
+                            class="fs-4 fw-bolder text-gray-900">@Model.ProductCostReadiness.MissingShippingCostCount</span>
+                    </div>
+                    <div class="flex-grow-1 mb-4">
+                        <span class="text-gray-800 fs-7 fw-bolder d-block">Kargo Gideri Eksik</span>
+                        <span class="text-muted fw-bold fs-8">Lojistik giderleri tanımlanmamış.</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-5">
+                        <div class="progress h-4px w-100 bg-light-warning">
+                            <div class="progress-bar bg-warning"
+                                style="width: @Model.ProductCostReadiness.MissingShippingPercent%"></div>
+                        </div>
+                        <span
+                            class="text-gray-500 fs-8 fw-bolder ms-2">%@Model.ProductCostReadiness.MissingShippingPercent</span>
+                    </div>
+                    <a href="@Url.Action("Costs", "Product", new { CostStatus = (int)ProductCostFilterType.MissingShippingCost })"
+                        class="btn btn-sm btn-light-warning fw-bold fs-8 w-100 py-3 mb-5 mt-auto">
+                        Giderleri Tanımla
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 hover-elevate-up transition-3s">
+                <div class="card-body d-flex flex-column pt-6 pb-0">
+                    <div class="d-flex flex-stack mb-3">
+                        <div class="symbol symbol-35px">
+                            <span class="symbol-label bg-light-info">
+                                <i class="ki-duotone ki-percentage fs-3 text-info">
+                                    <span class="path1"></span><span class="path2"></span>
+                                </i>
+                            </span>
+                        </div>
+                        <span class="fs-4 fw-bolder text-gray-900">@Model.ProductCostReadiness.MissingCommissionCount</span>
+                    </div>
+                    <div class="flex-grow-1 mb-4">
+                        <span class="text-gray-800 fs-7 fw-bolder d-block">Komisyon Oranı Eksik</span>
+                        <span class="text-muted fw-bold fs-8">Pazaryeri komisyonları eksik.</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-5">
+                        <div class="progress h-4px w-100 bg-light-info">
+                            <div class="progress-bar bg-info"
+                                style="width: @Model.ProductCostReadiness.MissingCommissionPercent%"></div>
+                        </div>
+                        <span
+                            class="text-gray-500 fs-8 fw-bolder ms-2">%@Model.ProductCostReadiness.MissingCommissionPercent</span>
+                    </div>
+                    <a href="@Url.Action("Costs", "Product", new { CostStatus = (int)ProductCostFilterType.MissingCommission })"
+                        class="btn btn-sm btn-light-info fw-bold fs-8 w-100 py-3 mb-5 mt-auto">
+                        Oranları Güncelle
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 hover-elevate-up transition-3s">
+                <div class="card-body d-flex flex-column pt-6 pb-0">
+                    <div class="d-flex flex-stack mb-3">
+                        <div class="symbol symbol-35px">
+                            <span class="symbol-label bg-light-success">
+                                <i class="ki-duotone ki-check-circle fs-3 text-success">
+                                    <span class="path1"></span><span class="path2"></span>
+                                </i>
+                            </span>
+                        </div>
+                        <span class="fs-4 fw-bolder text-gray-900">@Model.ProductCostReadiness.ReadyForAnalysisCount</span>
+                    </div>
+                    <div class="flex-grow-1 mb-4">
+                        <span class="text-gray-800 fs-7 fw-bolder d-block">Analize Hazır</span>
+                        <span class="text-muted fw-bold fs-8">Verileri tam ve analiz edilebilir.</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-5">
+                        <div class="progress h-4px w-100 bg-light-success">
+                            <div class="progress-bar bg-success" style="width: @Model.ProductCostReadiness.ReadyPercent%">
+                            </div>
+                        </div>
+                        <span class="text-gray-500 fs-8 fw-bolder ms-2">%@Model.ProductCostReadiness.ReadyPercent</span>
+                    </div>
+                    <a href="@Url.Action("Costs", "Product", new { CostStatus = (int)ProductCostFilterType.Completed })"
+                        class="btn btn-sm btn-light-success fw-bold fs-8 w-100 py-3 mb-5 mt-auto">
+                        Ürünleri Listele
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .transition-3s {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+</style>

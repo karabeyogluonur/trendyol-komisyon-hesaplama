@@ -1,9 +1,12 @@
 using System.Reflection;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using TKH.Business.Common.Services;
 using TKH.Business.Execution;
 using TKH.Business.Executors;
 using TKH.Business.Extensions;
+using TKH.Business.Features.Analytics.Services;
 using TKH.Business.Features.Categories.Services;
 using TKH.Business.Features.Claims.Services;
 using TKH.Business.Features.FinancialTransactions.Services;
@@ -11,6 +14,7 @@ using TKH.Business.Features.MarketplaceAccounts.Services;
 using TKH.Business.Features.Orders.Services;
 using TKH.Business.Features.ProductExpenses.Services;
 using TKH.Business.Features.ProductPrices.Services;
+using TKH.Business.Features.Products.Reports;
 using TKH.Business.Features.Products.Services;
 using TKH.Business.Features.Settings.Services;
 using TKH.Business.Features.ShipmentTransactions.Services;
@@ -50,6 +54,12 @@ namespace TKH.Business
             services.AddScoped<IProductExpenseService, ProductExpenseService>();
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
             services.AddScoped<IMarketplaceTaxService, MarketplaceTaxService>();
+
+            #endregion
+
+            #region Analytics Services
+
+            services.AddScoped<IProductReportService, ProductReportService>();
 
             #endregion
 

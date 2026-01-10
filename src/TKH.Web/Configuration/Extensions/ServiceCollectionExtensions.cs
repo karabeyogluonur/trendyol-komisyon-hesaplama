@@ -1,6 +1,8 @@
 using FluentValidation.AspNetCore;
 using FluentValidation;
+
 using System.Reflection;
+
 using TKH.Business;
 using TKH.Core;
 using TKH.DataAccess;
@@ -12,6 +14,7 @@ using TKH.Web.Features.Products.Services;
 using TKH.Web.Infrastructure.Filters;
 using TKH.Web.Features.ProductProfits.Services;
 using TKH.Web.Features.Settings.Services;
+using TKH.Web.Features.Dashboard.Services;
 
 namespace TKH.Web.Configuration.Extensions
 {
@@ -49,6 +52,7 @@ namespace TKH.Web.Configuration.Extensions
             services.AddScoped<IProductOrchestrator, ProductOrchestrator>();
             services.AddScoped<IProductProfitOrchestrator, ProductProfitOrchestrator>();
             services.AddScoped<ISettingsOrchestrator, SettingsOrchestrator>();
+            services.AddScoped<IDashboardOrchestrator, DashboardOrchestrator>();
         }
 
         public static void AddCustomValidation(this IServiceCollection services)

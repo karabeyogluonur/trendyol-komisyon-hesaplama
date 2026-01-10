@@ -1,11 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace TKH.Web.Controllers;
+using TKH.Core.Utilities.Results;
+using TKH.Web.Features.Dashboard.Models;
+using TKH.Web.Features.Dashboard.Services;
 
-public class HomeController : BaseController
+namespace TKH.Web.Controllers
 {
-    public IActionResult Index()
+    public class HomeController : BaseController
     {
-        return View();
+        private readonly IDashboardOrchestrator _dashboardOrchestrator;
+
+        public HomeController(IDashboardOrchestrator dashboardOrchestrator)
+        {
+            _dashboardOrchestrator = dashboardOrchestrator;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            IDataResult<DashboardViewModel> prepareDashboardViewModelResult = await _dashboardOrchestrator.PrepareDashboardViewModelAsync();
+
+            if (!prepareDashboardViewModelResult.Success)
+                return View(new DashboardViewModel());
+
+            return View(prepareDashboardViewModelResult.Data);
+        }
     }
 }
