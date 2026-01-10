@@ -257,6 +257,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
                         product.AddOrUpdateExpense(
                             ProductExpenseType.ShippingCost,
+                            GenerationType.Automated,
                             averageCost,
                             taxSettings.ShippingVatRate,
                             isVatIncluded: true
@@ -298,6 +299,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
                         product.AddOrUpdateExpense(
                             ProductExpenseType.CommissionRate,
+                            GenerationType.Automated,
                             latestRate,
                             vatRate,
                             isVatIncluded: true

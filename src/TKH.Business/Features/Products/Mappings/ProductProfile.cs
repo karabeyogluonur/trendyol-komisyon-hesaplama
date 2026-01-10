@@ -18,23 +18,23 @@ namespace TKH.Business.Features.Products.Mappings
                 src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.SalePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).FirstOrDefault()))
 
               .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src =>
-                src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.PurchasePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).FirstOrDefault()))
+                src.Prices.Where(productPrice => productPrice.Type == ProductPriceType.PurchasePrice && productPrice.EndDate == null).Select(productPrice => productPrice.Amount).First()))
 
               .ForMember(dest => dest.ManualShippingCost, opt => opt.MapFrom(src =>
                 src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.Manual).Select(productExpense => productExpense.Amount)
-                .FirstOrDefault()))
+                .First()))
 
               .ForMember(dest => dest.AutomatedShippingCost, opt => opt.MapFrom(src =>
                 src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.ShippingCost && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.Automated).Select(productExpense => productExpense.Amount)
-                .FirstOrDefault()))
+                .First()))
 
               .ForMember(dest => dest.ManualCommissionRate, opt => opt.MapFrom(src =>
                 src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.CommissionRate && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.Manual).Select(productExpense => productExpense.Amount)
-                .FirstOrDefault()))
+                .First()))
 
               .ForMember(dest => dest.AutomatedCommissionRate, opt => opt.MapFrom(src =>
                 src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.CommissionRate && productExpense.EndDate == null && productExpense.GenerationType == GenerationType.Automated).Select(productExpense => productExpense.Amount)
-                .FirstOrDefault()))
+                .First()))
 
               .ForMember(dest => dest.ServiceFee, opt => opt.MapFrom(src =>
                 src.Expenses.Where(productExpense => productExpense.Type == ProductExpenseType.MarketplaceServiceFee && productExpense.EndDate == null)
@@ -55,26 +55,26 @@ namespace TKH.Business.Features.Products.Mappings
                 .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src => src.Prices
                     .Where(product => product.Type == ProductPriceType.PurchasePrice && product.EndDate == null)
                     .Select(product => product.Amount)
-                    .FirstOrDefault()))
+                    .First()))
                 .ForMember(dest => dest.ManualCommissionRate, opt => opt.MapFrom(src => src.Expenses
                     .Where(product => product.Type == ProductExpenseType.CommissionRate && product.GenerationType == GenerationType.Manual && product.EndDate == null)
                     .Select(product => product.Amount)
-                    .FirstOrDefault()))
+                    .First()))
 
                 .ForMember(dest => dest.AutomatedCommissionRate, opt => opt.MapFrom(src => src.Expenses
                     .Where(product => product.Type == ProductExpenseType.CommissionRate && product.GenerationType == GenerationType.Automated && product.EndDate == null)
                     .Select(product => product.Amount)
-                    .FirstOrDefault()))
+                    .First()))
 
                 .ForMember(dest => dest.ManualShippingCost, opt => opt.MapFrom(src => src.Expenses
                     .Where(product => product.Type == ProductExpenseType.ShippingCost && product.GenerationType == GenerationType.Manual && product.EndDate == null)
                     .Select(product => product.Amount)
-                    .FirstOrDefault()))
+                    .First()))
 
                 .ForMember(dest => dest.AutomatedShippingCost, opt => opt.MapFrom(src => src.Expenses
                     .Where(product => product.Type == ProductExpenseType.ShippingCost && product.GenerationType == GenerationType.Automated && product.EndDate == null)
                     .Select(product => product.Amount)
-                    .FirstOrDefault()));
+                    .First()));
 
 
             #endregion

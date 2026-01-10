@@ -46,21 +46,22 @@
                         <div class="col-6">
                             <label class="fs-9 fw-bold form-label text-gray-600">Alış Fiyatı</label>
                             <input type="number" class="form-control form-control-sm form-control-solid calc-input"
-                                data-field="purchasePrice" value="@item.PurchasePrice.ToJsFormat()" step="0.01" />
+                                data-field="purchasePrice" value="@(item.PurchasePrice.ToNullableJsFormat() ?? "")"
+                                placeholder="Değer Bulunamadı" step="0.01" />
                         </div>
                         <div class="col-6">
                             <label class="fs-9 fw-bold form-label text-gray-600">Komisyon (%)</label>
                             <input type="number" class="form-control form-control-sm form-control-solid calc-input"
                                 data-field="commissionRate"
-                                value="@(item.ManualCommissionRate != 0 ? item.ManualCommissionRate.ToJsFormat() : item.AutomatedCommissionRate.ToJsFormat())"
-                                step="0.1" />
+                                value="@(item.ManualCommissionRate.ToNullableJsFormat() ?? item.AutomatedCommissionRate.ToNullableJsFormat() ?? "")"
+                                placeholder="Değer Bulunamadı" step="0.1" />
                         </div>
                         <div class="col-6">
                             <label class="fs-9 fw-bold form-label text-gray-600">Kargo</label>
                             <input type="number" class="form-control form-control-sm form-control-solid calc-input"
                                 data-field="shippingCost"
-                                value="@(item.ManualShippingCost != 0 ? item.ManualShippingCost.ToJsFormat() : item.AutomatedShippingCost.ToJsFormat())"
-                                step="0.01" />
+                                value="@(item.ManualShippingCost.ToNullableJsFormat() ?? item.AutomatedShippingCost.ToNullableJsFormat() ?? "")"
+                                placeholder="Değer Bulunamadı" step="0.01" />
                         </div>
                     </div>
 

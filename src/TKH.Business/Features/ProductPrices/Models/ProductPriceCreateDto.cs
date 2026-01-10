@@ -7,6 +7,6 @@ namespace TKH.Business.Features.ProductPrices.Models
     {
         public int ProductId { get; set; }
         public ProductPriceType Type { get; set; }
-        public decimal Amount { get; set; }
+        public decimal? Amount { get; set; }
     }
 }

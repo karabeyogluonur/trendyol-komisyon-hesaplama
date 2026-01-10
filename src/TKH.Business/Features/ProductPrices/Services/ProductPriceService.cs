@@ -1,70 +1,52 @@
 using TKH.Business.Features.ProductPrices.Models;
-using TKH.Business.Features.Products.Dtos;
-using TKH.Business.Features.Products.Services;
 using TKH.Core.DataAccess;
 using TKH.Core.Utilities.Results;
 using TKH.Entities;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace TKH.Business.Features.ProductPrices.Services
 {
     public class ProductPriceService : IProductPriceService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<ProductPrice> _productPriceRepository;
-        private readonly IProductService _productService;
+        private readonly IRepository<Product> _productRepository;
         private readonly ILogger<ProductPriceService> _logger;
 
-        public ProductPriceService(IUnitOfWork unitOfWork, IProductService productService, ILogger<ProductPriceService> logger)
+        public ProductPriceService(IUnitOfWork unitOfWork, ILogger<ProductPriceService> logger)
         {
             _unitOfWork = unitOfWork;
-            _productPriceRepository = _unitOfWork.GetRepository<ProductPrice>();
-            _productService = productService;
+            _productRepository = _unitOfWork.GetRepository<Product>();
             _logger = logger;
         }
 
         public async Task<IResult> CreateProductPriceAsync(ProductPriceCreateDto productPriceCreateDto)
         {
-            IDataResult<ProductSummaryDto> productResult = await _productService.GetProductByIdAsync(productPriceCreateDto.ProductId);
-
-            if (!productResult.Success)
-            {
-                _logger.LogWarning("Product not found. ProductId: {ProductId}", productPriceCreateDto.ProductId);
-                return new ErrorResult(productResult.Message ?? "Ürün bulunamadı.");
-            }
-
-            ProductPrice activePrice = await _productPriceRepository.GetFirstOrDefaultAsync(
-                predicate: price => price.ProductId == productPriceCreateDto.ProductId && price.Type == productPriceCreateDto.Type && price.EndDate == null
+            Product? product = await _productRepository.GetFirstOrDefaultAsync(
+                predicate: product => product.Id == productPriceCreateDto.ProductId,
+                include: include => include.Include(product => product.Prices),
+                disableTracking: false
             );
 
-            if (activePrice is not null)
+            if (product is null)
             {
-                if (!activePrice.ShouldUpdate(productPriceCreateDto.Amount))
-                    return new SuccessResult("Girilen fiyat mevcut aktif fiyat ile aynı, işlem yapılmadı.");
-
-                activePrice.MarkAsExpired();
-                _productPriceRepository.Update(activePrice);
-                _logger.LogInformation("Existing price marked as expired. ProductId: {ProductId}, Type: {Type}, OldAmount: {OldAmount}", activePrice.ProductId, activePrice.Type, activePrice.Amount);
+                _logger.LogWarning("Product not found for price update. ProductId: {ProductId}", productPriceCreateDto.ProductId);
+                return new ErrorResult("Ürün bulunamadı.");
             }
 
-            ProductPrice newPrice = ProductPrice.Create(
-                productPriceCreateDto.ProductId,
-                productPriceCreateDto.Type,
-                productPriceCreateDto.Amount
-            );
+            product.AddOrUpdatePrice(productPriceCreateDto.Type, productPriceCreateDto.Amount, isVatIncluded: true);
 
-            await _productPriceRepository.InsertAsync(newPrice);
             await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("New product price created. ProductId: {ProductId}, Type: {Type}, Amount: {Amount}", newPrice.ProductId, newPrice.Type, newPrice.Amount);
+            _logger.LogInformation("Product price updated via Entity. ProductId: {ProductId}, Amount: {Amount}", product.Id, productPriceCreateDto.Amount);
 
-            return new SuccessResult("Ürün fiyatı başarıyla oluşturuldu.");
+            return new SuccessResult("Ürün fiyatı başarıyla işlendi.");
         }
 
         public async Task<IResult> CreateProductPricesAsync(List<ProductPriceCreateDto> productPriceCreateDtos)
         {
-            if (productPriceCreateDtos == null || productPriceCreateDtos.Count == 0)
+            if (productPriceCreateDtos is null || !productPriceCreateDtos.Any())
             {
                 _logger.LogInformation("No product prices to process.");
                 return new SuccessResult("İşlenecek kayıt bulunamadı.");
@@ -72,63 +54,30 @@ namespace TKH.Business.Features.ProductPrices.Services
 
             List<int> productIds = productPriceCreateDtos.Select(dto => dto.ProductId).Distinct().ToList();
 
-            IDataResult<List<ProductSummaryDto>> productsResult = await _productService.GetProductsByIdsAsync(productIds);
-
-            if (!productsResult.Success)
-            {
-                _logger.LogError("Failed to retrieve products for batch price creation.");
-                return new ErrorResult("Ürün bilgileri alınırken hata oluştu.");
-            }
-
-            List<int> existingProductIds = productsResult.Data.Select(product => product.Id).ToList();
-            List<ProductPriceCreateDto> validProductPriceCreateDtos = productPriceCreateDtos.Where(dto => existingProductIds.Contains(dto.ProductId)).ToList();
-
-            if (validProductPriceCreateDtos.Count == 0)
-            {
-                _logger.LogWarning("No valid products found for price creation.");
-                return new ErrorResult("İşlenecek geçerli ürün bulunamadı.");
-            }
-
-            IList<ProductPrice> activePrices = await _productPriceRepository.GetAllAsync(
-                predicate: price => productIds.Contains(price.ProductId) && price.EndDate == null,
+            IList<Product> productEntities = await _productRepository.GetAllAsync(
+                predicate: product => productIds.Contains(product.Id),
+                include: include => include.Include(product => product.Prices),
                 disableTracking: false
             );
 
-            bool anyChanges = false;
-
-            foreach (ProductPriceCreateDto validProductPriceCreateDto in validProductPriceCreateDtos)
+            if (!productEntities.Any())
             {
-                ProductPrice existingPrice = activePrices.FirstOrDefault(
-                    price => price.ProductId == validProductPriceCreateDto.ProductId && price.Type == validProductPriceCreateDto.Type
-                );
-
-                if (existingPrice is not null && !existingPrice.ShouldUpdate(validProductPriceCreateDto.Amount))
-                    continue;
-
-                if (existingPrice is not null)
-                {
-                    existingPrice.MarkAsExpired();
-                    _productPriceRepository.Update(existingPrice);
-                    _logger.LogInformation("Existing price expired during batch creation. ProductId: {ProductId}, Type: {Type}, OldAmount: {OldAmount}", existingPrice.ProductId, existingPrice.Type, existingPrice.Amount);
-                }
-
-                ProductPrice newPrice = ProductPrice.Create(validProductPriceCreateDto.ProductId, validProductPriceCreateDto.Type, validProductPriceCreateDto.Amount);
-
-                await _productPriceRepository.InsertAsync(newPrice);
-
-                _logger.LogInformation("New product price added in batch. ProductId: {ProductId}, Type: {Type}, Amount: {Amount}", newPrice.ProductId, newPrice.Type, newPrice.Amount);
-
-                anyChanges = true;
+                _logger.LogWarning("No valid products found in database for the given IDs.");
+                return new ErrorResult("İşlenecek geçerli ürün bulunamadı.");
             }
 
-            if (anyChanges)
+            foreach (ProductPriceCreateDto productPriceCreateDto in productPriceCreateDtos)
             {
-                await _unitOfWork.SaveChangesAsync();
-                _logger.LogInformation("{Count} product prices created/updated.", validProductPriceCreateDtos.Count);
-                return new SuccessResult($"{validProductPriceCreateDtos.Count} adet fiyat kaydı güncellendi/eklendi.");
+                Product product = productEntities.FirstOrDefault(product => product.Id == productPriceCreateDto.ProductId);
+                if (product is null) continue;
+
+                product.AddOrUpdatePrice(productPriceCreateDto.Type, productPriceCreateDto.Amount, isVatIncluded: true);
             }
 
-            return new SuccessResult("Tüm kayıtlar zaten güncel, değişiklik yapılmadı.");
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("Batch price update completed. Processed Count: {Count}", productPriceCreateDtos.Count);
+            return new SuccessResult($"{productPriceCreateDtos.Count} adet ürünün fiyat bilgisi başarıyla işlendi.");
         }
     }
 }

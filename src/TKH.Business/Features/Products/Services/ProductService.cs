@@ -107,9 +107,7 @@ namespace TKH.Business.Features.Products.Services
             if (productCostListFilterDto == null)
                 return new ErrorDataResult<IPagedList<ProductCostSummaryDto>>("Filtre parametresi boş olamaz.");
 
-            IQueryable<Product> query = _productRepository.Query()
-                .Include(product => product.Prices)
-                .Include(product => product.Expenses);
+            IQueryable<Product> query = _productRepository.Query();
 
             if (!string.IsNullOrEmpty(productCostListFilterDto.Barcode))
                 query = query.Where(product => product.Barcode == productCostListFilterDto.Barcode);
@@ -128,27 +126,36 @@ namespace TKH.Business.Features.Products.Services
                 switch (productCostListFilterDto.CostStatus)
                 {
                     case ProductCostFilterType.MissingPurchasePrice:
-                        query = query.Where(product => !product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0));
+                        query = query.Where(product => !product.Prices.Any(price =>
+                            price.Type == ProductPriceType.PurchasePrice && price.EndDate == null));
                         break;
+
                     case ProductCostFilterType.MissingShippingCost:
-                        query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0));
+                        query = query.Where(product => !product.Expenses.Any(expense =>
+                            expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null));
                         break;
+
                     case ProductCostFilterType.MissingCommission:
-                        query = query.Where(product => !product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0));
+                        query = query.Where(product => !product.Expenses.Any(expense =>
+                            expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null));
                         break;
+
                     case ProductCostFilterType.Completed:
                         query = query.Where(product =>
-                            product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null && price.Amount > 0) &&
-                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null && expense.Amount > 0) &&
-                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null && expense.Amount > 0));
+                            product.Prices.Any(price => price.Type == ProductPriceType.PurchasePrice && price.EndDate == null) &&
+                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.ShippingCost && expense.EndDate == null) &&
+                            product.Expenses.Any(expense => expense.Type == ProductExpenseType.CommissionRate && expense.EndDate == null));
                         break;
                 }
             }
 
             IQueryable<ProductCostSummaryDto> costDtos = query.ProjectTo<ProductCostSummaryDto>(_mapper.ConfigurationProvider);
-            IPagedList<ProductCostSummaryDto> pagedCost = await costDtos.OrderBy(product => product.ModelCode).ToPagedListAsync(productCostListFilterDto.PageIndex, productCostListFilterDto.PageSize);
 
-            _logger.LogInformation("Paged product cost list fetched. PageIndex: {PageIndex}, PageSize: {PageSize}", productCostListFilterDto.PageIndex, productCostListFilterDto.PageSize);
+            IPagedList<ProductCostSummaryDto> pagedCost = await costDtos
+                .OrderBy(product => product.ModelCode)
+                .ToPagedListAsync(productCostListFilterDto.PageIndex, productCostListFilterDto.PageSize);
+
+            _logger.LogInformation("Paged product cost list fetched with filter: {Status}", productCostListFilterDto.CostStatus);
 
             return new SuccessDataResult<IPagedList<ProductCostSummaryDto>>(pagedCost);
         }

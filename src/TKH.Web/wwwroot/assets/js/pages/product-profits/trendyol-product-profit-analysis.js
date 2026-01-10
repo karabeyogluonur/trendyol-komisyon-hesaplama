@@ -11,6 +11,7 @@ TKH.ProductProfitAnalysis = (() => {
             let cleaned = val.toString().replace(',', '.').trim();
             return parseFloat(cleaned);
         },
+        isFilled: (val) => val !== "" && val !== null && val !== undefined && !isNaN(val),
         formatMoney: (val) => val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺',
         calculateBase: (amount, vatRate) => amount / (1 + vatRate),
         calculateVat: (amount, vatRate) => amount - (amount / (1 + vatRate))
@@ -22,7 +23,6 @@ TKH.ProductProfitAnalysis = (() => {
             const productVatPercent = productVatRate / 100;
             const commissionPercent = commissionRate / 100;
 
-            // 1. Satış KDV (Sadece Normal Satışta var)
             let salesExclVat, salesVat;
             if (isExport) {
                 salesExclVat = salesPrice;
@@ -32,11 +32,8 @@ TKH.ProductProfitAnalysis = (() => {
                 salesVat = Utils.calculateVat(salesPrice, productVatPercent);
             }
 
-            // 2. STOPAJ HESABI (CommissionCalculator'daki birebir mantık)
-            // DİKKAT: Diğer koddaki gibi isExport'tan bağımsız olarak matrahı KDV'li fiyattan ayıklıyoruz.
             const withholdingTax = Utils.calculateBase(salesPrice, productVatPercent) * CONFIG.rates.WITHHOLDING;
 
-            // 3. Giderlerin KDV'leri
             const serviceFeeTotal = isSameDay ? CONFIG.fees.SERVICE_SAMEDAY : serviceFee;
             const serviceFeeVat = Utils.calculateVat(serviceFeeTotal, CONFIG.rates.SERVICE_FEE_VAT);
             const shippingVat = Utils.calculateVat(shippingCost, CONFIG.rates.SHIPPING_VAT);
@@ -49,13 +46,11 @@ TKH.ProductProfitAnalysis = (() => {
                 exportVat = Utils.calculateVat(exportTotal, CONFIG.rates.EXPORT_VAT);
             }
 
-            // 4. Net KDV Dengesi
             const costVat = Utils.calculateVat(purchasePrice, productVatPercent);
             const deductibleVat = costVat + shippingVat + commissionVat + serviceFeeVat + exportVat;
             const netVatBalance = salesVat - deductibleVat;
             const payableVatExpense = Math.max(0, netVatBalance);
 
-            // 5. Toplam Gider ve Net Kar
             const platformExpenses = commissionTotal + shippingCost + serviceFeeTotal + exportTotal;
             const taxExpenses = withholdingTax + payableVatExpense;
             const totalExpenses = purchasePrice + platformExpenses + taxExpenses;
@@ -83,16 +78,16 @@ TKH.ProductProfitAnalysis = (() => {
             const $empty = $card.find('.empty-area');
             const $inputRow = $card.find('.calculation-inputs');
 
-            // Kontrol: Alanlardan biri bile 0 veya boşsa
-            if (isNaN(inputs.salesPrice) || inputs.salesPrice <= 0 ||
-                isNaN(inputs.purchasePrice) || inputs.purchasePrice <= 0 ||
-                isNaN(inputs.commissionRate) || inputs.commissionRate <= 0 ||
-                isNaN(inputs.shippingCost) || inputs.shippingCost <= 0) {
+            const isValid = Utils.isFilled(inputs.salesPrice) &&
+                    Utils.isFilled(inputs.purchasePrice) &&
+                    Utils.isFilled(inputs.commissionRate) &&
+                    Utils.isFilled(inputs.shippingCost);
 
-                $results.addClass('opacity-25'); // Arka planı hafiflet
-                $empty.removeClass('d-none').addClass('d-flex');
-                return;
-            }
+            if (!isValid) {
+                    $results.addClass('opacity-25');
+                    $empty.removeClass('d-none').addClass('d-flex');
+                    return;
+                }
 
             $results.removeClass('opacity-25');
             $empty.addClass('d-none').removeClass('d-flex');

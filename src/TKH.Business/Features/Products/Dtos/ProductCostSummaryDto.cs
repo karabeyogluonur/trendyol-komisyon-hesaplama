@@ -10,10 +10,10 @@ namespace TKH.Business.Features.Products.Dtos
         public string ModelCode { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = string.Empty;
         public string ExternalUrl { get; set; } = string.Empty;
-        public decimal PurchasePrice { get; set; }
-        public decimal ManualCommissionRate { get; set; }
-        public decimal AutomatedCommissionRate { get; set; }
-        public decimal ManualShippingCost { get; set; }
-        public decimal AutomatedShippingCost { get; set; }
+        public decimal? PurchasePrice { get; set; }
+        public decimal? ManualCommissionRate { get; set; }
+        public decimal? AutomatedCommissionRate { get; set; }
+        public decimal? ManualShippingCost { get; set; }
+        public decimal? AutomatedShippingCost { get; set; }
     }
 }

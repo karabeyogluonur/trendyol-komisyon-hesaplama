@@ -150,36 +150,49 @@ namespace TKH.Entities
 
         #region Collection Behaviors (Rich Domain)
 
-        public void AddOrUpdatePrice(ProductPriceType productPriceType, decimal amount, bool isVatIncluded)
+        public void AddOrUpdatePrice(ProductPriceType productPriceType, decimal? amount, bool isVatIncluded)
         {
             ProductPrice? activeProductPrice = Prices.FirstOrDefault(price => price.Type == productPriceType && price.IsActive());
 
+            if (!amount.HasValue)
+            {
+                activeProductPrice?.MarkAsExpired();
+                return;
+            }
+
             if (activeProductPrice is not null)
             {
-                if (!activeProductPrice.ShouldUpdate(amount))
+                if (!activeProductPrice.ShouldUpdate(amount.Value))
                     return;
 
                 activeProductPrice.MarkAsExpired();
             }
 
-            ProductPrice newProductPrice = ProductPrice.Create(this.Id, productPriceType, amount, isVatIncluded);
+            ProductPrice newProductPrice = ProductPrice.Create(this.Id, productPriceType, amount.Value, isVatIncluded);
             Prices.Add(newProductPrice);
         }
 
         public void AddOrUpdateExpense(
             ProductExpenseType productExpenseType,
-            decimal amount,
+            GenerationType generationType,
+            decimal? amount,
             decimal vatRate,
             bool isVatIncluded)
         {
             ProductExpense? activeProductExpense = Expenses.FirstOrDefault(expense =>
                 expense.Type == productExpenseType &&
                 expense.EndDate == null &&
-                expense.GenerationType == GenerationType.Automated);
+                expense.GenerationType == generationType);
+
+            if (!amount.HasValue)
+            {
+                activeProductExpense?.MarkAsEnded(DateTime.UtcNow);
+                return;
+            }
 
             if (activeProductExpense is not null)
             {
-                if (!activeProductExpense.IsDifferent(amount, vatRate, isVatIncluded))
+                if (!activeProductExpense.IsDifferent(amount.Value, vatRate, isVatIncluded))
                     return;
 
                 activeProductExpense.MarkAsEnded(DateTime.UtcNow);
@@ -188,8 +201,8 @@ namespace TKH.Entities
             ProductExpense newProductExpense = ProductExpense.Create(
                 this.Id,
                 productExpenseType,
-                amount,
-                GenerationType.Automated,
+                amount.Value,
+                generationType,
                 vatRate,
                 isVatIncluded
             );

@@ -59,6 +59,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
             productEntity.AddOrUpdateExpense(
                 productExpenseCreateDto.Type,
+                productExpenseCreateDto.GenerationType,
                 productExpenseCreateDto.Amount,
                 calculatedVatRate,
                 isVatIncluded: true
@@ -99,12 +100,15 @@ namespace TKH.Business.Features.ProductExpenses.Services
             var productMarketplaceMap = getProductsResult.Data.ToDictionary(product => product.Id, product => product.MarketplaceType);
 
             Dictionary<(MarketplaceType, ProductExpenseType), decimal> vatRateCacheDictionary = new Dictionary<(MarketplaceType, ProductExpenseType), decimal>();
+
             int processedCount = 0;
 
             foreach (ProductExpenseCreateDto productExpenseCreateDto in productExpenseCreateDtos)
             {
                 Product? productEntity = productEntities.FirstOrDefault(product => product.Id == productExpenseCreateDto.ProductId);
-                if (productEntity is null) continue;
+
+                if (productEntity is null)
+                    continue;
 
                 if (!productMarketplaceMap.TryGetValue(productEntity.Id, out MarketplaceType marketplaceType))
                     continue;
@@ -119,6 +123,7 @@ namespace TKH.Business.Features.ProductExpenses.Services
 
                 productEntity.AddOrUpdateExpense(
                     productExpenseCreateDto.Type,
+                    productExpenseCreateDto.GenerationType,
                     productExpenseCreateDto.Amount,
                     vatRate,
                     isVatIncluded: true

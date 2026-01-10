@@ -10,24 +10,24 @@ TKH.ProductCosts = (() => {
     };
 
     const Utils = {
-        getValue: ($row, field) => $row.find(`[data-field="${field}"]`).val(),
+        getValue: ($row, field) =>{
+            const val = $row.find(`[data-field="${field}"]`).val();
+            return (val === "" || val === null) ? null : val;
+        },
         setValue: ($row, field, val) => $row.find(`[data-field="${field}"]`).val(val),
-        // Sayıları karşılaştırma için standart formata sokar
         toStandardStr: (val) => {
+            if (val === "" || val === null || val === undefined) return "";
             let n = parseFloat(val);
-            return isNaN(n) ? "0.00" : n.toFixed(2);
+            if (isNaN(n)) return "";
+            return n.toFixed(2);
+        },
+        getNullableFloat: ($row, field) => {
+            const val = Utils.getValue($row, field);
+            return val === null ? null : parseFloat(val);
         }
     };
 
     const UI = {
-        handleFocus: function() {
-            if (parseFloat($(this).val()) === 0) $(this).val('');
-        },
-
-        handleBlur: function() {
-            if ($(this).val() === '' || $(this).val() === null) $(this).val('0.00');
-        },
-
         toggleRowState: ($row, isChanged) => {
             const productId = $row.data('product-id');
             const $saveBtn = $row.find('.btn-save-row');
@@ -47,11 +47,21 @@ TKH.ProductCosts = (() => {
             UI.updateBulkContainer();
         },
 
+        checkPriceValidation: ($row) => {
+            const $input = $row.find('[data-field="purchasePrice"]');
+            const val = $input.val().trim();
+
+            if (val !== "") {
+                $input.removeClass('border-danger border-dashed bg-light-danger').addClass('form-control-solid');
+            } else {
+                $input.addClass('border-danger border-dashed bg-light-danger').removeClass('form-control-solid');
+            }
+        },
+
         updateBulkContainer: () => {
             const $container = $('#bulkSaveContainer');
             const $count = $('#changeCount');
 
-            // Eğer değişen satır kalmadıysa çubuğu gizle
             if (state.changedRows.size > 0) {
                 $container.removeClass('d-none').show();
                 $count.text(state.changedRows.size);
@@ -76,15 +86,14 @@ TKH.ProductCosts = (() => {
                         dataList.forEach(item => {
                             const $row = $(`.cost-row[data-product-id="${item.id}"]`);
 
-                            // 1. Yeni değerleri orijinal olarak güncelle (HATA FIX)
                             state.originals.set(item.id, {
                                 purchasePrice: Utils.toStandardStr(item.purchasePrice),
                                 manualCommissionRate: Utils.toStandardStr(item.manualCommissionRate),
                                 manualShippingCost: Utils.toStandardStr(item.manualShippingCost)
                             });
 
-                            // 2. Satır durumunu ve Set listesini temizle
                             UI.toggleRowState($row, false);
+                            UI.checkPriceValidation($row);
                         });
 
                         toastr.success('Başarıyla kaydedildi.');
@@ -94,7 +103,7 @@ TKH.ProductCosts = (() => {
                 },
                 complete: () => {
                     $btn.attr('disabled', false);
-                    UI.updateBulkContainer(); // Çubuğu tekrar kontrol et
+                    UI.updateBulkContainer();
                 },
                 error: () => toastr.error('Bağlantı hatası.')
             });
@@ -107,7 +116,6 @@ TKH.ProductCosts = (() => {
             if (!$table.length) return;
             state.saveUrl = $table.data('save-url');
 
-            // Başlangıç değerlerini standart formatta sakla
             $('.cost-row').each(function() {
                 const $row = $(this);
                 state.originals.set($row.data('product-id'), {
@@ -117,15 +125,13 @@ TKH.ProductCosts = (() => {
                 });
             });
 
-            $table.on('focus', '.cost-input', UI.handleFocus);
-            $table.on('blur', '.cost-input', UI.handleBlur);
-
             $table.on('input change', '.cost-input', function() {
                 const $row = $(this).closest('.cost-row');
                 const id = $row.data('product-id');
                 const org = state.originals.get(id);
 
-                // Mevcut değerleri standart formatta karşılaştır
+                UI.checkPriceValidation($row);
+
                 const hasChange = Utils.toStandardStr(Utils.getValue($row, 'purchasePrice')) !== org.purchasePrice ||
                                  Utils.toStandardStr(Utils.getValue($row, 'manualCommissionRate')) !== org.manualCommissionRate ||
                                  Utils.toStandardStr(Utils.getValue($row, 'manualShippingCost')) !== org.manualShippingCost;
@@ -137,9 +143,9 @@ TKH.ProductCosts = (() => {
                 const $row = $(this).closest('.cost-row');
                 Actions.save([{
                     id: $row.data('product-id'),
-                    purchasePrice: parseFloat(Utils.getValue($row, 'purchasePrice')) || 0,
-                    manualCommissionRate: parseFloat(Utils.getValue($row, 'manualCommissionRate')) || 0,
-                    manualShippingCost: parseFloat(Utils.getValue($row, 'manualShippingCost')) || 0
+                    purchasePrice: Utils.getNullableFloat($row, 'purchasePrice'),
+                    manualCommissionRate: Utils.getNullableFloat($row, 'manualCommissionRate'),
+                    manualShippingCost: Utils.getNullableFloat($row, 'manualShippingCost')
                 }]);
             });
 
@@ -158,9 +164,9 @@ TKH.ProductCosts = (() => {
                     const $row = $(`.cost-row[data-product-id="${id}"]`);
                     payload.push({
                         id: id,
-                        purchasePrice: parseFloat(Utils.getValue($row, 'purchasePrice')) || 0,
-                        manualCommissionRate: parseFloat(Utils.getValue($row, 'manualCommissionRate')) || 0,
-                        manualShippingCost: parseFloat(Utils.getValue($row, 'manualShippingCost')) || 0
+                        purchasePrice: Utils.getNullableFloat($row, 'purchasePrice'),
+                        manualCommissionRate: Utils.getNullableFloat($row, 'manualCommissionRate'),
+                        manualShippingCost: Utils.getNullableFloat($row, 'manualShippingCost')
                     });
                 });
                 Actions.save(payload);

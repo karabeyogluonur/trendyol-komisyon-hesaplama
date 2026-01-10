@@ -97,12 +97,12 @@ namespace TKH.Web.Features.Products.Services
             if (productCostBatchViewModels is null || !productCostBatchViewModels.Any())
                 return new ErrorResult("Güncellenecek veri bulunamadı.");
 
-
-            List<ProductPriceCreateDto> priceUpdates = productCostBatchViewModels.Select(item => new ProductPriceCreateDto
+            List<ProductPriceCreateDto> priceUpdates = productCostBatchViewModels
+            .Select(productCost => new ProductPriceCreateDto
             {
-                ProductId = item.Id,
+                ProductId = productCost.Id,
                 Type = ProductPriceType.PurchasePrice,
-                Amount = item.PurchasePrice
+                Amount = productCost.PurchasePrice
             }).ToList();
 
             IResult addPriceResult = await _productPriceService.CreateProductPricesAsync(priceUpdates);
@@ -121,6 +121,7 @@ namespace TKH.Web.Features.Products.Services
                     Amount = productCostBatchViewModel.ManualCommissionRate,
                     GenerationType = GenerationType.Manual
                 });
+
 
                 expenseUpdates.Add(new ProductExpenseCreateDto
                 {

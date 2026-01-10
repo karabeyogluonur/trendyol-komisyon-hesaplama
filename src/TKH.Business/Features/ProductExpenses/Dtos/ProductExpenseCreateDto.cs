@@ -8,6 +8,6 @@ namespace TKH.Business.Features.ProductExpenses.Dtos
         public int ProductId { get; set; }
         public ProductExpenseType Type { get; set; }
         public GenerationType GenerationType { get; set; }
-        public decimal Amount { get; set; }
+        public decimal? Amount { get; set; }
     }
 }

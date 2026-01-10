@@ -9,6 +9,7 @@ using TKH.Business.Integrations.Marketplaces.Factories;
 using TKH.Core.Common.Constants;
 using TKH.Core.DataAccess;
 using TKH.Entities;
+using TKH.Entities.Enums;
 
 namespace TKH.Business.Features.Products.Services
 {
@@ -173,6 +174,7 @@ namespace TKH.Business.Features.Products.Services
                 {
                     productEntity.AddOrUpdateExpense(
                         marketplaceProductExpenseDto.Type,
+                        GenerationType.Automated,
                         marketplaceProductExpenseDto.Amount,
                         marketplaceProductExpenseDto.VatRate,
                         marketplaceProductExpenseDto.IsVatIncluded

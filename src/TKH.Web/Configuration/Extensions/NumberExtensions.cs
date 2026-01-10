@@ -14,6 +14,10 @@ namespace TKH.Web.Configuration.Extensions
                 ? value.Value.ToString("F2", CultureInfo.InvariantCulture)
                 : defaultValue;
         }
+        public static string ToNullableJsFormat(this decimal? value)
+        {
+            return value?.ToString("F2", CultureInfo.InvariantCulture);
+        }
 
         public static string ToPercentageRate(this decimal value)
         {
